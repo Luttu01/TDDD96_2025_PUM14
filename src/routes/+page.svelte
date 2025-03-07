@@ -12,7 +12,7 @@
 </script>
 
 <div class="flex flex-grow">
-  <aside class="w-40 h-full">
+  <aside class={$expandTimeline ? "w-0 transition-all duration-500" : "w-40 h-full transition-all duration-500"}>
     <List />
   </aside>
 
@@ -22,8 +22,8 @@
     </div>
     <div
       class={$expandTimeline
-        ? "flex h-16 transition-all duration-500"
-        : "flex h-6/8 transition-all duration-500"}
+        ? "flex h-6/8 transition-all duration-500"
+        : "flex h-16 transition-all duration-500"}
     >
       <Timeline />
     </div>
