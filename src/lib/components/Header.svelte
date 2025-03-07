@@ -36,9 +36,9 @@
                 {journalmall} <i class="fa fa-caret-down"></i>
             </button>
             <div id="dropdown_1">
-                <button name="Test11" on:click={handleButtonClick1}>Test1</button>
-                <button name="Test12" on:click={handleButtonClick1}>Test2</button>
-                <button name="Test13" on:click={handleButtonClick1}>Test3</button>
+                <button name="Test11" on:click={handleButtonClick1}>Test11</button>
+                <button name="Test12" on:click={handleButtonClick1}>Test12</button>
+                <button name="Test13" on:click={handleButtonClick1}>Test13</button>
             </div>
         </div>
         <div id="Vårdenhet" class="w-[10vw] outline-3 outline-gray-300 rounded-xl bg-white">
@@ -46,9 +46,9 @@
                 {vardenhet} <i class="fa fa-caret-down"></i>
             </button>
             <div id="dropdown_2">
-                <button name="Test21" on:click={handleButtonClick2}>Test1</button>
-                <button name="Test22" on:click={handleButtonClick2}>Test2</button>
-                <button name="Test23" on:click={handleButtonClick2}>Test3</button>
+                <button name="Test21" on:click={handleButtonClick2}>Test21</button>
+                <button name="Test22" on:click={handleButtonClick2}>Test22</button>
+                <button name="Test23" on:click={handleButtonClick2}>Test23</button>
             </div>
         </div>
         <div id="Yrkesroll" class="w-[10vw] outline-3 outline-gray-300 rounded-xl bg-white">
@@ -56,9 +56,9 @@
                 {yrkesroll} <i class="fa fa-caret-down"></i>
             </button>
             <div id="dropdown_3">
-                <button name="Test31" on:click={handleButtonClick3}>Test1</button>
-                <button name="Test32" on:click={handleButtonClick3}>Test2</button>
-                <button name="Test33" on:click={handleButtonClick3}>Test3</button>
+                <button name="Test31" on:click={handleButtonClick3}>Test31</button>
+                <button name="Test32" on:click={handleButtonClick3}>Test32</button>
+                <button name="Test33" on:click={handleButtonClick3}>Test33</button>
             </div>
         </div>
         <style>
