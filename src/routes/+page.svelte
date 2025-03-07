@@ -12,18 +12,22 @@
 </script>
 
 <div class="flex flex-grow">
-  <aside class={$expandTimeline ? "w-0 transition-all duration-500" : "w-40 h-full transition-all duration-500"}>
+  <aside
+    class={$expandTimeline
+      ? "w-0 flex-none transition-all duration-500 overflow-hidden"
+      : "w-40 flex-none h-full transition-all duration-500 overflow-hidden"}
+  >
     <List />
   </aside>
 
-  <main class="flex flex-col flex-grow">
-    <div class="flex flex-grow transition-all duration-500">
+  <main class="flex flex-col flex-grow overflow-hidden">
+    <div class="flex-grow transition-all duration-500 overflow-hidden">
       <SelectedNotes />
     </div>
     <div
       class={$expandTimeline
-        ? "flex h-6/8 transition-all duration-500"
-        : "flex h-16 transition-all duration-500"}
+        ? "h-6/8 transition-all duration-500"
+        : "h-10 transition-all duration-500"}
     >
       <Timeline />
     </div>
@@ -32,7 +36,7 @@
 
 <button
   on:click={toggleView}
-  class="fixed bottom-4 right-4 bg-black text-white p-2 rounded-full"
+  class="fixed top-1 right-1 bg-black text-white p-1 rounded-md"
 >
   {#if $expandTimeline}
     Hide Timeline
