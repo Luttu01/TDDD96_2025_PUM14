@@ -1,24 +1,57 @@
 <script lang="ts">
+    import type { document } from "../utils/fetchBot";
+    import { fetchData } from "../utils/fetchBot";
+    import { onMount } from "svelte";
+
+    let documents: document[] = [];
+    let matchingDocs: number = 0;
+
+    onMount(async () => {
+        documents = await fetchData("documents");
+        matchingDocs = documents.length;
+    });
+
+    let journalmallar: string[] = ["Läkaranteckning", "Case Report", "Research Article", "Clinical Study", "Review", "Guidelines"];
+    let vardenheter: string[] = ["Kardiologiska kliniken", "Neurologiska avdelningen", "Onkologiska kliniken", "Kirurgen", "Medicinkliniken"];
+    let yrkesroller: string[] = ["Läkare", "Specialistläkare", "Sjuksköterska", "Kirurg"];
+
     let journalmall: string = "Journalmall";
     let vardenhet: string = "Vårdenhet";
     let yrkesroll: string = "Yrkesroll";
 
+    function update() {
+        /***
+         * Uppdaterar dynamiskt antalet dokument som uppnår filterkrav
+        */
+        const filteredDocs = documents.filter(
+            (doc) => 
+                (doc.unit == vardenhet || vardenhet == "Vårdenhet") && 
+                (doc.professional == yrkesroll || yrkesroll == "Yrkesroll") && 
+                (doc.type == journalmall || journalmall == "Journalmall")
+        );
+        matchingDocs = filteredDocs.length;
+    }
+
     function handleButtonClick1(event: MouseEvent) {
         const button = event.target as HTMLButtonElement;
         journalmall = button.name; 
+        update();
     }
     function handleButtonClick2(event: MouseEvent) {
         const button = event.target as HTMLButtonElement;
         vardenhet = button.name; 
+        update();
     }
     function handleButtonClick3(event: MouseEvent) {
         const button = event.target as HTMLButtonElement;
         yrkesroll = button.name; 
+        update();
     }
     function reset(event: MouseEvent) {
         journalmall = "Journalmall";
         vardenhet = "Vårdenhet";
         yrkesroll = "Yrkesroll";
+        update();
     }
 </script>
 
@@ -35,31 +68,37 @@
             <button id="dropdown_button" class="pl-[5%]">
                 {journalmall} <i class="fa fa-caret-down"></i>
             </button>
-            <div id="dropdown_1">
-                <button name="Test11" on:click={handleButtonClick1}>Test11</button>
-                <button name="Test12" on:click={handleButtonClick1}>Test12</button>
-                <button name="Test13" on:click={handleButtonClick1}>Test13</button>
-            </div>
+            <ul id="dropdown_1">
+                {#each journalmallar as journal}
+                    <li>
+                        <button name={journal} on:click={handleButtonClick1}>{journal}</button>
+                    </li>
+                {/each}
+            </ul>
         </div>
         <div id="Vårdenhet" class="w-[10vw] outline-3 outline-gray-300 rounded-xl bg-white">
             <button id="dropdown_button" class="pl-[5%]">
                 {vardenhet} <i class="fa fa-caret-down"></i>
             </button>
-            <div id="dropdown_2">
-                <button name="Test21" on:click={handleButtonClick2}>Test21</button>
-                <button name="Test22" on:click={handleButtonClick2}>Test22</button>
-                <button name="Test23" on:click={handleButtonClick2}>Test23</button>
-            </div>
+            <ul id="dropdown_2">
+                {#each vardenheter as enhet}
+                    <li>
+                        <button name={enhet} on:click={handleButtonClick2}>{enhet}</button>
+                    </li>
+                {/each}
+            </ul>
         </div>
         <div id="Yrkesroll" class="w-[10vw] outline-3 outline-gray-300 rounded-xl bg-white">
             <button id="dropdown_button" class="pl-[5%]">
                 {yrkesroll} <i class="fa fa-caret-down"></i>
             </button>
-            <div id="dropdown_3">
-                <button name="Test31" on:click={handleButtonClick3}>Test31</button>
-                <button name="Test32" on:click={handleButtonClick3}>Test32</button>
-                <button name="Test33" on:click={handleButtonClick3}>Test33</button>
-            </div>
+            <ul id="dropdown_3">
+                {#each yrkesroller as yrke}
+                    <li>
+                        <button name={yrke} on:click={handleButtonClick3}>{yrke}</button>
+                    </li>
+                {/each}
+            </ul>
         </div>
         <style>
             #Journalmall, #Yrkesroll, #Vårdenhet {
@@ -67,7 +106,7 @@
                 position: relative;
                 transition: 0.5s;
                 display: block;
-                text-align: center;
+                text-align: left;
             }
             #dropdown_button {
                 color: #000;
@@ -84,7 +123,7 @@
             }
             #dropdown_1 button:hover, #dropdown_2 button:hover, #dropdown_3 button:hover {background-color: #ddd;}
 
-            #Journalmall:hover div, #Yrkesroll:hover div, #Vårdenhet:hover div {
+            #Journalmall:hover ul, #Yrkesroll:hover ul, #Vårdenhet:hover ul {
                 display: flex;
                 position: absolute;
                 flex-direction: column;
@@ -100,10 +139,7 @@
             }
         </style>
 
-        <div id="Datum" class="flex flex-row gap-[6vw] w-[20vw] outline-3 outline-gray-300 rounded-xl bg-white">
-            <div class="pl-[5%]">Från:</div>
-            <div>Till:</div>
-        </div>
         <button id="Reset" class="hover:text-purple-500" on:click={reset}>Återställ</button>
+        <div>Matchande Dokument: {matchingDocs}</div>
     </div>
 </div>

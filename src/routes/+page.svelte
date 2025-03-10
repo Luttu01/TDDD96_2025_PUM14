@@ -10,7 +10,6 @@
 </aside>
 
 <main>
-  <Header/>
   <SelectedNotes />
   <Timeline />
 </main>
