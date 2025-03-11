@@ -1,5 +1,5 @@
 <script lang="ts">
-    import type { document } from "../utils/fetchBot";
+    import type { document } from "../models/note"
     import { fetchData } from "../utils/fetchBot";
     import { onMount } from "svelte";
 
