@@ -8,7 +8,7 @@
   <List />
 </aside>
 
-<main>
+<main class="h-screen">
   <SelectedNotes />
   <Timeline />
 </main>
