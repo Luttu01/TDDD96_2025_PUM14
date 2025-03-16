@@ -41,7 +41,11 @@
   type GroupType = "day" | "month" | "year";
 
   function groupNotes(notes: JournalNote[]) {
-    let groups: Record<GroupType, number[][]> = { day: [], month: [], year: [] };
+    let groups: Record<GroupType, number[][]> = {
+      day: [],
+      month: [],
+      year: [],
+    };
     let dayMap = new Map<string, number[]>();
     let monthMap = new Map<string, number[]>();
     let yearMap = new Map<string, number[]>();
@@ -71,8 +75,9 @@
     return groups;
   }
 
-  // Derived store to update grouped data dynamically
-  let groupedNotes = derived(journalNotes, ($journalNotes) => groupNotes($journalNotes));
+  let groupedNotes = derived(journalNotes, ($journalNotes) =>
+    groupNotes($journalNotes)
+  );
 
   function handleZoom(event: WheelEvent): void {
     if (event.ctrlKey) {
@@ -80,6 +85,102 @@
       scale -= event.deltaY * speed;
       scale = Math.min(maxScale, Math.max(minScale, scale));
     }
+  }
+
+  let collapsedYears = writable(new Set<number>());
+  let collapsedMonths = writable(new Set<number>());
+  let collapsedDays = writable(new Set<number>());
+
+  function toggleCollapse(
+    setStore: typeof collapsedYears,
+    index: number,
+    parentStore?: typeof collapsedYears,
+    parentIndex?: number
+  ) {
+    setStore.update((set) => {
+      if (set.has(index)) {
+        set.delete(index);
+      } else {
+        set.add(index);
+        if (parentStore && parentIndex !== undefined) {
+          parentStore.update((pSet) => {
+            pSet.delete(parentIndex);
+            return new Set(pSet);
+          });
+        }
+      }
+      return new Set(set);
+    });
+  }
+
+  function isCollapsed(
+    index: number,
+    groups: number[][],
+    collapsedSet: Set<number>
+  ): boolean {
+    return groups.some(
+      (group, groupIndex) =>
+        collapsedSet.has(groupIndex) && group.includes(index)
+    );
+  }
+
+  function getCollapsedSummary(groups: number[][], collapsedSet: Set<number>) {
+    return groups
+      .map((group, groupIndex) => ({
+        index: groupIndex,
+        start: $journalNotes[group[0]].date,
+        end: $journalNotes[group[group.length - 1]].date,
+        count: group.length,
+      }))
+      .filter(({ index }) => collapsedSet.has(index));
+  }
+
+  function getCollapsedCountBefore(
+    index: number,
+    collapsedSets: Set<number>[],
+    groupedNotes: number[][][]
+  ): number {
+    return groupedNotes
+      .flatMap((groups, level) =>
+        groups.slice(0, index).reduce((count, group, groupIndex) => {
+          if (
+            level > 0 &&
+            collapsedSets[level - 1].has(
+              groupedNotes[level - 1].findIndex((g) => g.includes(group[0]))
+            )
+          ) {
+            return count;
+          }
+          return collapsedSets[level].has(groupIndex)
+            ? count + (group.length - 1)
+            : count;
+        }, 0)
+      )
+      .reduce((a, b) => a + b, 0);
+  }
+
+  function getCollapsedCount(
+    index: number,
+    collapsedSets: Set<number>[],
+    groupedNotes: number[][][]
+  ): number {
+    return groupedNotes
+      .flatMap((groups, level) =>
+        groups.slice(index).reduce((count, group, groupIndex) => {
+          if (
+            level > 0 &&
+            collapsedSets[level - 1].has(
+              groupedNotes[level - 1].findIndex((g) => g.includes(group[0]))
+            )
+          ) {
+            return count;
+          }
+          return collapsedSets[level].has(groupIndex)
+            ? count + (group.length - 1)
+            : count;
+        }, 0)
+      )
+      .reduce((a, b) => a + b, 0);
   }
 
   onMount(() => {
@@ -94,58 +195,196 @@
 <div
   class="h-full bg-gray-100 relative flex flex-col overflow-x-auto p-2 space-y-2"
 >
-  
-<div class="relative flex min-w-max space-x-1">
-  <div class="absolute top-1 left-0 right-0 h-1 bg-gray-300"></div>
+  <div class="relative flex min-w-max space-x-1">
+    <div class="absolute top-1 left-0 right-0 h-1 bg-gray-300"></div>
 
-  {#each $groupedNotes.year as yearGroup}
-    <div
-      class="absolute top-0 h-3 bg-gray-300 rounded-md border-2 border-white"
-      style="
-        left: {yearGroup[0] * baseWidth * scale + yearGroup[0]*space +40*scale}px;
-        width: {yearGroup.length * baseWidth * scale +((yearGroup.length-1)*4) -80*scale}px;
+    {#each $groupedNotes.year as yearGroup, yearIndex}
+      <button
+        on:click={() => toggleCollapse(collapsedYears, yearIndex)}
+        class="absolute top-0 h-3 bg-gray-300 rounded-md border-2 border-white"
+        style="
+        left: {(yearGroup[0] -
+          getCollapsedCountBefore(
+            yearIndex,
+            [$collapsedYears, $collapsedMonths, $collapsedDays],
+            [$groupedNotes.year, $groupedNotes.month, $groupedNotes.day]
+          )) *
+          baseWidth *
+          scale +
+          (yearGroup[0] -
+            getCollapsedCountBefore(
+              yearIndex,
+              [$collapsedYears, $collapsedMonths, $collapsedDays],
+              [$groupedNotes.year, $groupedNotes.month, $groupedNotes.day]
+            ) -
+            1) *
+            4 +
+          40 * scale}px;
+        width: {!$collapsedYears.has(yearIndex)
+          ? (yearGroup.length -
+              getCollapsedCount(
+                yearIndex,
+                [$collapsedMonths, $collapsedDays],
+                [$groupedNotes.month, $groupedNotes.day]
+              )) *
+              baseWidth *
+              scale +
+            (yearGroup.length -
+              getCollapsedCount(
+                yearIndex,
+                [$collapsedMonths, $collapsedDays],
+                [$groupedNotes.month, $groupedNotes.day]
+              ) +
+              1) *
+              4 -
+            80 * scale
+          : baseWidth * scale - 80 * scale + 8}px;
       "
-    ></div>
-  {/each}
+        aria-label="Toggle year group"
+      ></button>
+    {/each}
 
-  {#each $groupedNotes.month as monthGroup}
-    <div
-      class="absolute top-0 h-3 bg-gray-500 rounded-md border-2 border-white"
-      style="
-        left: {monthGroup[0] * baseWidth * scale + monthGroup[0]*space +80*scale}px;
-        width: {monthGroup.length * baseWidth * scale +((monthGroup.length-1)*4) -160*scale}px;
-      "
-    ></div>
-  {/each}
+    {#each $groupedNotes.month as monthGroup, monthIndex}
+      {#if !$collapsedYears.has($groupedNotes.year.findIndex( (g) => g.includes(monthGroup[0]) ))}
+        <button
+          on:click={() => toggleCollapse(collapsedMonths, monthIndex)}
+          class="absolute top-0 h-3 bg-gray-500 rounded-md border-2 border-white"
+          style="
+          left: {(monthGroup[0] -
+            getCollapsedCountBefore(
+              monthIndex,
+              [$collapsedYears, $collapsedMonths, $collapsedDays],
+              [$groupedNotes.year, $groupedNotes.month, $groupedNotes.day]
+            )) *
+            baseWidth *
+            scale +
+            (monthGroup[0] -
+              getCollapsedCountBefore(
+                monthIndex,
+                [$collapsedYears, $collapsedMonths, $collapsedDays],
+                [$groupedNotes.year, $groupedNotes.month, $groupedNotes.day]
+              ) -
+              1) *
+              4 +
+            80 * scale}px;
+          width: {!$collapsedMonths.has(monthIndex)
+            ? (monthGroup.length -
+                getCollapsedCount(
+                  monthIndex,
+                  [$collapsedDays],
+                  [$groupedNotes.day]
+                )) *
+                baseWidth *
+                scale +
+              (monthGroup.length -
+                getCollapsedCount(
+                  monthIndex,
+                  [$collapsedDays],
+                  [$groupedNotes.day]
+                ) +
+                1) *
+                4 -
+              160 * scale
+            : baseWidth * scale - 160 * scale + 8}px;
+        "
+          aria-label="Toggle month group"
+        ></button>
+      {/if}
+    {/each}
 
-  {#each $groupedNotes.day as dayGroup}
-    <div
-      class="absolute top-0 h-3 bg-gray-700 rounded-md border-2 border-white"
-      style="
-        left: {dayGroup[0] * baseWidth * scale + dayGroup[0]*space +120*scale}px;
-        width: {dayGroup.length * baseWidth * scale +((dayGroup.length-1)*4) -240*scale}px;
-      "
-    ></div>
-  {/each}
+    {#each $groupedNotes.day as dayGroup, dayIndex}
+      {#if !$collapsedYears.has($groupedNotes.year.findIndex( (g) => g.includes(dayGroup[0]) )) && !$collapsedMonths.has($groupedNotes.month.findIndex( (g) => g.includes(dayGroup[0]) ))}
+        <button
+          on:click={() => toggleCollapse(collapsedDays, dayIndex)}
+          class="absolute top-0 h-3 bg-gray-700 rounded-md border-2 border-white"
+          style="
+          left: {(dayGroup[0] -
+            getCollapsedCountBefore(
+              dayIndex,
+              [$collapsedYears, $collapsedMonths, $collapsedDays],
+              [$groupedNotes.year, $groupedNotes.month, $groupedNotes.day]
+            )) * baseWidth * scale +
+            (dayGroup[0] -
+              getCollapsedCountBefore(
+                dayIndex,
+                [$collapsedYears, $collapsedMonths, $collapsedDays],
+                [$groupedNotes.year, $groupedNotes.month, $groupedNotes.day]
+              ) - 1) * 4 + 120 * scale}px;
+          width: {!$collapsedDays.has(dayIndex)
+            ? dayGroup.length * baseWidth * scale + (dayGroup.length + 1) * 4 - 240 * scale
+            : baseWidth * scale - 240 * scale + 8}px;
+          "
+          aria-label="Toggle day group"
+        ></button>
+      {/if}
+    {/each}
 
-  {#each $journalNotes as _}
-    <div class="relative flex-none" style="width: {baseWidth * scale}px;">
-      <div class="relative top-0 left-1/2 h-3 w-3 bg-black rounded-full border-2 border-white"></div>
-    </div>
-  {/each}
-</div>
-
-  <div class="flex flex-grow space-x-1">
-    {#each $journalNotes as note}
-      <div
-        class="bg-white flex-none p-1 rounded-md shadow-sm"
-        style="width: {baseWidth * scale}px;"
-      >
-        <div class="text-left text-sm text-gray-500">
-          {note.date.toDateString()}
+    <!-- TODO: fixa så en prick finns för en kollapsad enhet också, nu tas alla prickar bort -->
+    {#each $journalNotes as _, index}
+      {#if !isCollapsed(index, $groupedNotes.year, $collapsedYears) && !isCollapsed(index, $groupedNotes.month, $collapsedMonths) && !isCollapsed(index, $groupedNotes.day, $collapsedDays)}
+        <div
+          class="flex flex-none items-center justify-center"
+          style="width: {baseWidth * scale}px;"
+        >
+          <div
+            class="relative h-3 w-3 bg-black rounded-full border-2 border-white"
+          ></div>
         </div>
-        {note.content}
-      </div>
+      {/if}
+    {/each}
+  </div>
+
+  <!-- TODO: fixa hela denna så allt är i ordning och under rätt prick vid kollaps, också att om förälderkollaps så behövs inte summary av barn -->
+  <div class="flex flex-grow space-x-1">
+    {#each getCollapsedSummary($groupedNotes.year, $collapsedYears) as summary}
+      <button
+        class="bg-gray-200 flex-none p-1 rounded-md shadow-sm text-gray-700"
+        style="width: {baseWidth * scale}px;"
+        on:click={() => toggleCollapse(collapsedYears, summary.index)}
+      >
+        <div class="text-sm text-gray-600">
+          År {summary.start.getFullYear()}
+        </div>
+        <div>{summary.count} anteckningar dolda</div>
+      </button>
+    {/each}
+
+    {#each getCollapsedSummary($groupedNotes.month, $collapsedMonths) as summary}
+      <button
+        class="bg-gray-300 flex-none p-1 rounded-md shadow-sm text-gray-700"
+        style="width: {baseWidth * scale}px;"
+        on:click={() => toggleCollapse(collapsedMonths, summary.index)}
+      >
+        <div class="text-sm text-gray-600">
+          Månad {summary.start.toLocaleString("default", { month: "long" })}
+        </div>
+        <div>{summary.count} anteckningar dolda</div>
+      </button>
+    {/each}
+
+    {#each getCollapsedSummary($groupedNotes.day, $collapsedDays) as summary}
+      <button
+        class="bg-gray-400 flex-none p-1 rounded-md shadow-sm text-gray-700"
+        style="width: {baseWidth * scale}px;"
+        on:click={() => toggleCollapse(collapsedDays, summary.index)}
+      >
+        <div class="text-sm text-gray-600">{summary.start.toDateString()}</div>
+        <div>{summary.count} anteckningar dolda</div>
+      </button>
+    {/each}
+
+    {#each $journalNotes as note, index}
+      {#if !isCollapsed(index, $groupedNotes.year, $collapsedYears) && !isCollapsed(index, $groupedNotes.month, $collapsedMonths) && !isCollapsed(index, $groupedNotes.day, $collapsedDays)}
+        <div
+          class="bg-white flex-none p-1 rounded-md shadow-sm"
+          style="width: {baseWidth * scale}px;"
+        >
+          <div class="text-left text-sm text-gray-500">
+            {note.date.toDateString()}
+          </div>
+          {note.content}
+        </div>
+      {/if}
     {/each}
   </div>
 </div>
