@@ -1,0 +1,115 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage[english, swedish]{babel}
+\usepackage{amsmath}
+\usepackage{listings}
+\usepackage{graphicx}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{multirow}
+\usepackage[a4paper,pdftex,bottom=20mm, width=160mm]{geometry}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{1em}
+\usepackage{ragged2e}
+\newcolumntype{L}[1]{>{\RaggedRight\arraybackslash}p{#1}}
+
+\begin{document}
+
+\title{Testspecifikation: Filterpanel}
+\author{Kandidatprojekt VT 2025}
+\date{\today}
+
+\maketitle
+
+\section{Introduktion}
+Detta dokument specificerar testfall för filterpanelen (K1.1-3, K2.1-3) i IVPJ.
+\section{Testmiljö}
+\subsection{Verktyg}
+\begin{itemize}
+    \item     Pytest med Playwright
+    \item Mock-data för journaler
+\end{itemize}
+
+\section{Testfall}
+
+\subsection{Rendering och Layout}
+\begin{longtable}{|L{1.5cm}|L{3.2cm}|L{4.5cm}|L{4.5cm}|L{2.2cm}|}
+\hline
+\textbf{Nr} & \textbf{Testfall} & \textbf{Indata} & \textbf{Förväntat resultat} & \textbf{Krav} \\
+\hline
+1.1 & Panel existerar & Navigera till basvyn & Filterpanelen renderas och är synlig & K1.1-3, K2.1-3 \\
+\hline
+1.2 & Datumväljare & Klick på datumfält & Datumväljare visas med korrekt format & K3.2-4 \\
+\hline
+1.3 & Journaltypslista & Öppna journaltypsväljare & Lista med tillgängliga journaltyper visas & K3.2-5 \\
+\hline
+1.4 & Vårdenhetslista & Öppna vårdenhetväljare & Lista med tillgängliga vårdenheter visas & K3.2-6 \\
+\hline
+1.5 & Sökordsfält & Klick i sökfält & Textfält aktiveras för inmatning & K3.2-7 \\
+\hline
+1.6 & Yrkesrollslista & Öppna yrkesrollsväljare & Lista med tillgängliga yrkesroller visas & K3.2-8 \\
+\hline
+1.7 & Återställningsknapp & Panel med aktiva filter & Återställningsknapp är synlig & K3.2-10 \\
+\hline
+1.8 & Färgvalsgränssnitt & Öppna färgvalsinställningar & Gränssnitt för att välja färger visas & K3.2-13 \\
+\hline
+\end{longtable}
+
+\subsection{Filterlogik}
+\begin{longtable}{|L{1.5cm}|L{3.2cm}|L{4.5cm}|L{4.5cm}|L{2.2cm}|}
+\hline
+\textbf{Nr} & \textbf{Testfall} & \textbf{Indata} & \textbf{Förväntat resultat} & \textbf{Krav} \\
+\hline
+2.1 & Datumfiltrering & Välj start- och slutdatum & Korrekt datumintervall sätts & K3.2-4 \\
+\hline
+2.2 & Journaltypsfilter & Välj en journaltyp & Vald journaltyp aktiveras & K3.2-5 \\
+\hline
+2.3 & Vårdenhetfilter & Välj en vårdenhet & Vald vårdenhet aktiveras & K3.2-6 \\
+\hline
+2.4 & Sökordfilter & Skriv in sökord & Sökordet registreras & K3.2-7 \\
+\hline
+2.5 & Yrkesrollfilter & Välj en yrkesroll & Vald yrkesroll aktiveras & K3.2-8 \\
+\hline
+2.6 & Kombinerade filter & Aktivera flera filter & Alla valda filter är aktiva & K3.2-9 \\
+\hline
+2.7 & Återställning & Klick på återställ & Alla filter återställs till default & K3.2-10 \\
+\hline
+2.8 & Spara filter & Klick på spara-knapp & Nuvarande filterinställningar sparas för framtida användning & K3.2-12 \\
+\hline
+2.9 & Färgval för kodning & Välj färg och nyckelord & Nyckelord associeras med vald färg & K3.2-13 \\
+\hline
+\end{longtable}
+
+\subsection{Validering}
+\begin{longtable}{|L{1.5cm}|L{3.2cm}|L{4.5cm}|L{4.5cm}|L{2.2cm}|}
+\hline
+\textbf{Nr} & \textbf{Testfall} & \textbf{Indata} & \textbf{Förväntat resultat} & \textbf{Krav} \\
+\hline
+3.1 & Ogiltigt datum & "2024-13-45" & Felmeddelande visas, input rensas & K3.2-4 \\
+\hline
+3.2 & Tomt sökord & "" (tom sträng) & Sökning inaktiveras & K3.2-7 \\
+\hline
+3.3 & Datumordning & Slutdatum före startdatum & Felmeddelande visas & K3.2-4 \\
+\hline
+3.4 & Specialtecken & "!@\#\$\%" i sökfält & Specialtecken hanteras korrekt & K3.2-7 \\
+\hline
+\end{longtable}
+
+\subsection{Realtidsuppdatering}
+\begin{longtable}{|L{1.5cm}|L{3.2cm}|L{4.5cm}|L{4.5cm}|L{2.2cm}|}
+\hline
+\textbf{Nr} & \textbf{Testfall} & \textbf{Indata} & \textbf{Förväntat resultat} & \textbf{Krav} \\
+\hline
+4.1 & Datumändring & Ändra datum & Filter uppdateras direkt och innehåll filtreras i realtid & K3.2-11 \\
+\hline
+4.2 & Typändring & Ändra journaltyp & Filter uppdateras direkt och innehåll filtreras i realtid & K3.2-11 \\
+\hline
+4.3 & Enhetändring & Ändra vårdenhet & Filter uppdateras direkt och innehåll filtreras i realtid & K3.2-11 \\
+\hline
+4.4 & Sökordändring & Skriv tecken för tecken & Filter uppdateras vid varje tecken och innehåll filtreras i realtid & K3.2-11 \\
+\hline
+4.5 & Rollbyte & Byt yrkesroll & Filter uppdateras direkt och innehåll filtreras i realtid & K3.2-11 \\
+\hline
+\end{longtable}
+
+\end{document} 
