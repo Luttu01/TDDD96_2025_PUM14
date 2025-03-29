@@ -1,7 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { derived, writable } from "svelte/store";
-  import { slide } from "svelte/transition";
 
   type JournalNote = {
     date: Date;
@@ -100,20 +99,20 @@
     group: { isCollapsed: boolean },
     event?: Event
   ): void {
-    if (event) event.stopPropagation(); // Prevents event bubbling to parent elements
+    if (event) event.stopPropagation();
     group.isCollapsed = !group.isCollapsed;
-    noteHierarchy.update((n) => [...n]); // Ensures Svelte reactivity
+    noteHierarchy.update((n) => [...n]);
   }
 
   function countVisibleNotes(groups: (Year | Month | Day)[]): number {
     let count = 0;
     for (const group of groups) {
       if ("notes" in group) {
-        count += group.isCollapsed ? 1 : group.notes.length; // Day level
+        count += group.isCollapsed ? 1 : group.notes.length;
       } else if ("days" in group) {
-        count += group.isCollapsed ? 1 : countVisibleNotes(group.days); // Month level
+        count += group.isCollapsed ? 1 : countVisibleNotes(group.days);
       } else if ("months" in group) {
-        count += group.isCollapsed ? 1 : countVisibleNotes(group.months); // Year level
+        count += group.isCollapsed ? 1 : countVisibleNotes(group.months);
       }
     }
     return count;
@@ -124,7 +123,6 @@
 
     for (const year of $noteHierarchy) {
       if (year.isCollapsed) {
-        // If year is collapsed, create a single summary block
         const count = year.months.reduce(
           (sum, month) =>
             sum +
@@ -133,7 +131,7 @@
         );
         output.push({
           type: "summary",
-          text: `Year ${year.year} (${count} notes hidden)`,
+          text: `${year.year} (${count} anteckningar dolda)`,
           year,
         });
       } else {
@@ -145,7 +143,10 @@
             );
             output.push({
               type: "summary",
-              text: `Month ${month.month + 1}, ${year.year} (${count} notes hidden)`,
+                text: `${new Date(year.year, month.month).toLocaleDateString("sv-SE", {
+                  year: "numeric",
+                  month: "long",
+                  })} (${count} anteckningar dolda)`,
               month,
             });
           } else {
@@ -153,7 +154,12 @@
               if (day.isCollapsed) {
                 output.push({
                   type: "summary",
-                  text: `Day ${day.day}, ${month.month + 1}, ${year.year} (${day.notes.length} notes hidden)`,
+                  text: `${day.notes[0]?.date.toLocaleDateString("sv-SE", {
+                    weekday: "long",
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                    })} (${day.notes.length} anteckningar dolda)`,
                   day,
                 });
               } else {
@@ -193,14 +199,14 @@
       {#each $noteHierarchy as yearGroup}
         <button
           on:click={(event) => toggleCollapse(yearGroup, event)}
-          class="h-6 bg-purple-300 rounded-full "
+          class="h-4 bg-purple-300 rounded-full"
           style="width: {baseWidth * countVisibleNotes([yearGroup]) * scale +
             4 * countVisibleNotes([yearGroup]) -
             25}px;"
           aria-label="Toggle year group"
         >
           {#if !yearGroup.isCollapsed}
-            <div class="flex justify-between px-[10px]">
+            <div class="flex justify-between px-[30px]">
               {#each yearGroup.months as monthGroup}
                 <!-- svelte-ignore node_invalid_placement_ssr -->
                 <button
@@ -210,20 +216,20 @@
                     countVisibleNotes([monthGroup]) *
                     scale +
                     4 * countVisibleNotes([monthGroup]) -
-                    45}px;"
+                    85}px;"
                   aria-label="Toggle month group"
                 >
                   {#if !monthGroup.isCollapsed}
-                    <div class="flex justify-between px-[10px]">
+                    <div class="flex justify-between px-[30px]">
                       {#each monthGroup.days as dayGroup}
                         <button
                           on:click={(event) => toggleCollapse(dayGroup, event)}
-                          class="h-2 bg-purple-700 rounded-full "
+                          class="h-4 bg-purple-700 rounded-full "
                           style="width: {baseWidth *
                             countVisibleNotes([dayGroup]) *
                             scale +
                             4 * countVisibleNotes([dayGroup]) -
-                            65}px;"
+                            145}px;"
                           aria-label="Toggle day group"
                         >
                         </button>
@@ -240,7 +246,6 @@
     <div class="flex flex-grow space-x-1">
       {#each $visibleNotes as item}
         {#if item.type === "summary"}
-          <!-- Summary block for collapsed years, months, or days -->
           <button
             class="bg-gray-200 flex-none p-1 rounded-md shadow-sm text-gray-700"
             style="width: {baseWidth * scale}px;"
@@ -253,13 +258,17 @@
             {item.text}
           </button>
         {:else}
-          <!-- Individual notes when expanded -->
           <div
             class="bg-white flex-none p-1 rounded-md shadow-sm"
             style="width: {baseWidth * scale}px;"
           >
             <div class="text-left text-sm text-gray-500">
-              {item.note?.date.toDateString()}
+                {item.note?.date.toLocaleDateString("sv-SE", {
+                weekday: "long",
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+                })}
             </div>
             {item.note?.content}
           </div>
