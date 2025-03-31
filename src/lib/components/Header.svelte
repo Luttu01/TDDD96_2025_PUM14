@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { nonpassive } from "svelte/legacy";
     import type { document } from "../models/note"
     import { fetchData } from "../utils/fetchBot";
     import { onMount } from "svelte";
@@ -59,19 +60,19 @@
     }
 </script>
 
-<div class="flex display-center h-[3em] outline-solid outline-gray-300 bg-gray-100">
+<div id="Header" class="flex display-center h-[3em] outline-solid outline-gray-300 bg-gray-100">
     <h1 id="ProjektTitel" class="pl-[5vw] pr-[5vw] text-4xl"><a href="/" on:click={reset}>Better<span class="text-purple-700">Care</span></a></h1>
     <div id="Filtermenu" class="flex flex-row gap-[1vw] items-center text-[1.2em]">
-        <div id="Sök" class="w-[15vw] overflow-hidden outline-3 outline-gray-300 rounded-xl bg-white">
+        <div id="Sök" class="w-[15vw] outline-3 outline-gray-300 rounded-xl bg-white">
             <input class="pl-[5%] w-[100%] bg-white outline-3 outline-gray-300 rounded-xl" type="text" placeholder="Sök:">
         </div>
 
         <div id="Journalmall" class="w-[10vw] outline-3 outline-gray-300 rounded-xl bg-white">
             <div id="dropdown_button">
-                <button class="pl-[5%] w-[80%] overflow-hidden">
+                <button class="pl-[5%]">
                     {journalmall}
                 </button>
-                <i class="fa fa-caret-down"></i>
+                <i class="fa fa-caret-down absolute pt-[2.5%] right-[5%]"></i>
             </div>
         
             <ul id="dropdown_1">
@@ -84,10 +85,10 @@
         </div>
         <div id="Vårdenhet" class="w-[10vw] outline-3 outline-gray-300 rounded-xl bg-white">
             <div id="dropdown_button">
-                <button class="pl-[5%] w-[80%] overflow-hidden">
+                <button class="pl-[5%]">
                     {vardenhet}
                 </button>
-                <i class="fa fa-caret-down"></i>
+                <i class="fa fa-caret-down absolute pt-[2.5%] right-[5%]"></i>
             </div>
             <ul id="dropdown_2">
                 {#each vardenheter as enhet}
@@ -99,10 +100,10 @@
         </div>
         <div id="Yrkesroll" class="w-[10vw] outline-3 outline-gray-300 rounded-xl bg-white">
             <div id="dropdown_button">
-                <button class="pl-[5%] w-[80%] overflow-hidden">
+                <button class="pl-[5%]">
                     {yrkesroll}
                 </button>
-                <i class="fa fa-caret-down"></i>
+                <i class="fa fa-caret-down absolute pt-[2.5%] right-[5%]"></i>
             </div>
             <ul id="dropdown_3">
                 {#each yrkesroller as yrke}
@@ -116,9 +117,9 @@
             #Journalmall, #Yrkesroll, #Vårdenhet {
                 list-style: none;
                 position: relative;
-                transition: 0.5s;
                 display: block;
                 text-align: left;
+                padding-right: 3%;
             }
             #dropdown_button {
                 color: #000;
@@ -144,6 +145,7 @@
                 font-size: 15px;
                 background: white;
                 width: 90%;
+                min-width: fit-content;
                 margin-left: 5%;
                 margin-right: 5%;
                 box-shadow: 0px 20px 100px 0px rgba(0, 0, 0, 0.5);
@@ -165,4 +167,41 @@
         </div>
         <button id="Reset" class="hover:text-purple-500" on:click={reset}>Återställ</button>
     </div>
+    <div id="More" class="w-[100%] h-[3wh] ml-[1vw] text-3xl">
+        <i class="fa-solid fa-bars"></i>
+        <ul id="More-List">
+        </ul>
+
+    </div>
+    <style>
+        #DatumDiv {
+            width: fit-content;
+            padding-right: 1%;
+        }
+        #More {
+            display: none;
+            padding-top: 1vh;
+        }
+        @media (width <= 1350px) {
+            #Reset {
+                display: none;
+            }
+            #More {
+                display: flex;
+                flex: column;
+                padding-top: 1vh;
+            }
+            #More-List {
+                position: absolute;
+                display: none;
+                box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
+            }
+            #More-List li {
+                white-space: nowrap;
+            }
+            #More-List li:hover {
+                background: #9470B0;
+            }
+        }
+    </style>
 </div>
