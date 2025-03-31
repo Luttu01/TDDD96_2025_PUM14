@@ -1,8 +1,8 @@
 <script lang="ts">
-    import { nonpassive } from "svelte/legacy";
     import type { document } from "../models/note"
     import { fetchData } from "../utils/fetchBot";
     import { onMount } from "svelte";
+    import { adjustMenu } from "../utils/menuResizer";
 
     let documents: document[] = [];
     let matchingDocs: number = 0;
@@ -10,7 +10,10 @@
     onMount(async () => {
         documents = await fetchData("documents");
         matchingDocs = documents.length;
+        window.addEventListener("resize", adjustMenu);
+        window.addEventListener("load", adjustMenu);
     });
+
 
     let journalmallar: string[] = ["Läkaranteckning", "Case Report", "Research Article", "Clinical Study", "Review", "Guidelines"];
     let vardenheter: string[] = ["Kardiologiska kliniken", "Neurologiska avdelningen", "Onkologiska kliniken", "Kirurgen", "Medicinkliniken"];
@@ -67,7 +70,7 @@
             <input class="pl-[5%] w-[100%] bg-white outline-3 outline-gray-300 rounded-xl" type="text" placeholder="Sök:">
         </div>
 
-        <div id="Journalmall" class="w-[10vw] outline-3 outline-gray-300 rounded-xl bg-white">
+        <div id="Journalmall" class="max-w-[10vw] outline-3 outline-gray-300 rounded-xl bg-white">
             <div id="dropdown_button">
                 <button class="pl-[5%]">
                     {journalmall}
@@ -83,7 +86,7 @@
                 {/each}
             </ul>
         </div>
-        <div id="Vårdenhet" class="w-[10vw] outline-3 outline-gray-300 rounded-xl bg-white">
+        <div id="Vårdenhet" class="max-w-[10vw] outline-3 outline-gray-300 rounded-xl bg-white">
             <div id="dropdown_button">
                 <button class="pl-[5%]">
                     {vardenhet}
@@ -98,7 +101,7 @@
                 {/each}
             </ul>
         </div>
-        <div id="Yrkesroll" class="w-[10vw] outline-3 outline-gray-300 rounded-xl bg-white">
+        <div id="Yrkesroll" class="max-w-[10vw] outline-3 outline-gray-300 rounded-xl bg-white">
             <div id="dropdown_button">
                 <button class="pl-[5%]">
                     {yrkesroll}
@@ -120,6 +123,7 @@
                 display: block;
                 text-align: left;
                 padding-right: 3%;
+                width: fit-content;
             }
             #dropdown_button {
                 color: #000;
@@ -182,26 +186,15 @@
             display: none;
             padding-top: 1vh;
         }
-        @media (width <= 1350px) {
-            #Reset {
-                display: none;
-            }
-            #More {
-                display: flex;
-                flex: column;
-                padding-top: 1vh;
-            }
-            #More-List {
-                position: absolute;
-                display: none;
-                box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
-            }
-            #More-List li {
-                white-space: nowrap;
-            }
-            #More-List li:hover {
-                background: #9470B0;
-            }
+        #More-List {
+            position: absolute;
+            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
+        }
+        #More-List li {
+            white-space: nowrap;
+        }
+        #More-List li:hover {
+            background: #9470B0;
         }
     </style>
 </div>
