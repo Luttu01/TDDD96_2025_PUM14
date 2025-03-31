@@ -1,15 +1,17 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { derived, writable } from "svelte/store";
+  import { flip } from 'svelte/animate';
+  import { fade } from 'svelte/transition';
 
-  type JournalNote = {
+  type Note = {
     date: Date;
     content: string;
   };
 
   type Day = {
     day: number;
-    notes: JournalNote[];
+    notes: Note[];
     isCollapsed: boolean;
   };
 
@@ -25,7 +27,7 @@
     isCollapsed: boolean;
   };
 
-  let journalNotes = writable<JournalNote[]>([
+  let notes = writable<Note[]>([
     { date: new Date("2021-01-01"), content: "Anteckning 1" },
     { date: new Date("2021-01-01"), content: "Anteckning 1" },
     { date: new Date("2021-01-01"), content: "Anteckning 1" },
@@ -51,11 +53,14 @@
 
   let scale: number = 1;
   let speed: number = 0.01;
-  const minScale: number = 0.38;
+  const minScale: number = 0.5;
   const maxScale: number = 1.5;
   const baseWidth: number = 320;
 
-  function buildHierarchy(notes: JournalNote[]): Year[] {
+  let enableTransition = writable(false);
+  $: scale, enableTransition.set(false);
+
+  function buildHierarchy(notes: Note[]): Year[] {
     const hierarchy: Year[] = [];
 
     notes.forEach((note) => {
@@ -93,15 +98,17 @@
     return hierarchy;
   }
 
-  const noteHierarchy = writable<Year[]>(buildHierarchy($journalNotes));
+  const noteHierarchy = writable<Year[]>(buildHierarchy($notes));
 
   function toggleCollapse(
     group: { isCollapsed: boolean },
     event?: Event
   ): void {
     if (event) event.stopPropagation();
+    setTimeout(() => enableTransition.set(true), 300);
     group.isCollapsed = !group.isCollapsed;
     noteHierarchy.update((n) => [...n]);
+    
   }
 
   function countVisibleNotes(groups: (Year | Month | Day)[]): number {
@@ -143,10 +150,13 @@
             );
             output.push({
               type: "summary",
-                text: `${new Date(year.year, month.month).toLocaleDateString("sv-SE", {
+              text: `${new Date(year.year, month.month).toLocaleDateString(
+                "sv-SE",
+                {
                   year: "numeric",
-                  month: "long",
-                  })} (${count} anteckningar dolda)`,
+                  month: "numeric",
+                }
+              )} (${count} anteckningar dolda)`,
               month,
             });
           } else {
@@ -154,12 +164,7 @@
               if (day.isCollapsed) {
                 output.push({
                   type: "summary",
-                  text: `${day.notes[0]?.date.toLocaleDateString("sv-SE", {
-                    weekday: "long",
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                    })} (${day.notes.length} anteckningar dolda)`,
+                  text: `${day.notes[0]?.date.toLocaleDateString("sv-SE")} (${day.notes.length} anteckningar dolda)`,
                   day,
                 });
               } else {
@@ -195,23 +200,25 @@
 
 <div class="h-full bg-gray-100 flex overflow-x-auto">
   <div class="w-max flex-col flex p-2 space-y-2">
-    <div class="flex relative min-w-max px-[10px] justify-between">
+    <div class="flex relative min-w-max px-[10px] justify-between" transition:fade={{ duration: 150 }}>
       {#each $noteHierarchy as yearGroup}
         <button
           on:click={(event) => toggleCollapse(yearGroup, event)}
-          class="h-4 bg-purple-300 rounded-full"
+          class="h-2 bg-purple-300 rounded-full"
+          class:transition-width={$enableTransition}
           style="width: {baseWidth * countVisibleNotes([yearGroup]) * scale +
             4 * countVisibleNotes([yearGroup]) -
             25}px;"
           aria-label="Toggle year group"
         >
           {#if !yearGroup.isCollapsed}
-            <div class="flex justify-between px-[30px]">
+            <div class="flex justify-between px-[30px]" transition:fade={{ duration: 150 }}>
               {#each yearGroup.months as monthGroup}
                 <!-- svelte-ignore node_invalid_placement_ssr -->
                 <button
                   on:click={(event) => toggleCollapse(monthGroup, event)}
-                  class="h-4 bg-purple-500 rounded-full "
+                  class="h-2 bg-purple-500 rounded-full"
+                  class:transition-width={$enableTransition}
                   style="width: {baseWidth *
                     countVisibleNotes([monthGroup]) *
                     scale +
@@ -220,11 +227,12 @@
                   aria-label="Toggle month group"
                 >
                   {#if !monthGroup.isCollapsed}
-                    <div class="flex justify-between px-[30px]">
+                    <div class="flex justify-between px-[30px]" transition:fade={{ duration: 150 }}>
                       {#each monthGroup.days as dayGroup}
                         <button
                           on:click={(event) => toggleCollapse(dayGroup, event)}
-                          class="h-4 bg-purple-700 rounded-full "
+                          class="h-2 bg-purple-700 rounded-full"
+                          class:transition-width={$enableTransition}
                           style="width: {baseWidth *
                             countVisibleNotes([dayGroup]) *
                             scale +
@@ -244,9 +252,11 @@
       {/each}
     </div>
     <div class="flex flex-grow space-x-1">
-      {#each $visibleNotes as item}
+      {#each $visibleNotes as item (item.type === "note" ? item.note?.date : item.text)}
+      <div class="flex flex-grow" animate:flip={{ duration: 250 }}>
         {#if item.type === "summary"}
           <button
+            transition:fade={{ duration: 150 }}
             class="bg-gray-200 flex-none p-1 rounded-md shadow-sm text-gray-700"
             style="width: {baseWidth * scale}px;"
             on:click={() => {
@@ -259,21 +269,24 @@
           </button>
         {:else}
           <div
+          transition:fade={{ duration: 150 }}
             class="bg-white flex-none p-1 rounded-md shadow-sm"
             style="width: {baseWidth * scale}px;"
           >
             <div class="text-left text-sm text-gray-500">
-                {item.note?.date.toLocaleDateString("sv-SE", {
-                weekday: "long",
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-                })}
+              {item.note?.date.toLocaleDateString("sv-SE")}
             </div>
             {item.note?.content}
           </div>
         {/if}
+      </div>
       {/each}
     </div>
   </div>
 </div>
+
+<style>
+  .transition-width {
+    transition: width 250ms ease-in-out;
+  }
+</style>
