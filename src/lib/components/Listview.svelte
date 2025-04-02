@@ -1,16 +1,11 @@
 <script lang="ts">
   import type { Document } from '$lib/types';
-  import { createEventDispatcher } from 'svelte';
-
-  // Setup event dispatcher
-  const dispatch = createEventDispatcher<{
-    select: Document;
-  }>();
 
   const props = $props<{
     items?: Document[];
     keyBy?: string | ((item: Document) => string | number);
     selectedDocument?: Document | null;
+    onselect?: (document: Document) => void;
   }>();
 
   // Create mutable state for values that need to be updated
@@ -29,7 +24,6 @@
     localSelectedDocument = props.selectedDocument || null;
   });
   
-  const keyBy = $derived(props.keyBy || 'id');
 
 
   function formatDate(dateString: string): string {
@@ -75,15 +69,14 @@
     // Update local state
     localSelectedDocument = document;
     
-    // Use Svelte's event dispatcher to send the event to parent
-    dispatch('select', document);
+    // Call the onselect handler if provided
+    if (props.onselect) {
+      props.onselect(document);
+    }
     
     // Log for debugging
-    console.log('Document clicked:', document.title, 'Event dispatched');
+    console.log('Document clicked:', document.title, 'Event handled');
   }
-
- 
-
 </script>
 
 <ul class="list-view">
