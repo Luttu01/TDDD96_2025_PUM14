@@ -126,50 +126,48 @@
                 </ul>
             </div>
         </div>
-        <style>
-            #template, #role, #Vårdenhet {
-                list-style: none;
-                position: relative;
-                display: block;
-                text-align: left;
-                padding-right: 3%;
-            }
-            #dropdown_button {
-                color: #000;
-                text-decoration: none;
-                white-space: nowrap;
-                overflow: hidden;
-            }
-            #dropdown_1, #dropdown_2, #dropdown_3 {
-                display: none;
-                text-align: left;
-            }
-            #dropdown_1 button, #dropdown_2 button, #dropdown_3 button {
-                color: black;
-                text-decoration: none;
-                padding: 5px;
-            }
-            #dropdown_1 button:hover, #dropdown_2 button:hover, #dropdown_3 button:hover {background-color: #9E7BB3;}
-
-            #template:hover ul, #role:hover ul, #Vårdenhet:hover ul {
-                display: flex;
-                position: absolute;
-                flex-direction: column;
-                font-size: 15px;
-                background: white;
-                width: 90%;
-                min-width: fit-content;
-                margin-left: 5%;
-                margin-right: 5%;
-                box-shadow: 0px 20px 100px 0px rgba(0, 0, 0, 0.5);
-            }
-            #template:hover, #role:hover, #Vårdenhet:hover {
-                background-color: #9470B0;
-            }
-        </style>
     </div>
     <button id="Reset" class="absolute text-[1.2em] hover:text-purple-500 right-[2em] top-[0.5em]" on:click={reset}>Återställ</button>
     <style>
+        #template, #role, #Vårdenhet {
+            list-style: none;
+            position: relative;
+            display: block;
+            text-align: left;
+            padding-right: 3%;
+        }
+        #dropdown_button {
+            color: #000;
+            text-decoration: none;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+        #dropdown_1, #dropdown_2, #dropdown_3 {
+            display: none;
+            text-align: left;
+        }
+        #dropdown_1 button, #dropdown_2 button, #dropdown_3 button {
+            color: black;
+            text-decoration: none;
+            padding: 5px;
+        }
+        #dropdown_1 button:hover, #dropdown_2 button:hover, #dropdown_3 button:hover {background-color: #9E7BB3;}
+
+        #template:hover ul, #role:hover ul, #Vårdenhet:hover ul {
+            display: flex;
+            position: absolute;
+            flex-direction: column;
+            font-size: 15px;
+            background: white;
+            width: 90%;
+            min-width: fit-content;
+            margin-left: 5%;
+            margin-right: 5%;
+            box-shadow: 0px 20px 100px 0px rgba(0, 0, 0, 0.5);
+        }
+        #template:hover, #role:hover, #Vårdenhet:hover {
+            background-color: #9470B0;
+        }
         #DateDiv {
             width: fit-content;
             padding-right: 1%;
