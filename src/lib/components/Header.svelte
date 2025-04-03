@@ -2,7 +2,6 @@
     import type { document } from "../models/note"
     import { fetchData } from "../utils/fetchBot";
     import { onMount } from "svelte";
-    import { adjustMenu } from "../utils/menuResizer";
 
     let documents: document[] = [];
     let matchingDocs: number = 0;
@@ -10,120 +9,130 @@
     onMount(async () => {
         documents = await fetchData("documents");
         matchingDocs = documents.length;
-        window.addEventListener("resize", adjustMenu);
-        window.addEventListener("load", adjustMenu);
     });
 
+    let templates: string[] = ["Läkaranteckning", "Case Report", "Research Article", "Clinical Study", "Review", "Guidelines"];
+    let units: string[] = ["Kardiologiska kliniken", "Neurologiska avdelningen", "Onkologiska kliniken", "Kirurgen", "Medicinkliniken"];
+    let roles: string[] = ["Läkare", "Specialistläkare", "Sjuksköterska", "Kirurg"];
 
-    let journalmallar: string[] = ["Läkaranteckning", "Case Report", "Research Article", "Clinical Study", "Review", "Guidelines"];
-    let vardenheter: string[] = ["Kardiologiska kliniken", "Neurologiska avdelningen", "Onkologiska kliniken", "Kirurgen", "Medicinkliniken"];
-    let yrkesroller: string[] = ["Läkare", "Specialistläkare", "Sjuksköterska", "Kirurg"];
+    let template: string = "Journalmall";
+    let unit: string = "Vårdenhet";
+    let role: string = "Yrkesroll";
 
-    let journalmall: string = "Journalmall";
-    let vardenhet: string = "Vårdenhet";
-    let yrkesroll: string = "Yrkesroll";
-
-    function update() {
+    function updateDocument() {
         /***
          * Uppdaterar dynamiskt antalet dokument som uppnår filterkrav
         */
         const filteredDocs = documents.filter(
             (doc) => 
-                (doc.unit == vardenhet || vardenhet == "Vårdenhet") && 
-                (doc.professional == yrkesroll || yrkesroll == "Yrkesroll") && 
-                (doc.type == journalmall || journalmall == "Journalmall")
+                (doc.unit == unit || unit == "Vårdenhet") && 
+                (doc.professional == role || role == "Yrkesroll") && 
+                (doc.type == template || template == "Journalmall")
         );
         matchingDocs = filteredDocs.length;
     }
 
-    function handleButtonClick1(event: MouseEvent) {
+    function updateJournal(event: MouseEvent) {
         const button = event.target as HTMLButtonElement;
-        journalmall = button.name; 
-        update();
+        template = button.name; 
+        updateDocument();
     }
-    function handleButtonClick2(event: MouseEvent) {
+    function updateUnit(event: MouseEvent) {
         const button = event.target as HTMLButtonElement;
-        vardenhet = button.name; 
-        update();
+        unit = button.name; 
+        updateDocument();
     }
-    function handleButtonClick3(event: MouseEvent) {
+    function updateRole(event: MouseEvent) {
         const button = event.target as HTMLButtonElement;
-        yrkesroll = button.name; 
-        update();
+        role = button.name; 
+        updateDocument();
     }
     function reset(event: MouseEvent) {
-        journalmall = "Journalmall";
-        vardenhet = "Vårdenhet";
-        yrkesroll = "Yrkesroll";
-        const date1 = document.getElementById("DatumÄldst") as HTMLFormElement;
-        const date2 = document.getElementById("DatumSenast") as HTMLFormElement;
+        template = "Journalmall";
+        unit = "Vårdenhet";
+        role = "Yrkesroll";
+        const date1 = document.getElementById("OldestDate") as HTMLFormElement;
+        const date2 = document.getElementById("NewestDate") as HTMLFormElement;
         date1.value = "";
         date2.value = "";
-        update();
+        updateDocument();
     }
 </script>
 
 <div id="Header" class="flex display-center h-[3em] outline-solid outline-gray-300 bg-gray-100">
-    <h1 id="ProjektTitel" class="pl-[5vw] pr-[5vw] text-4xl"><a href="/" on:click={reset}>Better<span class="text-purple-700">Care</span></a></h1>
-    <div id="Filtermenu" class="flex flex-row gap-[1vw] items-center text-[1.2em]">
-        <div id="Sök" class="w-[15vw] outline-3 outline-gray-300 rounded-xl bg-white">
-            <input class="pl-[5%] w-[100%] bg-white outline-3 outline-gray-300 rounded-xl" type="text" placeholder="Sök:">
-        </div>
-
-        <div id="Journalmall" class="max-w-[10vw] outline-3 outline-gray-300 rounded-xl bg-white">
-            <div id="dropdown_button">
-                <button class="pl-[5%]">
-                    {journalmall}
-                </button>
-                <i class="fa fa-caret-down absolute pt-[2.5%] right-[5%]"></i>
+    <h1 id="ProjectTitle" class="pl-[5vw] text-4xl"><a href="/" on:click={reset}>Better<span class="text-purple-700">Care</span></a></h1>
+    <div id="Filtermenu" class="flex flex-row gap-[1em] items-center text-[1.2em] pl-[5em]">
+        <div id="SearchAndDate" class="flex flex-row gap-[1em]">
+            <div id="Search" class="w-[15vw] min-w-[10.5em] outline-3 outline-gray-300 rounded-xl bg-white">
+                <input class="pl-[5%] w-[100%] bg-white outline-3 outline-gray-300 rounded-xl" type="text" placeholder="Sök:">
             </div>
-        
-            <ul id="dropdown_1">
-                {#each journalmallar as journal}
-                    <li>
-                        <button class="w-[100%] text-ellipsis" name={journal} on:click={handleButtonClick1}>{journal}</button>
-                    </li>
-                {/each}
-            </ul>
-        </div>
-        <div id="Vårdenhet" class="max-w-[10vw] outline-3 outline-gray-300 rounded-xl bg-white">
-            <div id="dropdown_button">
-                <button class="pl-[5%]">
-                    {vardenhet}
-                </button>
-                <i class="fa fa-caret-down absolute pt-[2.5%] right-[5%]"></i>
+            <div id="DateDiv" class="w-[21em] outline-3 outline-gray-300 rounded-xl bg-white flex items-center">
+                <div id="Date1" class="flex flex-row gap-[1em] items-center">
+                    <label for="OldestDate"></label>
+                    <input type="date" name="OldestDate" id="OldestDate">
+                </div>
+                <p class="pl-[1em]">-</p>
+                <div id="Date2" class="flex flex-row gap-[1em] items-center">
+                    <label for="NewestDate"></label>
+                    <input type="date" name="NewestDate" id="NewestDate">
+                </div>
             </div>
-            <ul id="dropdown_2">
-                {#each vardenheter as enhet}
-                    <li>
-                        <button class="w-[100%] text-ellipsis" name={enhet} on:click={handleButtonClick2}>{enhet}</button>
-                    </li>
-                {/each}
-            </ul>
         </div>
-        <div id="Yrkesroll" class="max-w-[10vw] outline-3 outline-gray-300 rounded-xl bg-white">
-            <div id="dropdown_button">
-                <button class="pl-[5%]">
-                    {yrkesroll}
-                </button>
-                <i class="fa fa-caret-down absolute pt-[2.5%] right-[5%]"></i>
+        <div id="Filter" class="flex flex-row gap-[1em]">
+            <div id="template" class="w-[10em] outline-3 outline-gray-300 rounded-xl bg-white">
+                <div id="dropdown_button">
+                    <button class="pl-[5%]">
+                        {template}
+                    </button>
+                    <i class="fa fa-caret-down absolute pt-[2.5%] right-[5%]"></i>
+                </div>
+            
+                <ul id="dropdown_1">
+                    {#each templates as journal}
+                        <li>
+                            <button class="w-[100%] text-ellipsis" name={journal} on:click={updateJournal}>{journal}</button>
+                        </li>
+                    {/each}
+                </ul>
             </div>
-            <ul id="dropdown_3">
-                {#each yrkesroller as yrke}
-                    <li class="display: inline">
-                        <button class="w-[100%]" name={yrke} on:click={handleButtonClick3}>{yrke}</button>
-                    </li>
-                {/each}
-            </ul>
+            <div id="Vårdenhet" class="w-[10em] outline-3 outline-gray-300 rounded-xl bg-white">
+                <div id="dropdown_button">
+                    <button class="pl-[5%]">
+                        {unit}
+                    </button>
+                    <i class="fa fa-caret-down absolute pt-[2.5%] right-[5%]"></i>
+                </div>
+                <ul id="dropdown_2">
+                    {#each units as unit}
+                        <li>
+                            <button class="w-[100%] text-ellipsis" name={unit} on:click={updateUnit}>{unit}</button>
+                        </li>
+                    {/each}
+                </ul>
+            </div>
+            <div id="role" class="w-[10em] outline-3 outline-gray-300 rounded-xl bg-white">
+                <div id="dropdown_button">
+                    <button class="pl-[5%]">
+                        {role}
+                    </button>
+                    <i class="fa fa-caret-down absolute pt-[2.5%] right-[5%]"></i>
+                </div>
+                <ul id="dropdown_3">
+                    {#each roles as role}
+                        <li class="display: inline">
+                            <button class="w-[100%]" name={role} on:click={updateRole}>{role}</button>
+                        </li>
+                    {/each}
+                </ul>
+            </div>
         </div>
         <style>
-            #Journalmall, #Yrkesroll, #Vårdenhet {
+            #template, #role, #Vårdenhet {
                 list-style: none;
                 position: relative;
                 display: block;
                 text-align: left;
                 padding-right: 3%;
-                width: fit-content;
             }
             #dropdown_button {
                 color: #000;
@@ -142,7 +151,7 @@
             }
             #dropdown_1 button:hover, #dropdown_2 button:hover, #dropdown_3 button:hover {background-color: #9E7BB3;}
 
-            #Journalmall:hover ul, #Yrkesroll:hover ul, #Vårdenhet:hover ul {
+            #template:hover ul, #role:hover ul, #Vårdenhet:hover ul {
                 display: flex;
                 position: absolute;
                 flex-direction: column;
@@ -154,47 +163,78 @@
                 margin-right: 5%;
                 box-shadow: 0px 20px 100px 0px rgba(0, 0, 0, 0.5);
             }
-            #Journalmall:hover, #Yrkesroll:hover, #Vårdenhet:hover {
+            #template:hover, #role:hover, #Vårdenhet:hover {
                 background-color: #9470B0;
             }
         </style>
-        <div id="DatumDiv" class="w-[21vw] h-[60%] outline-3 outline-gray-300 rounded-xl bg-white text-[80%] flex items-center">
-            <div id="Datum1" class="flex flex-row gap-[1vw] items-center">
-                <label for="DatumÄldst"></label>
-                <input type="date" name="DatumÄldst" id="DatumÄldst">
-            </div>
-            <p class="pl-[1vw]">-</p>
-            <div id="Datum2" class="flex flex-row gap-[1vw] items-center">
-                <label for="DatumSenast"></label>
-                <input type="date" name="DatumSenast" id="DatumSenast">
-            </div>
-        </div>
-        <button id="Reset" class="hover:text-purple-500" on:click={reset}>Återställ</button>
     </div>
-    <div id="More" class="w-[100%] h-[3wh] ml-[1vw] text-3xl">
-        <i class="fa-solid fa-bars"></i>
-        <ul id="More-List">
-        </ul>
-
-    </div>
+    <button id="Reset" class="absolute text-[1.2em] hover:text-purple-500 right-[2em] top-[0.5em]" on:click={reset}>Återställ</button>
     <style>
-        #DatumDiv {
+        #DateDiv {
             width: fit-content;
             padding-right: 1%;
         }
-        #More {
-            display: none;
-            padding-top: 1vh;
+        /** ADJUSTING PROPERTIES TO FIT SCREENS OF DIFFERENT RESOLUTION */
+        @Media (1400px < width < 1775px) {
+            #ProjectTitle {
+                display: none;
+            }
+            #Filtermenu {
+                padding-left: 2.5%;
+            }
         }
-        #More-List {
-            position: absolute;
-            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
+        @Media (width < 1400px) {
+            #Header {
+                height: 6em;
+            }
+            #Filtermenu {
+                padding-top: 1vh;
+                flex-direction: column;
+            }
+            #Reset {
+                top: 1.75em;
+            }
         }
-        #More-List li {
-            white-space: nowrap;
-        }
-        #More-List li:hover {
-            background: #9470B0;
+        /** IPAD MINI */
+        @Media (width < 869px) {
+            #Header {
+                height: fit-content;
+                flex-direction: column;
+            }
+            #ProjectTitle {
+                display: flex;
+                width: 20%;
+                outline: dotted red 1px;
+                margin: auto;
+                padding: 0;
+                padding-top: 0.5em;
+            }
+            #Filtermenu {
+                width: 100%;
+                padding: 0;
+            }
+            #SearchAndDate {
+                flex-direction: column;
+                width: 100%;
+                padding-right: 5%;
+                padding-left: 5%;
+                padding-top: 1em;
+            }
+            #Search {
+                width: 100%;
+            }
+            #DateDiv {
+                width: 100%;
+            }
+            #Filter {
+                width: 100%;
+                padding: 5%;
+                padding-top: 0;
+            }
+            #Reset {
+                top: 9em;
+                right: 3em;
+            }
         }
     </style>
 </div>
