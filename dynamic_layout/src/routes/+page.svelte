@@ -9,6 +9,9 @@
   function toggleView() {
     expandTimeline.update((state) => !state);
   }
+
+  export let data: any = {}; // Skicka data som ett objekt
+
 </script>
 
 <div class="flex flex-grow">
@@ -22,7 +25,7 @@
 
   <main class="flex flex-col flex-grow overflow-hidden">
     <div class="flex-grow transition-all duration-500 overflow-hidden">
-      <SelectedNotes />
+      <SelectedNotes {data} />
     </div>
     <div
       class={$expandTimeline

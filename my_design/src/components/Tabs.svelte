@@ -2,17 +2,14 @@
 
     import { tabsData } from '$lib/tabsData'; // Import from the lib directory
 
-    //let activeLink: string = 'Journaltexter'; // Default active tab
-    //function setActiveLink(link: string) {
-    //  activeLink = link;
-    //}
-    export let activeTab: string; // ⭐ Receive activeTab from parent
+    export let activeTab: string; // Receive activeTab from parent (page.svelte)
 
   function setActiveLink(link: string) {
-    activeTab = link; // ⭐ Update activeTab (this will reflect in page.svelte)
+    activeTab = link; // Update activeTab (this will reflect in page.svelte)
   }
 </script>
 
+<!-- Loop  throught array and create all tabs-->
 <ul class="flex border-b border-gray-500 text-center font-medium text-gray-400 mb-2">
   {#each tabsData as tab}
     <li class="me-2 w-32 flex justify-center relative">

@@ -1,7 +1,6 @@
 <script lang="ts">
 
-    export let isRows: boolean = false;  // Accept isRows as a prop
-    export let activeTab: string = '';   // To detect if we're in the "Timeline" tab
+    export let isRows: boolean = false;  // Accept isRows as a prop    
 
 </script>
 
@@ -17,4 +16,3 @@
 <div class={`border bg-white rounded-sm text-center text-gray-400 flex items-center justify-center ${isRows ? "" : "hidden"}`}>col 3 row 1</div>
 </div> 
 
- 
