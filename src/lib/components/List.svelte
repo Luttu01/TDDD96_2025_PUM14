@@ -117,7 +117,6 @@
       >
         <span class="unit-name">{unit}</span>
         <span class="item-count">({unitItems.length})</span>
-        <span class="toggle-icon" aria-hidden="true">{expandedUnits.includes(unit) ? '−' : '+'}</span>
       </button>
 
       {#if expandedUnits.includes(unit)}
