@@ -1,6 +1,3 @@
-export type Note = {}
-
-
 export interface Document {
     id: number;
     patient_id: number;

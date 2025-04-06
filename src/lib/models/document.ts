@@ -1,9 +1,5 @@
-export type Note = {}
-
-
-export interface Document {
+export type Document = {
     id: number;
-    patient_id: number;
     title: string;
     type: string;
     category: string;
@@ -12,5 +8,4 @@ export interface Document {
     date: string;
     abstract: string;
     content: string;
-    [key: string]: string | number;  // Index signature for dynamic access
-} 
+};
