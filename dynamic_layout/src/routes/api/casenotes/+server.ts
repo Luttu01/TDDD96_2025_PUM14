@@ -8,6 +8,8 @@ export async function GET() {
   // Base64-koda användarnamn och lösenord för Basic Authentication
   const authHeader = 'Basic ' + btoa(`${username}:${password}`);
 
+
+
   const url = `https://open-platform-migration.service.tietoevry.com/ehr/rest/v1/view/${ehrId}/RSK.View.CaseNoteList`;
 
   try {
