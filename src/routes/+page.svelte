@@ -59,6 +59,19 @@
       items={typedJournals}
       onselect={handleDocumentSelect}
     />
+    {#if showNotification}
+      <div class="notification">
+        <div class="notification-content">
+          <span>{notificationMessage}</span>
+          <button 
+            class="close-button" 
+            onclick={() => showNotification = false}
+            aria-label="Close notification"
+          >
+          </button>
+        </div>
+      </div>
+    {/if}
   </aside>
 
   <main class="flex flex-col flex-grow overflow-hidden">
