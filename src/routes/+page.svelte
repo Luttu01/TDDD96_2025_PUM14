@@ -36,7 +36,7 @@
 
 <button
   on:click={toggleView}
-  class="fixed top-1 right-1 bg-black text-white p-1 rounded-md"
+  class="fixed bottom-1 right-1 bg-black text-white p-1 rounded-md"
 >
   {#if $expandTimeline}
     Hide Timeline
