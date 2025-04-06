@@ -1,6 +1,7 @@
 // Import necessary utilities
 import { json } from '@sveltejs/kit';
 import { ehrIds } from '$lib/utils';  
+import { allNotes } from '$lib/models'; // Import the store you want to use
 
 // Helper to create Basic Auth header
 function createBasicAuth(username: string, password: string): string {
@@ -39,22 +40,23 @@ export async function GET() {
       // For debugging
       console.debug('Fetch status:', res.status, res.statusText);
 
+      // Handle the response
       if (!res.ok) {
         console.error(`Fetch failed for ehrId: ${ehrId} with status:`, res.status);
         allData.push({ ehrId, error: `API request failed with status: ${res.status}` });
-        continue;  // Skip to the next ehrId if this one fails
+        continue;  
       }
 
-      // Parse the response JSON
+
       let data;
       try {
         // Attempt to parse the JSON response
-        data = await res.json();  // Parse the response JSON into a JavaScript object
+        data = await res.json();  
       } catch (jsonError) {
         // If parsing fails, handle the error and push an error message to allData
         console.error('Failed to parse JSON for ehrId:', ehrId, jsonError);
         allData.push({ ehrId, error: 'Failed to parse response data' });
-        continue;  // Skip to the next ehrId and continue the loop
+        continue;  
       }
 
       // Check if the data is empty

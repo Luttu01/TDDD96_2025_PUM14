@@ -4,15 +4,11 @@
   import List from "$lib/components/List.svelte";
   import { writable } from "svelte/store";
 
-  let expandTimeline = writable(false);
-  let errorMessage: string | null = null;
+  const expandTimeline = writable(false);
 
   function toggleView() {
     expandTimeline.update((state) => !state);
   }
-
-  export let data: any = {};  // Data passed from the server
-  export let error: string | null = null;  // Error message, if any
 </script>
 
 <div class="flex flex-grow">
@@ -26,11 +22,7 @@
 
   <main class="flex flex-col flex-grow overflow-hidden">
     <div class="flex-grow transition-all duration-500 overflow-hidden">
-      {#if error}
-        <div class="text-red-500">{error}</div> <!-- Display error message if exists -->
-      {:else}
-        <SelectedNotes {data} /> <!-- Pass data to SelectedNotes component -->
-      {/if}
+      <SelectedNotes />
     </div>
     <div
       class={$expandTimeline
