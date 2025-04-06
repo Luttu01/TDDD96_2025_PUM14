@@ -3,25 +3,39 @@
   import Timeline from "$lib/components/Timeline.svelte";
   import List from "$lib/components/List.svelte";
   import { writable } from "svelte/store";
+  import { mockJournals } from "$lib/data/mockJournals";
+  import type { Document } from "$lib/models/note";
 
   let expandTimeline = writable(false);
+  const typedJournals = mockJournals;
+  let selectedDocuments = $state<Document[]>([]);
+
+  function handleDocumentSelect(documents: Document[]) {
+    console.log('Selected documents:', documents);
+  }
 
   function toggleView() {
     expandTimeline.update((state) => !state);
   }
+
+
+    
 </script>
 
-<div class="flex flex-grow">
+<div class="flex flex-grow h-full">
   <aside
     class={$expandTimeline
       ? "w-0 flex-none transition-all duration-500 overflow-hidden"
-      : "w-40 flex-none h-full transition-all duration-500 overflow-hidden"}
+      : "w-40 flex-none h-full transition-all duration-500 overflow-y-auto"}
   >
-    <List />
+    <List
+      items={typedJournals}
+      onselect={handleDocumentSelect}
+    />
   </aside>
 
-  <main class="flex flex-col flex-grow overflow-hidden">
-    <div class="flex-grow transition-all duration-500 overflow-hidden">
+  <main class="flex flex-col flex-grow h-full overflow-hidden">
+    <div class="flex-grow overflow-y-auto">
       <SelectedNotes />
     </div>
     <div
