@@ -1,4 +1,5 @@
 export type Note = {
+    ehrId: string; // Added ehrId to each Note
     CompositionId: string;
     DateTime: string;
     DisplayDateTime: string;
