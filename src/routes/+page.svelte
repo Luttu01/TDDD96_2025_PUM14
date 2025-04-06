@@ -3,23 +3,32 @@
   import Timeline from "$lib/components/Timeline.svelte";
   import List from "$lib/components/List.svelte";
   import { writable } from "svelte/store";
-  import { mockJournals } from "$lib/data/mockJournals";
-  import type { Document } from "$lib/models/note";
+  import type { Note } from "$lib/models/note";
+  import { onMount } from "svelte";
 
   let expandTimeline = writable(false);
-  const typedJournals = mockJournals;
-  let selectedDocuments = $state<Document[]>([]);
+  let notes = $state<Note[]>([]);
+  let selectedNotes = $state<Note[]>([]);
 
-  function handleDocumentSelect(documents: Document[]) {
-    console.log('Selected documents:', documents);
+  function handleDocumentSelect(documents: Note[]) {
+    console.log('Selected notes:', documents);
+    selectedNotes = documents;
   }
 
   function toggleView() {
     expandTimeline.update((state) => !state);
   }
 
-
-    
+  onMount(async () => {
+    try {
+      const response = await fetch('/api/journals');
+      const data = await response.json();
+      notes = data;
+    } catch (error) {
+      console.error('Failed to fetch journal data:', error);
+      notes = [];
+    }
+  });
 </script>
 
 <div class="flex flex-grow h-full">
@@ -29,7 +38,7 @@
       : "w-40 flex-none h-full transition-all duration-500 overflow-y-auto"}
   >
     <List
-      items={typedJournals}
+      items={notes}
       onselect={handleDocumentSelect}
     />
   </aside>

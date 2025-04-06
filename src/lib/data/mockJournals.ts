@@ -1,65 +1,70 @@
-import type { Document } from "../models/note";
+import type { Note } from "../models/note";
 
 // Create mock journal data with minimal content for better performance
-export const mockJournals: Document[] = [
+export const mockJournals: Note[] = [
     {
-        id: 1,
-        title: "Yearly Health Checkup",
-        type: "Journal",
-        category: "General Medicine",
-        unit: "Primary Care Unit",
-        professional: "Dr. Anna Andersson",
-        date: "2024-03-15",
-        abstract: "Regular yearly checkup shows good overall health with minor vitamin D deficiency.",
-        content: "Patient presents with good overall health. Physical examination normal. Blood tests show slight vitamin D deficiency (42 nmol/L). Recommended vitamin D supplementation 800 IU daily for 3 months.",
-        patient_id: 1001
+        CompositionId: "1",
+        DateTime: "2024-03-15",
+        DisplayDateTime: "2024-03-15 09:30",
+        Dokument_ID: "DOC1001",
+        Dokument_skapad_av_yrkestitel_ID: "12345",
+        Dokument_skapad_av_yrkestitel_Namn: "Dr. Anna Andersson",
+        Dokumentationskod: "Journal",
+        Dokumentnamn: "Yearly Health Checkup",
+        Tidsstämpel_för_sparat_dokument: "2024-03-15T09:30:00",
+        Vårdenhet_Identifierare: "PCU001",
+        Vårdenhet_Namn: "Primary Care Unit"
     },
     {
-        id: 2,
-        title: "Dermatology Consultation",
-        type: "Consultation",
-        category: "Dermatology",
-        unit: "Dermatology Department",
-        professional: "Dr. Erik Svensson",
-        date: "2024-02-10",
-        abstract: "Assessment of eczema on both hands, prescribed hydrocortisone cream.",
-        content: "Patient presents with dry, itchy patches on both hands, worse between fingers.",
-        patient_id: 1001
+        CompositionId: "2",
+        DateTime: "2024-02-10",
+        DisplayDateTime: "2024-02-10 14:15",
+        Dokument_ID: "DOC1002",
+        Dokument_skapad_av_yrkestitel_ID: "23456",
+        Dokument_skapad_av_yrkestitel_Namn: "Dr. Erik Svensson",
+        Dokumentationskod: "Consultation",
+        Dokumentnamn: "Dermatology Consultation",
+        Tidsstämpel_för_sparat_dokument: "2024-02-10T14:15:00",
+        Vårdenhet_Identifierare: "DERM001",
+        Vårdenhet_Namn: "Dermatology Department"
     },
     {
-        id: 3,
-        title: "Orthopedic Evaluation",
-        type: "Evaluation",
-        category: "Orthopedics",
-        unit: "Orthopedic Clinic",
-        professional: "Dr. Maria Johansson",
-        date: "2024-01-20",
-        abstract: "Follow-up after ankle sprain, good recovery progress noted.",
-        content: "Patient recovering well from grade 2 ankle sprain sustained 4 weeks ago.",
-        patient_id: 1001
+        CompositionId: "3",
+        DateTime: "2024-01-20",
+        DisplayDateTime: "2024-01-20 10:45",
+        Dokument_ID: "DOC1003",
+        Dokument_skapad_av_yrkestitel_ID: "34567",
+        Dokument_skapad_av_yrkestitel_Namn: "Dr. Maria Johansson",
+        Dokumentationskod: "Evaluation",
+        Dokumentnamn: "Orthopedic Evaluation",
+        Tidsstämpel_för_sparat_dokument: "2024-01-20T10:45:00",
+        Vårdenhet_Identifierare: "ORTH001",
+        Vårdenhet_Namn: "Orthopedic Clinic"
     },
     {
-        id: 4,
-        title: "Cardiology Assessment",
-        type: "Assessment",
-        category: "Cardiology",
-        unit: "Cardiology Department",
-        professional: "Dr. Lars Nilsson",
-        date: "2023-12-05",
-        abstract: "Evaluation for occasional heart palpitations, ECG within normal limits.",
-        content: "Patient reports occasional heart palpitations, typically after caffeine consumption.",
-        patient_id: 1001
+        CompositionId: "4",
+        DateTime: "2023-12-05",
+        DisplayDateTime: "2023-12-05 11:30",
+        Dokument_ID: "DOC1004",
+        Dokument_skapad_av_yrkestitel_ID: "45678",
+        Dokument_skapad_av_yrkestitel_Namn: "Dr. Lars Nilsson",
+        Dokumentationskod: "Assessment",
+        Dokumentnamn: "Cardiology Assessment",
+        Tidsstämpel_för_sparat_dokument: "2023-12-05T11:30:00",
+        Vårdenhet_Identifierare: "CARD001",
+        Vårdenhet_Namn: "Cardiology Department"
     },
     {
-        id: 5,
-        title: "Neurology Consultation",
-        type: "Consultation",
-        category: "Neurology",
-        unit: "Neurology Department",
-        professional: "Dr. Karin Lindberg",
-        date: "2023-11-15",
-        abstract: "Consultation for recurring migraine headaches, treatment plan updated.",
-        content: "Patient reports increasing frequency of migraine attacks (3-4 per month).",
-        patient_id: 1001
+        CompositionId: "5",
+        DateTime: "2023-11-15",
+        DisplayDateTime: "2023-11-15 13:00",
+        Dokument_ID: "DOC1005",
+        Dokument_skapad_av_yrkestitel_ID: "56789",
+        Dokument_skapad_av_yrkestitel_Namn: "Dr. Karin Lindberg",
+        Dokumentationskod: "Consultation",
+        Dokumentnamn: "Neurology Consultation",
+        Tidsstämpel_för_sparat_dokument: "2023-11-15T13:00:00",
+        Vårdenhet_Identifierare: "NEUR001",
+        Vårdenhet_Namn: "Neurology Department"
     }
 ]; 

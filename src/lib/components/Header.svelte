@@ -1,14 +1,21 @@
 <script lang="ts">
-    import type { Document } from "../models/note"
-    import { fetchData } from "../utils/fetchBot";
+    import type { Note } from "../models/note"
     import { onMount } from "svelte";
 
-    let documents: Document[] = [];
+    let documents: Note[] = [];
     let matchingDocs: number = 0;
 
     onMount(async () => {
-        documents = await fetchData("documents");
-        matchingDocs = documents.length;
+        try {
+            const response = await fetch('/api/journals');
+            const data = await response.json();
+            documents = data;
+            matchingDocs = documents.length;
+        } catch (error) {
+            console.error('Failed to fetch journal data:', error);
+            documents = [];
+            matchingDocs = 0;
+        }
     });
 
     let templates: string[] = ["Läkaranteckning", "Case Report", "Research Article", "Clinical Study", "Review", "Guidelines"];
@@ -25,9 +32,9 @@
         */
         const filteredDocs = documents.filter(
             (doc) => 
-                (doc.unit == unit || unit == "Vårdenhet") && 
-                (doc.professional == role || role == "Yrkesroll") && 
-                (doc.type == template || template == "Journalmall")
+                (doc.Vårdenhet_Namn == unit || unit == "Vårdenhet") && 
+                (doc.Dokument_skapad_av_yrkestitel_Namn == role || role == "Yrkesroll") && 
+                (doc.Dokumentnamn == template || template == "Journalmall")
         );
         matchingDocs = filteredDocs.length;
     }

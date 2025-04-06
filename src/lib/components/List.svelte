@@ -1,14 +1,14 @@
 <script lang="ts">
-  import type { Document } from '$lib/models/note';
+  import type { Note } from '$lib/models/note';
   import { onMount, onDestroy } from 'svelte';
 
   const props = $props<{
-    items?: Document[];
-    onselect?: (selectedDocs: Document[]) => void;
+    items?: Note[];
+    onselect?: (selectedNotes: Note[]) => void;
   }>();
 
-  let localItems = $state<Document[]>([]);
-  let selectedDocuments = $state<Document[]>([]);
+  let localItems = $state<Note[]>([]);
+  let selectedDocuments = $state<Note[]>([]);
   let expandedUnits = $state<string[]>([]);
   let listViewElement: HTMLElement;
 
@@ -23,23 +23,23 @@
   }
 // groups the items by unit
   function getGroupedItems() {
-    const groups: Record<string, Array<Document & { uniqueId: string }>> = {};
+    const groups: Record<string, Array<Note & { uniqueId: string }>> = {};
     let counter = 0;
 
     for (const item of localItems) {
-      const unit = item.unit;
+      const unit = item.Vårdenhet_Namn;
       if (!groups[unit]) {
         groups[unit] = [];
       }
       // uniqueId helps Svelte efficiently update the list when items change order or content
       groups[unit].push({
         ...item,
-        uniqueId: `${unit}-${item.id}-${counter++}`
+        uniqueId: `${unit}-${item.CompositionId}-${counter++}`
       });
     }
 
     for (const unit in groups) {
-      groups[unit].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      groups[unit].sort((a, b) => new Date(b.DateTime).getTime() - new Date(a.DateTime).getTime());
     }
 
     return groups;
@@ -55,20 +55,20 @@
       : [...expandedUnits, unit];
   }
 
-  function handleDocumentClick(document: Document, event: MouseEvent) {
+  function handleDocumentClick(document: Note, event: MouseEvent) {
     event.stopPropagation();
 
     const ctrlOrCmdPressed = event.ctrlKey || event.metaKey;
 
     if (ctrlOrCmdPressed) {
-      const isAlreadySelected = selectedDocuments.some(doc => doc.id === document.id);
+      const isAlreadySelected = selectedDocuments.some(doc => doc.CompositionId === document.CompositionId);
       if (isAlreadySelected) {
-        selectedDocuments = selectedDocuments.filter(doc => doc.id !== document.id);
+        selectedDocuments = selectedDocuments.filter(doc => doc.CompositionId !== document.CompositionId);
       } else {
         selectedDocuments = [...selectedDocuments, document];
       }
     } else {
-      if (selectedDocuments.length === 1 && selectedDocuments[0].id === document.id) {
+      if (selectedDocuments.length === 1 && selectedDocuments[0].CompositionId === document.CompositionId) {
         selectedDocuments = [];
       } else {
         selectedDocuments = [document];
@@ -123,24 +123,24 @@
       {#if expandedUnits.includes(unit)}
         <ul class="unit-items" role="presentation">
           {#each unitItems as item (item.uniqueId)}
-            <li role="option" aria-selected={selectedDocuments.some(doc => doc.id === item.id)}>
+            <li role="option" aria-selected={selectedDocuments.some(doc => doc.CompositionId === item.CompositionId)}>
               <button
                 type="button"
                 class="document-button"
-                class:selected={selectedDocuments.some(doc => doc.id === item.id)}
+                class:selected={selectedDocuments.some(doc => doc.CompositionId === item.CompositionId)}
                 onclick={(e) => handleDocumentClick(item, e)}
               >
                 <div class="document-item">
-                  <h3>{item.title}</h3>
+                  <h3>{item.Dokumentnamn}</h3>
                   <div class="document-meta">
-                    <span class="type">{item.type}</span>
-                    <span class="category">{item.category}</span>
-                    <span class="date">{formatDate(item.date)}</span>
+                    <span class="type">{item.Dokumentationskod}</span>
+                    <span class="category">Journal</span>
+                    <span class="date">{formatDate(item.DateTime)}</span>
                   </div>
                   <div class="document-details">
-                    <span class="professional">{item.professional}</span>
+                    <span class="professional">{item.Dokument_skapad_av_yrkestitel_Namn}</span>
                   </div>
-                  <p class="abstract">{item.abstract}</p>
+                  <p class="abstract">{item.CompositionId}</p>
                 </div>
               </button>
             </li>
