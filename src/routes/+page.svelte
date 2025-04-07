@@ -85,7 +85,7 @@
   </main>
 </div>
 
-<button onclick={toggleView} class="fixed bottom-1 right-1 bg-black text-white text-sm p-1 rounded-md">
+<button onclick={toggleView} class="fixed bottom-1 right-1 bg-black text-white text-sm p-1 rounded-md z-20">
   {#if $expandTimeline}
     Hide Timeline
   {:else}

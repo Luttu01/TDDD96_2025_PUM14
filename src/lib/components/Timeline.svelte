@@ -86,6 +86,12 @@
     }
   }
 
+  function calculateNoteXPosition(item: { note?: Note; type: string }) {
+  const index = $visibleNotes.findIndex(n => n === item);
+  return index * ((baseWidth * scale)+4) + (baseWidth * scale) / 2;
+}
+
+
   onMount(() => {
     window.addEventListener("wheel", handleZoom, { passive: false });
     updateCurrentDate();
@@ -96,7 +102,7 @@
     };
   });
 
-  function handleNoteClick(noteData) {
+  function handleNoteClick(noteData: Note) {
     $selectedNotes = $selectedNotes || []; 
 
     const foundIndex = $selectedNotes.findIndex(n => n.CaseData === noteData.CaseData);
@@ -109,7 +115,7 @@
       newSelectedNotes.splice(foundIndex, 1);
     } else {
      
-      newSelectedNotes.push({ CaseData: noteData.CaseData });
+      newSelectedNotes.push(noteData);
     }
 
    
@@ -121,7 +127,21 @@
   {currentDate}
 </div>
 
-<div class="h-full bg-gray-100 flex overflow-x-auto no-scrollbar" bind:this={timelineContainer}>
+<div class="h-full bg-gray-100 flex overflow-x-auto no-scrollbar relative" bind:this={timelineContainer}>
+  <!-- Dot overlay above all content -->
+  <div class="absolute top-0 left-0 pointer-events-none z-10">
+    {#each $visibleNotes as item}
+    {#if item.type === "note"}
+        <div
+          class="absolute w-3 h-3 bg-black rounded-full outline-2 outline-gray-100 pointer-events-none"
+          style="
+            left: {calculateNoteXPosition(item)}px;
+            top: 0.5rem;
+          "
+        ></div>
+      {/if}
+    {/each}
+  </div>
   <div class="w-max flex-col flex p-2 space-y-2">
     <div
       class="flex relative min-w-max px-[20px] justify-between"
@@ -147,7 +167,7 @@
                   on:click={(event) => toggleCollapse(monthGroup, event)}
                   class="h-3 bg-blue-400 rounded-full outline-2 outline-gray-100"
                   class:transition-width={$enableTransition}
-                  style="width: {calculateWidth(monthGroup)}px;"
+                  style="width: {calculateWidth(monthGroup)}px; opacity: {monthGroup.days.length > 1 ? 1 : 0}; pointer-events: {monthGroup.days.length > 1 ? 'auto' : 'none'}"
                   data-date={monthGroup.month}
                   aria-label="Toggle month group"
                 >
@@ -162,11 +182,11 @@
                           use:registerButton
                           class="h-3 bg-green-400 rounded-full outline-2 outline-gray-100"
                           class:transition-width={$enableTransition}
-                          style="width: {calculateWidth(dayGroup)}px;"
+                          style="width: {calculateWidth(dayGroup)}px; opacity: {dayGroup.notes.length > 1 ? 1 : 0}; pointer-events: {dayGroup.notes.length > 1 ? 'auto' : 'none'}"
                           data-date={dayGroup.notes[0].DateTime}
                           aria-label="Toggle day group"
                         >
-                        </button>
+                      </button>
                       {/each}
                     </div>
                   {/if}
@@ -198,7 +218,7 @@
             <!-- svelte-ignore a11y_no_static_element_interactions -->
             <div
               transition:fade={{ duration: 150 }}
-              class="bg-white flex-none p-2 rounded-md shadow-sm overflow-y-auto overflow-x-hidden"
+              class="bg-white flex-none p-4 rounded-md shadow-sm overflow-y-auto overflow-x-hidden"
               style="width: {baseWidth * scale}px;"
               on:click={() => item.note?.CaseData && handleNoteClick(item.note)} 
               class:selected={$selectedNotes?.find(n => n.CaseData === item.note?.CaseData)}

@@ -48,8 +48,6 @@
 
     selectedNotes.update((current) => {
       const alreadySelected = current.some(n => n.Dokument_ID === note.Dokument_ID);
-
-      if (ctrlOrCmd) {
         // Multi-select logic
         if (alreadySelected) {
           // Remove from selected
@@ -58,16 +56,6 @@
           // Add to selected
           return [...current, note];
         }
-      } else {
-        // Single-select logic
-        if (current.length === 1 && alreadySelected) {
-          // If single item is selected and it's the same, clear it
-          return [];
-        } else {
-          // Replace with this single selection
-          return [note];
-        }
-      }
     });
   }
 

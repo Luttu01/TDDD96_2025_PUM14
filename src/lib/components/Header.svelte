@@ -17,9 +17,9 @@
         return notes;
     });
     const readNotes = get(filterNotes);
-    let templates: Map<string, number> = readNotes.get("Journalmall")!;
-    let units: Map<string, number> = readNotes.get("Vårdenhet")!;
-    let roles: Map<string, number> = readNotes.get("Yrkesroll")!;
+    let templates: Set<string> = readNotes.get("Journalmall")!;
+    let units: Set<string> = readNotes.get("Vårdenhet")!;
+    let roles: Set<string> = readNotes.get("Yrkesroll")!;
 
     let template: string = "Journalmall";
     let unit: string = "Vårdenhet";
@@ -160,6 +160,7 @@
         width: 90%;
         min-width: fit-content;
         box-shadow: 0px 10px 10px 0px rgba(0, 0, 0, 0.2);
+        z-index: 50;
     }
     #template:hover, #role:hover, #Vårdenhet:hover {
         background-color: #c495fc;
