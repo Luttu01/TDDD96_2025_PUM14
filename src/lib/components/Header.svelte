@@ -1,19 +1,25 @@
 <script lang="ts">
-    import type { Document } from "$lib/models/note"
-    import { fetchData } from "../utils/fetchBot";
     import { onMount } from "svelte";
+    import { allNotes } from "$lib/stores"
+    import {derived, get } from "svelte/store"
 
-    let documents: Document[] = [];
-    let matchingDocs: number = 0;
 
-    onMount(async () => {
-        documents = await fetchData("documents");
-        matchingDocs = documents.length;
+    const filterNotes = derived(allNotes, $allNotes => {
+        let notes : Map<string, Set<string>> = new Map
+        notes.set("Vårdenhet", new Set<string>);
+        notes.set("Journalmall", new Set<string>);
+        notes.set("Yrkesroll", new Set<string>);
+        $allNotes.forEach(note => {
+            notes.get("Vårdenhet")!.add(note.Vårdenhet_Namn);
+            notes.get("Journalmall")!.add(note.Dokumentnamn);
+            notes.get("Yrkesroll")!.add(note.Dokument_skapad_av_yrkestitel_Namn);
+        });
+        return notes;
     });
-
-    let templates: string[] = ["Läkaranteckning", "Case Report", "Research Article", "Clinical Study", "Review", "Guidelines"];
-    let units: string[] = ["Kardiologiska kliniken", "Neurologiska avdelningen", "Onkologiska kliniken", "Kirurgen", "Medicinkliniken"];
-    let roles: string[] = ["Läkare", "Specialistläkare", "Sjuksköterska", "Kirurg"];
+    const readNotes = get(filterNotes);
+    let templates: Map<string, number> = readNotes.get("Journalmall")!;
+    let units: Map<string, number> = readNotes.get("Vårdenhet")!;
+    let roles: Map<string, number> = readNotes.get("Yrkesroll")!;
 
     let template: string = "Journalmall";
     let unit: string = "Vårdenhet";
@@ -23,13 +29,6 @@
         /***
          * Uppdaterar dynamiskt antalet dokument som uppnår filterkrav
         */
-        const filteredDocs = documents.filter(
-            (doc) => 
-                (doc.unit == unit || unit == "Vårdenhet") && 
-                (doc.professional == role || role == "Yrkesroll") && 
-                (doc.type == template || template == "Journalmall")
-        );
-        matchingDocs = filteredDocs.length;
     }
 
     function updateJournal(event: MouseEvent) {
