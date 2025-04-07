@@ -103,7 +103,7 @@
 <div class="h-full bg-gray-100 flex overflow-x-auto no-scrollbar" bind:this={timelineContainer}>
   <div class="w-max flex-col flex p-2 space-y-2">
     <div
-      class="flex relative min-w-max px-[{buttonPaddingX}px] justify-between"
+      class="flex relative min-w-max px-[20px] justify-between"
       transition:fade={{ duration: 150 }}
     >
       {#each $noteHierarchy as yearGroup}
@@ -117,7 +117,7 @@
         >
           {#if !yearGroup.isCollapsed}
             <div
-              class="flex justify-between px-[{buttonPaddingX}px]"
+              class="flex justify-between px-[20px]"
               transition:fade={{ duration: 150 }}
             >
               {#each yearGroup.months as monthGroup}
@@ -132,7 +132,7 @@
                 >
                   {#if !monthGroup.isCollapsed}
                     <div
-                      class="flex justify-between px-[{buttonPaddingX}px]"
+                      class="flex justify-between px-[20px]"
                       transition:fade={{ duration: 150 }}
                     >
                       {#each monthGroup.days as dayGroup}
@@ -193,14 +193,5 @@
 <style>
   .transition-width {
     transition: width 250ms ease-in-out;
-  }
-
-  .no-scrollbar {
-    overflow: scroll;
-    scrollbar-width: none; /* Firefox */
-  }
-
-  .no-scrollbar::-webkit-scrollbar {
-    display: none; /* Chrome, Safari, Opera */
   }
 </style>
