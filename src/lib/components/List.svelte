@@ -1,145 +1,128 @@
 <script lang="ts">
-  import type { Document } from '$lib/models/note';
   import { onMount, onDestroy } from 'svelte';
+  import { allNotes, selectedNotes } from '$lib/stores';
+  import type { Note } from '$lib/models/note';
 
-  const props = $props<{
-    items?: Document[];
-    onselect?: (selectedDocs: Document[]) => void;
-  }>();
-
-  let localItems = $state<Document[]>([]);
-  let selectedDocuments = $state<Document[]>([]);
-  let expandedUnits = $state<string[]>([]);
   let listViewElement: HTMLElement;
-
-  $effect(() => {
-    if (props.items) {
-      localItems = [...props.items];
-    }
-  });
+  let expandedUnits: string[] = [];
 
   function formatDate(dateString: string): string {
+    if (!dateString) return '';
     return new Date(dateString).toLocaleDateString('sv-SE');
   }
-// groups the items by unit
-  function getGroupedItems() {
-    const groups: Record<string, Array<Document & { uniqueId: string }>> = {};
-    let counter = 0;
 
-    for (const item of localItems) {
-      const unit = item.unit;
+  function groupByUnit(notes: Note[]): Record<string, Note[]> {
+    const groups: Record<string, Note[]> = {};
+
+    for (const note of notes) {
+      // Use "Unknown" or some fallback if Vårdenhet_Namn is missing
+      const unit = note.Vårdenhet_Namn || 'Okänd enhet';
       if (!groups[unit]) {
         groups[unit] = [];
       }
-      // uniqueId helps Svelte efficiently update the list when items change order or content
-      groups[unit].push({
-        ...item,
-        uniqueId: `${unit}-${item.id}-${counter++}`
-      });
+      groups[unit].push(note);
     }
 
     for (const unit in groups) {
-      groups[unit].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      groups[unit].sort((a, b) => {
+        return new Date(b.DateTime).getTime() - new Date(a.DateTime).getTime();
+      });
     }
 
     return groups;
   }
 
-  let groupedItems = $derived(getGroupedItems());
+  $: groupedNotes = groupByUnit($allNotes);
 
-  // expands or collapses the unit group
   function toggleUnit(unit: string) {
-    expandedUnits = expandedUnits.includes(unit)
-      ? expandedUnits.filter(u => u !== unit)
-      : [...expandedUnits, unit];
+    if (expandedUnits.includes(unit)) {
+      expandedUnits = expandedUnits.filter(u => u !== unit);
+    } else {
+      expandedUnits = [...expandedUnits, unit];
+    }
   }
 
-  function handleDocumentClick(document: Document, event: MouseEvent) {
+  function handleNoteClick(note: Note, event: MouseEvent) {
     event.stopPropagation();
+    const ctrlOrCmd = event.ctrlKey || event.metaKey;
 
-    const ctrlOrCmdPressed = event.ctrlKey || event.metaKey;
+    selectedNotes.update((current) => {
+      const alreadySelected = current.some(n => n.Dokument_ID === note.Dokument_ID);
 
-    if (ctrlOrCmdPressed) {
-      const isAlreadySelected = selectedDocuments.some(doc => doc.id === document.id);
-      if (isAlreadySelected) {
-        selectedDocuments = selectedDocuments.filter(doc => doc.id !== document.id);
+      if (ctrlOrCmd) {
+        // Multi-select logic
+        if (alreadySelected) {
+          // Remove from selected
+          return current.filter(n => n.Dokument_ID !== note.Dokument_ID);
+        } else {
+          // Add to selected
+          return [...current, note];
+        }
       } else {
-        selectedDocuments = [...selectedDocuments, document];
+        // Single-select logic
+        if (current.length === 1 && alreadySelected) {
+          // If single item is selected and it's the same, clear it
+          return [];
+        } else {
+          // Replace with this single selection
+          return [note];
+        }
       }
-    } else {
-      if (selectedDocuments.length === 1 && selectedDocuments[0].id === document.id) {
-        selectedDocuments = [];
-      } else {
-        selectedDocuments = [document];
-      }
-    }
-
-    if (props.onselect) {
-      props.onselect(selectedDocuments);
-    }
+    });
   }
 
   function handleOutsideClick(event: MouseEvent) {
-    if (listViewElement && !listViewElement.contains(event.target as Node)) {
-      if (selectedDocuments.length > 0) {
-        selectedDocuments = [];
-        if (props.onselect) {
-          props.onselect([]);
+    if (
+      listViewElement &&
+      !listViewElement.contains(event.target as Node)
+    ) {
+      selectedNotes.update((current) => {
+        if (current.length > 0) {
+          return [];
         }
-      }
+        return current;
+      });
     }
   }
-
-  // listens for clicks outside the list-view
-  onMount(() => {
-    if (typeof window !== 'undefined') {
-      window.addEventListener('click', handleOutsideClick);
-    }
-  });
-
-  // removes the listener when the component is destroyed
-  onDestroy(() => {
-    if (typeof window !== 'undefined') {
-      window.removeEventListener('click', handleOutsideClick);
-    }
-  });
 </script>
 
 <ul class="list-view" bind:this={listViewElement} role="listbox">
-  {#each Object.entries(groupedItems) as [unit, unitItems] (unit)}
-    <li class="unit-group" role="group" aria-labelledby={`unit-header-${unit.replace(/\s+/g, '-')}`}>
+  {#each Object.entries(groupedNotes) as [unitName, notes] (unitName)}
+    <li
+      class="unit-group"
+      role="group"
+      aria-labelledby={`unit-header-${unitName}`}
+    >
       <button
         type="button"
         class="unit-header"
-        onclick={() => toggleUnit(unit)}
-        aria-expanded={expandedUnits.includes(unit)}
-        id={`unit-header-${unit.replace(/\s+/g, '-')}`}
+        on:click={() => toggleUnit(unitName)}
+        aria-expanded={expandedUnits.includes(unitName)}
+        id={`unit-header-${unitName}`}
       >
-        <span class="unit-name">{unit}</span>
-        <span class="item-count">({unitItems.length})</span>
+        <span class="unit-name">{unitName}</span>
+        <span class="item-count">({notes.length})</span>
       </button>
 
-      {#if expandedUnits.includes(unit)}
+      {#if expandedUnits.includes(unitName)}
         <ul class="unit-items" role="presentation">
-          {#each unitItems as item (item.uniqueId)}
-            <li role="option" aria-selected={selectedDocuments.some(doc => doc.id === item.id)}>
+          {#each notes as note (note.Dokument_ID)}
+            <li
+              role="option"
+              aria-selected={$selectedNotes.some(n => n.Dokument_ID === note.Dokument_ID)}
+            >
               <button
                 type="button"
                 class="document-button"
-                class:selected={selectedDocuments.some(doc => doc.id === item.id)}
-                onclick={(e) => handleDocumentClick(item, e)}
+                class:selected={$selectedNotes.some(n => n.Dokument_ID === note.Dokument_ID)}
+                on:click={(e) => handleNoteClick(note, e)}
               >
                 <div class="document-item">
-                  <h3>{item.title}</h3>
+                  <h3>{note.Dokumentnamn}</h3>
                   <div class="document-meta">
-                    <span class="type">{item.type}</span>
-                    <span class="category">{item.category}</span>
-                    <span class="date">{formatDate(item.date)}</span>
+                    <span class="date">{formatDate(note.DateTime)}</span>
+                    <span class="professional">{note.Dokument_skapad_av_yrkestitel_Namn}</span>
                   </div>
-                  <div class="document-details">
-                    <span class="professional">{item.professional}</span>
-                  </div>
-                  <p class="abstract">{item.abstract}</p>
                 </div>
               </button>
             </li>
@@ -158,24 +141,21 @@
   }
 
   .unit-group {
-    margin-bottom: 1rem;
     border: 1px solid #e0e0e0;
-    border-radius: 4px;
     background-color: white;
     overflow: hidden; 
   }
 
   .unit-header {
     width: 100%;
-    padding: 1rem;
+    padding: 0.5rem;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
     background: none;
     border: none;
     cursor: pointer;
     text-align: left;
-    font-size: 1.1rem;
+    font-size: 0.9rem;
     font-weight: 500;
     color: #333;
     border-bottom: 1px solid transparent; 
@@ -195,12 +175,7 @@
   }
   .item-count {
     color: #666;
-    font-size: 0.9rem;
-  }
-
-  .toggle-icon {
-    font-weight: bold;
-    margin-left: auto; 
+    font-size: 0.8rem;
   }
 
   .unit-items {
@@ -220,7 +195,7 @@
 
   .document-button {
     width: 100%;
-    padding: 1rem;
+    padding: 0.5rem;
     background: none;
     border: none;
     cursor: pointer;
@@ -245,14 +220,14 @@
   .document-item h3 {
     margin: 0 0 0.5rem 0;
     color: #333;
-    font-size: 1rem;
+    font-size: 0.9rem;
   }
 
   .document-meta {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem 1rem; 
-    font-size: 0.85rem; 
+    font-size: 0.8rem; 
   }
 
   .document-details {
@@ -278,7 +253,7 @@
   .abstract {
     margin: 0.5rem 0 0 0;
     color: #444;
-    font-size: 0.9rem;
+    font-size: 0.8rem;
     line-height: 1.4;
   }
 </style>

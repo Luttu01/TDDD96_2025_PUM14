@@ -4,7 +4,7 @@
 </script>
 
 
-<main class="flex flex-col gap-1 h-screen">
+<main class="flex flex-col h-screen">
   <header>
     <Header />
   </header>

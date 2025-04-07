@@ -100,7 +100,7 @@
   {currentDate}
 </div>
 
-<div class="h-full bg-gray-100 flex overflow-x-auto" bind:this={timelineContainer}>
+<div class="h-full bg-gray-100 flex overflow-x-auto no-scrollbar" bind:this={timelineContainer}>
   <div class="w-max flex-col flex p-2 space-y-2">
     <div
       class="flex relative min-w-max px-[{buttonPaddingX}px] justify-between"
@@ -109,7 +109,7 @@
       {#each $noteHierarchy as yearGroup}
         <button
           on:click={(event) => toggleCollapse(yearGroup, event)}
-          class="h-5 bg-purple-300 rounded-full outline-solid outline-2"
+          class="h-3 bg-purple-400 rounded-full outline-2 outline-gray-100"
           class:transition-width={$enableTransition}
           style="width: {calculateWidth(yearGroup)}px;"
           data-date={yearGroup.year}
@@ -124,7 +124,7 @@
                 <!-- svelte-ignore node_invalid_placement_ssr -->
                 <button
                   on:click={(event) => toggleCollapse(monthGroup, event)}
-                  class="h-5 bg-green-300 rounded-full outline-solid outline-2"
+                  class="h-3 bg-blue-400 rounded-full outline-2 outline-gray-100"
                   class:transition-width={$enableTransition}
                   style="width: {calculateWidth(monthGroup)}px;"
                   data-date={monthGroup.month}
@@ -139,7 +139,7 @@
                         <button
                           on:click={(event) => toggleCollapse(dayGroup, event)}
                           use:registerButton
-                          class="h-5 bg-blue-300 rounded-full outline-solid outline-2"
+                          class="h-3 bg-green-400 rounded-full outline-2 outline-gray-100"
                           class:transition-width={$enableTransition}
                           style="width: {calculateWidth(dayGroup)}px;"
                           data-date={dayGroup.notes[0].DateTime}
@@ -193,5 +193,14 @@
 <style>
   .transition-width {
     transition: width 250ms ease-in-out;
+  }
+
+  .no-scrollbar {
+    overflow: scroll;
+    scrollbar-width: none; /* Firefox */
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
   }
 </style>

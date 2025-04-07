@@ -53,12 +53,9 @@
   <aside
     class={$expandTimeline
       ? "w-0 flex-none transition-all duration-500 overflow-hidden"
-      : "w-40 flex-none h-full transition-all duration-500 overflow-y-auto"}
+      : "w-60 flex-none h-full transition-all duration-500 overflow-y-auto"}
   >
-    <List 
-      items={typedJournals}
-      onselect={handleDocumentSelect}
-    />
+    <List/>
     {#if showNotification}
       <div class="notification">
         <div class="notification-content">
@@ -81,14 +78,14 @@
     <div
       class={$expandTimeline
         ? "h-6/8 transition-all duration-500"
-        : "h-10 transition-all duration-500"}
+        : "h-8 transition-all duration-500"}
     >
       <Timeline />
     </div>
   </main>
 </div>
 
-<button onclick={toggleView} class="fixed bottom-1 right-1 bg-black text-white p-1 rounded-md">
+<button onclick={toggleView} class="fixed bottom-1 right-1 bg-black text-white text-sm p-1 rounded-md">
   {#if $expandTimeline}
     Hide Timeline
   {:else}
