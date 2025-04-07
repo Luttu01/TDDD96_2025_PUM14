@@ -97,50 +97,6 @@
 </button>
 
 <style>
-  .app-container {
-    display: flex;
-    min-height: 100vh;
-  }
-  
-  .sidebar {
-    width: 30%;
-    min-width: 300px;
-    border-right: 1px solid #e5e7eb;
-  }
-  
-  .main-content {
-    flex: 1;
-    padding: 1rem;
-  }
-  
-  .welcome-message {
-    background-color: #f0f9ff;
-    padding: 1rem;
-    margin-bottom: 1rem;
-    border-radius: 0.5rem;
-    border-left: 4px solid #3b82f6;
-  }
-  
-  h1 {
-    font-size: 1.5rem;
-    margin: 0 0 0.5rem 0;
-    color: #1e40af;
-  }
-  
-  p {
-    margin: 0;
-    color: #4b5563;
-  }
-  
-  .success-message {
-    margin-top: 0.5rem;
-    padding: 0.5rem;
-    background-color: #d1fae5;
-    border-radius: 0.25rem;
-    color: #065f46;
-    font-weight: 500;
-  }
-  
   .notification {
     position: fixed;
     bottom: 2rem;
