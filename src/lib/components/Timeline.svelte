@@ -10,7 +10,7 @@
     buildVisibleNotes,
     countVisibleNotesWithinGroup,
   } from "$lib/utils";
-  import { dummyNotes } from "$lib/stores";
+  import { allNotes } from "$lib/stores";
 
   let scale: number = 1;
   const zoomSpeed: number = 0.01;
@@ -19,7 +19,7 @@
   const baseWidth: number = 320;
   const buttonPaddingX: number = 20;
 
-  const noteHierarchy = writable<Year[]>(buildDateHierarchy($dummyNotes));
+  const noteHierarchy = writable<Year[]>(buildDateHierarchy($allNotes));
   const visibleNotes = derived(noteHierarchy, ($noteHierarchy) => {
     return buildVisibleNotes($noteHierarchy);
   });
@@ -142,7 +142,7 @@
                           class="h-2 bg-purple-700 rounded-full"
                           class:transition-width={$enableTransition}
                           style="width: {calculateWidth(dayGroup)}px;"
-                          data-date={dayGroup.notes[0].date.toLocaleDateString("sv-SE")}
+                          data-date={dayGroup.notes[0].DateTime}
                           aria-label="Toggle day group"
                         >
                         </button>
@@ -156,13 +156,13 @@
         </button>
       {/each}
     </div>
-    <div class="flex flex-grow space-x-1">
-      {#each $visibleNotes as item (item.type === "note" ? item.note?.date : item.text)}
-        <div class="flex flex-grow" animate:flip={{ duration: 250 }}>
+    <div class="flex flex-grow space-x-1 overflow-hidden">
+      {#each $visibleNotes as item (item.type === "note" ? item.note?.DateTime : item.text)}
+        <div class="flex flex-grow overflow-hidden" animate:flip={{ duration: 250 }}>
           {#if item.type === "summary"}
             <button
               transition:fade={{ duration: 150 }}
-              class="bg-gray-200 flex-none p-1 rounded-md shadow-sm text-gray-700"
+              class="bg-gray-200 flex-none p-1 rounded-md shadow-sm text-gray-700 overflow-y-auto"
               style="width: {baseWidth * scale}px;"
               on:click={() => {
                 if (item.year) toggleCollapse(item.year);
@@ -175,13 +175,13 @@
           {:else}
             <div
               transition:fade={{ duration: 150 }}
-              class="bg-white flex-none p-1 rounded-md shadow-sm"
+              class="bg-white flex-none p-2 rounded-md shadow-sm overflow-y-auto overflow-x-hidden"
               style="width: {baseWidth * scale}px;"
             >
               <div class="text-left text-sm text-gray-500">
-                {item.note?.date.toLocaleDateString("sv-SE")}
+                {item.note?.DateTime}
               </div>
-              {item.note?.content}
+                {@html item.note?.CaseData}
             </div>
           {/if}
         </div>

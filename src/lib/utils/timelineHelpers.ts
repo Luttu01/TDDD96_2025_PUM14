@@ -3,11 +3,14 @@ import type { Year, Month, Day } from "$lib/models/dateHierarchy";
 
 export function buildDateHierarchy(notes: Note[]): Year[] {
     const hierarchy: Year[] = [];
-
+    console.log("Building date hierarchy...");
+    console.log("Notes:", notes);
     notes.forEach((note) => {
-        const noteYear = note.date.getFullYear();
-        const noteMonth = note.date.getMonth();
-        const noteDay = note.date.getDay();
+        const noteDate = new Date(note.DateTime);
+        console.log("Note date:", note.DateTime);
+        const noteYear = noteDate.getFullYear();
+        const noteMonth = noteDate.getMonth();
+        const noteDay = noteDate.getDay();
 
         let yearGroup = hierarchy.find((y) => y.year === noteYear);
         if (!yearGroup) {
@@ -78,7 +81,7 @@ export function buildVisibleNotes(noteHierarchy: Year[]) {
                         if (day.isCollapsed) {
                             output.push({
                                 type: "summary",
-                                text: `${day.notes[0]?.date.toLocaleDateString("sv-SE")} (${day.notes.length} anteckningar dolda)`,
+                                text: `${day.notes[0].DateTime} (${day.notes.length} anteckningar dolda)`,
                                 day,
                             });
                         } else {

@@ -26,13 +26,11 @@ export async function load({ fetch }) {
         }
         throw new Error(errorMessage);
       }
-  
       
-      const allData = await res.json();
-    console.log('allData', allData);
+    const allData = await res.json();
 
-    if (Array.isArray(allData) && allData.length > 0) {
-      allNotes.set(allData);
+    if (allData) {
+      allNotes.set(allData.notes);
     } else {
       allNotes.set([]);
     }

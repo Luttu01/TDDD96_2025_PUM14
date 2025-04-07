@@ -31,14 +31,14 @@ export async function GET() {
     const enrichedNotes = [];
 
     for (const note of notes) {
-      const compositionId = note.compositionId;
+      const compositionId = note.CompositionId;
 
       if (!compositionId) {
         enrichedNotes.push({ ...note, CaseData: null, error: 'Missing compositionId' });
         continue;
       }
 
-      const detailUrl = `https://open-platform-migration.service.tietoevry.com/ehr/rest/v1/view/${ehrId}/RSK.View.CaseNote?compositionId=${compositionId}`;
+      const detailUrl = `https://open-platform-migration.service.tietoevry.com/ehr/rest/v1/view/${ehrId}/RSK.View.CaseNote?compId=${compositionId}`;
 
       try {
         const detailRes = await fetch(detailUrl, {
@@ -49,14 +49,15 @@ export async function GET() {
         });
 
         if (!detailRes.ok) {
-          enrichedNotes.push({ ...note, CaseData: null, error: `Detail fetch failed: ${detailRes.status}` });
           continue;
         }
 
         const detailData = await detailRes.json();
-        const caseData = detailData?.CaseData ?? null;
+        const caseData: string = detailData[0]?.CaseData ?? "<div style=\"text-indent:10px; margin-bottom:10px;\"><b>Not Found</b></div>";"><b>Not Found</b></div>";
 
-        enrichedNotes.push({ ...note, CaseData: caseData });
+        if (caseData) {
+          enrichedNotes.push({ ...note, CaseData: caseData });
+        }
 
       } catch (e) {
         const errorMessage = e instanceof Error ? e.message : String(e);
