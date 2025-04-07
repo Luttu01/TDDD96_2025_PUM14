@@ -6,11 +6,11 @@
   </script>
 
 
-<div class="h-full bg-yellow-100 flex">
+<div class="h-full bg-gray-100 flex">
     <div class="flex-1 overflow-x-auto p-4">
       <div class="flex space-x-4 h-full min-w-full">
         {#each $selectedNotes as note (note.CaseData)}
-          <div class="w-[100vw] bg-red-100 p-6 rounded-lg shadow-md h-full overflow-y-auto">
+          <div class="w-[100vw] bg-white p-6 rounded-lg shadow-md h-full overflow-y-auto">
             {@html note.CaseData}
           </div>
         {/each}
