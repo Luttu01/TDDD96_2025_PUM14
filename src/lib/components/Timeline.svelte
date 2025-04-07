@@ -11,6 +11,7 @@
     countVisibleNotesWithinGroup,
   } from "$lib/utils";
   import { allNotes } from "$lib/stores";
+  import { selectedNotes } from "$lib/stores";
 
   let scale: number = 1;
   const zoomSpeed: number = 0.01;
@@ -94,6 +95,26 @@
       window.removeEventListener('wheel', updateCurrentDate);
     };
   });
+
+  function handleNoteClick(noteData) {
+    $selectedNotes = $selectedNotes || []; 
+
+    const foundIndex = $selectedNotes.findIndex(n => n.CaseData === noteData.CaseData);
+
+
+    let newSelectedNotes = [...$selectedNotes]; // Copy array
+
+    if (foundIndex >= 0) {
+    
+      newSelectedNotes.splice(foundIndex, 1);
+    } else {
+     
+      newSelectedNotes.push({ CaseData: noteData.CaseData });
+    }
+
+   
+    selectedNotes.set(newSelectedNotes);
+  }
 </script>
 
 <div class="hidden w-full text-center transform bg-gray-800 text-white text-sm rounded shadow z-10">
@@ -173,10 +194,14 @@
               {item.text}
             </button>
           {:else}
+            <!-- svelte-ignore a11y_click_events_have_key_events -->
+            <!-- svelte-ignore a11y_no_static_element_interactions -->
             <div
               transition:fade={{ duration: 150 }}
               class="bg-white flex-none p-2 rounded-md shadow-sm overflow-y-auto overflow-x-hidden"
               style="width: {baseWidth * scale}px;"
+              on:click={() => item.note?.CaseData && handleNoteClick(item.note)} 
+              class:selected={$selectedNotes?.find(n => n.CaseData === item.note?.CaseData)}
             >
               <div class="text-left text-sm text-gray-500">
                 {item.note?.DateTime}
