@@ -49,11 +49,11 @@
   }
 </script>
 
-<div class="flex flex-grow">
+<div class="flex flex-grow overflow-hidden">
   <aside
     class={$expandTimeline
       ? "w-0 flex-none transition-all duration-500 overflow-hidden"
-      : "w-40 flex-none h-full transition-all duration-500 overflow-hidden"}
+      : "w-40 flex-none h-full transition-all duration-500 overflow-y-auto"}
   >
     <List 
       items={typedJournals}
