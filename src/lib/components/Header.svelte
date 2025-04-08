@@ -149,7 +149,7 @@
         text-decoration: none;
         padding: 5px;
     }
-    #dropdown_1 button:hover, #dropdown_2 button:hover, #dropdown_3 button:hover {background-color: #c495fc;}
+    #dropdown_1 button:hover, #dropdown_2 button:hover, #dropdown_3 button:hover {background-color: oklch(94.6% 0.033 307.174);}
 
     #template:hover ul, #role:hover ul, #Vårdenhet:hover ul {
         display: flex;
@@ -163,7 +163,7 @@
         z-index: 50;
     }
     #template:hover, #role:hover, #Vårdenhet:hover {
-        background-color: #c495fc;
+        background-color: oklch(94.6% 0.033 307.174);
     }
     #DateDiv {
         height: fit-content;
