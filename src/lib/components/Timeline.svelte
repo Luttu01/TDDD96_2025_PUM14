@@ -218,15 +218,20 @@
             <!-- svelte-ignore a11y_no_static_element_interactions -->
             <div
               transition:fade={{ duration: 150 }}
-              class="bg-white flex-none p-4 rounded-md shadow-sm overflow-y-auto overflow-x-hidden"
+                class="flex-none p-4 rounded-md shadow-sm overflow-x-hidden { $selectedNotes?.find(n => n.CaseData === item.note?.CaseData) ? 'bg-purple-100' : 'bg-white' }"
               style="width: {baseWidth * scale}px;"
-              on:click={() => item.note?.CaseData && handleNoteClick(item.note)} 
-              class:selected={$selectedNotes?.find(n => n.CaseData === item.note?.CaseData)}
             >
-              <div class="text-left text-sm text-gray-500">
+              <div class="text-left text-sm text-gray-500 flex justify-between">
                 {item.note?.DateTime}
+                <button class="h-6 w-6 rounded-md fa text-white { $selectedNotes?.find(n => n.CaseData === item.note?.CaseData) ? 'bg-red-500 fa-caret-down' : 'bg-green-500 fa-caret-up' }"
+                on:click={() => item.note?.CaseData && handleNoteClick(item.note)} 
+              class:selected={$selectedNotes?.find(n => n.CaseData === item.note?.CaseData)}
+              aria-label="select note"
+                ></button>
               </div>
+              <div class="h-full overflow-y-auto">
                 {@html item.note?.CaseData}
+                </div>
             </div>
           {/if}
         </div>

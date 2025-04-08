@@ -196,8 +196,8 @@
   }
 
   .document-button.selected {
-    background-color: #e3f2fd; 
-    border-left: 4px solid #3b82f6; 
+    background-color: oklch(94.6% 0.033 307.174); 
+    border-left: 4px solid oklch(62.7% 0.265 303.9); 
     padding-left: calc(1rem - 4px); 
   }
 
