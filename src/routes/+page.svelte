@@ -2,8 +2,6 @@
   import SelectedNotes from "$lib/components/SelectedNotes.svelte";
   import Timeline from "$lib/components/Timeline.svelte";
   import List from "$lib/components/List.svelte";
-  import type { Document } from "$lib/models/note";
-  import { mockJournals } from "$lib/data/mockJournals";
   import { writable } from "svelte/store";
 
   let expandTimeline = writable(false);
@@ -11,70 +9,23 @@
   function toggleView() {
     expandTimeline.update((state) => !state);
   }
-  
-  // Using mocked journals until we have a real API
-  const typedJournals = mockJournals as unknown as Document[];
-
-  // Temporary states for notification popup
-  let showNotification = $state(false);
-  let notificationMessage = $state("");
-  let notificationTimeout: ReturnType<typeof setTimeout>;
-
-  // Selected documents state
-  let selectedDocuments = $state<Document[]>([]);
-
-  // Temporary function to test document selection
-  function handleDocumentSelect(selectedDocs: Document[]) {
-      // Update the selected documents
-      selectedDocuments = selectedDocs;
-      
-      // Update notification message based on selection count
-      if (selectedDocs.length > 1) {
-          notificationMessage = `Selected ${selectedDocs.length} documents`;
-      } else if (selectedDocs.length === 1) {
-          notificationMessage = `Selected: ${selectedDocs[0].title}`;
-      } else {
-          notificationMessage = 'No documents selected';
-      }
-      
-      showNotification = true;
-      
-      // Clear previous timeout if exists
-      if (notificationTimeout) clearTimeout(notificationTimeout);
-      
-      // Auto-hide after 3 seconds
-      notificationTimeout = setTimeout(() => {
-          showNotification = false;
-      }, 3000);
-  }
 </script>
 
 <div class="flex flex-grow overflow-hidden">
   <aside
     class={$expandTimeline
-      ? "w-0 flex-none transition-all duration-500 overflow-hidden"
-      : "w-60 flex-none h-full transition-all duration-500 overflow-y-auto"}
+      ? "w-0 flex-none transition-all duration-500 overflow-hidden border-r-1 border-gray-200"
+      : "w-60 flex-none h-full transition-all duration-500 overflow-y-auto border-r-1 border-gray-200"}
   >
     <List/>
-    {#if showNotification}
-      <div class="notification">
-        <div class="notification-content">
-          <span>{notificationMessage}</span>
-          <button 
-            class="close-button" 
-            onclick={() => showNotification = false}
-            aria-label="Close notification"
-          >
-          </button>
-        </div>
-      </div>
-    {/if}
   </aside>
 
   <main class="flex flex-col flex-grow overflow-hidden">
     <div class="flex-grow transition-all duration-500 overflow-hidden">
       <SelectedNotes />
     </div>
+    <button onclick={toggleView} class="w-full border-t-1 border-b-1 border-gray-200 bg-white fa {$expandTimeline ? 'fa-caret-down' : 'fa-caret-up' }" aria-label="Toggle timeline view">
+    </button>
     <div
       class={$expandTimeline
         ? "h-6/8 transition-all duration-500"
@@ -84,54 +35,3 @@
     </div>
   </main>
 </div>
-
-<button onclick={toggleView} class="fixed bottom-1 right-1 bg-black text-white text-sm p-1 rounded-md z-20">
-  {#if $expandTimeline}
-    Hide Timeline
-  {:else}
-    Show Timeline
-  {/if}
-</button>
-
-<style>
-  .notification {
-    position: fixed;
-    bottom: 2rem;
-    right: 2rem;
-    z-index: 100;
-    animation: slideIn 0.3s ease-out;
-  }
-  
-  .notification-content {
-    background-color: #3b82f6;
-    color: white;
-    padding: 0.75rem 1.25rem;
-    border-radius: 0.5rem;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    max-width: 400px;
-  }
-  
-  .close-button {
-    background: none;
-    border: none;
-    color: white;
-    font-size: 1.25rem;
-    cursor: pointer;
-    padding: 0;
-    line-height: 1;
-  }
-  
-  @keyframes slideIn {
-    from {
-      transform: translateY(100%);
-      opacity: 0;
-    }
-    to {
-      transform: translateY(0);
-      opacity: 1;
-    }
-  }
-</style>

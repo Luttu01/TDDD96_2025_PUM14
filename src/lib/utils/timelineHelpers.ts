@@ -7,7 +7,6 @@ export function buildDateHierarchy(notes: Note[]): Year[] {
     console.log("Notes:", notes);
     notes.forEach((note) => {
         const noteDate = new Date(note.DateTime);
-        console.log("Note date:", note.DateTime);
         const noteYear = noteDate.getFullYear();
         const noteMonth = noteDate.getMonth();
         const noteDay = noteDate.getDay();
