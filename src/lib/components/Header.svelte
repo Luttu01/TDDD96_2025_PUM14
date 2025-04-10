@@ -1,51 +1,122 @@
 <script lang="ts">
-    import { onMount } from "svelte";
-    import { allNotes } from "$lib/stores"
-    import {derived, get } from "svelte/store"
+    import { allNotes, filteredNotes } from "$lib/stores"
+    import type { filterSelect } from "$lib/models";
+    import { derived, get } from "svelte/store"
 
+    /**
+     * TODO Sprint 2-3
+     * 1. Vid fler än X alternativ i en drop-down: lägg till overflow-scroll ist för oändligt lång lista
+     * 2. Flera filteralternativ ska kunna vara aktiva samtidigt från samma kategori, färgmarkerade
+     * 3. Varje kategori ska vara återställbar utan att påverka de andra kategorierna
+     * 4. Filtrering ska ske vid val av filter (just nu genom färgläggning av dok)
+     * 
+     * Rekommenderad arbetsordning: 4->2->3->1
+     */
 
-    const filterNotes = derived(allNotes, $allNotes => {
-        let notes : Map<string, Set<string>> = new Map
-        notes.set("Vårdenhet", new Set<string>);
-        notes.set("Journalmall", new Set<string>);
-        notes.set("Yrkesroll", new Set<string>);
-        $allNotes.forEach(note => {
-            notes.get("Vårdenhet")!.add(note.Vårdenhet_Namn);
-            notes.get("Journalmall")!.add(note.Dokumentnamn);
-            notes.get("Yrkesroll")!.add(note.Dokument_skapad_av_yrkestitel_Namn);
-        });
-        return notes;
-    });
-    const readNotes = get(filterNotes);
-    let templates: Set<string> = readNotes.get("Journalmall")!;
-    let units: Set<string> = readNotes.get("Vårdenhet")!;
-    let roles: Set<string> = readNotes.get("Yrkesroll")!;
+    let selectedFilters : Map<string, Set<filterSelect>> = new Map;
+    selectedFilters.set("Vårdenhet", new Set<filterSelect>);
+    selectedFilters.set("Journalmall", new Set<filterSelect>);
+    selectedFilters.set("Yrkesroll", new Set<filterSelect>);
 
     let template: string = "Journalmall";
     let unit: string = "Vårdenhet";
     let role: string = "Yrkesroll";
 
-    function updateDocument() {
+    const filterNotes = derived(allNotes, $allNotes => {
+        /**
+         * Derives a map of sets of filter options from all notes for select patient
+         */
+        let notes : Map<string, Map<string, filterSelect>> = new Map
+        notes.set("Vårdenhet", new Map<string, filterSelect>);
+        notes.set("Journalmall", new Map<string, filterSelect>);
+        notes.set("Yrkesroll", new Map<string, filterSelect>);
+        $allNotes.forEach(note => {
+            notes.get("Vårdenhet")!.set(
+                note.Vårdenhet_Namn, 
+                {name: note.Vårdenhet_Namn, selected : false}
+            );
+            notes.get("Journalmall")!.set(
+                note.Dokumentnamn, 
+                {name: note.Dokumentnamn, selected : false}
+            );
+            notes.get("Yrkesroll")!.set(
+                note.Dokument_skapad_av_yrkestitel_Namn, 
+                {name: note.Dokument_skapad_av_yrkestitel_Namn, selected : false}
+            );
+        });
+        return notes;
+    });
+
+    const readNotes = get(filterNotes);
+    let templates: Map<string, filterSelect> = readNotes.get("Journalmall")!;
+    let units: Map<string, filterSelect> = readNotes.get("Vårdenhet")!;
+    let roles: Map<string, filterSelect> = readNotes.get("Yrkesroll")!;
+
+    let filteredTemplates : Set<string> = new Set;
+    let filteredUnits : Set<string> = new Set;
+    let filteredRoles : Set<string> = new Set;
+
+    function updateDocument(event: MouseEvent) {
         /***
          * Uppdaterar dynamiskt antalet dokument som uppnår filterkrav
         */
+        const button = event.target as HTMLButtonElement;
+        let selectedFilter = button.name; 
+        let selectedFilterOption : filterSelect
+
+        // Check if selected filter is a template filter 
+        if(templates.has(selectedFilter)) {
+            const newTemplates = new Map(templates); // create temporary placeholder for templates
+            selectedFilterOption = templates.get(selectedFilter) as filterSelect; // Get value from key
+            newTemplates.set(selectedFilter, {name : selectedFilter, selected : !selectedFilterOption.selected}); // set new value in temporary map
+            templates = newTemplates; // replace existing map with new one
+            if(!selectedFilterOption.selected) { 
+                filteredTemplates.add(selectedFilter); // Add to "keep track" list
+            } else {
+                filteredTemplates.delete(selectedFilter); // Remove from "keep track" list
+            }
+        }
+        // Repeat (look at template for brief)
+        else if(units.has(selectedFilter)) {
+            const newUnits = new Map(units);
+            selectedFilterOption = units.get(selectedFilter) as filterSelect;
+            newUnits.set(selectedFilter, {name : selectedFilter, selected : !selectedFilterOption.selected});
+            units = newUnits;
+            if(!selectedFilterOption.selected) {
+                filteredUnits.add(selectedFilter);
+            } else {
+                filteredUnits.delete(selectedFilter);
+            }
+        }
+        // Repeat (look at template for brief)
+        else if(roles.has(selectedFilter)) {
+            const newRoles = new Map(roles);
+            selectedFilterOption = roles.get(selectedFilter) as filterSelect;
+            newRoles.set(selectedFilter, {name : selectedFilter, selected : !selectedFilterOption.selected});
+            roles = newRoles;
+            if(!selectedFilterOption.selected) {
+                filteredRoles.add(selectedFilter);
+            } else {
+                filteredRoles.delete(selectedFilter);
+            }
+        } else { // If function called from somewhere not associated with filter
+            return;
+        }
+        
+        // Filter all notes by filter criteria 
+        allNotes.subscribe(notes => {
+            const filtered = notes.filter(
+                (note) => {
+                    return (templates.get(note.Dokumentnamn)!.selected || filteredTemplates.size == 0) &&
+                    (units.get(note.Vårdenhet_Namn)!.selected || filteredUnits.size == 0) &&
+                    (roles.get(note.Dokument_skapad_av_yrkestitel_Namn)!.selected || filteredRoles.size == 0);
+                }
+            );
+            filteredNotes.set(filtered);
+            console.log(filtered);
+        })();
     }
 
-    function updateJournal(event: MouseEvent) {
-        const button = event.target as HTMLButtonElement;
-        template = button.name; 
-        updateDocument();
-    }
-    function updateUnit(event: MouseEvent) {
-        const button = event.target as HTMLButtonElement;
-        unit = button.name; 
-        updateDocument();
-    }
-    function updateRole(event: MouseEvent) {
-        const button = event.target as HTMLButtonElement;
-        role = button.name; 
-        updateDocument();
-    }
     function reset(event: MouseEvent) {
         template = "Journalmall";
         unit = "Vårdenhet";
@@ -54,7 +125,7 @@
         const date2 = document.getElementById("NewestDate") as HTMLFormElement;
         date1.value = "";
         date2.value = "";
-        updateDocument();
+        updateDocument(event);
     }
 </script>
 
@@ -79,9 +150,9 @@
                 
                 <div class="w-full flex justify-center">
                 <ul id="dropdown_1">
-                    {#each templates as journal}
+                    {#each Array.from(templates) as [key, journal]}
                         <li>
-                            <button class="w-[100%]" name={journal} on:click={updateJournal}>{journal}</button>
+                            <button class="w-[100%] {journal.selected == true ? 'bg-blue-200 hover:bg-blue-300' : 'bg-white hover:bg-purple-100'}" name={journal.name} on:click={updateDocument}>{journal.name}</button>
                         </li>
                     {/each}
                 </ul>
@@ -96,9 +167,9 @@
                 </div>
                 <div class="w-full flex justify-center">
                 <ul id="dropdown_2">
-                    {#each units as unit}
+                    {#each Array.from(units) as [key, unit]}
                         <li>
-                            <button class="w-[100%]" name={unit} on:click={updateUnit}>{unit}</button>
+                            <button class="w-[100%] {unit.selected == true ? 'bg-blue-200 hover:bg-blue-300' : 'bg-white hover:bg-purple-100'}" name={unit.name} on:click={updateDocument}>{unit.name}</button>
                         </li>
                     {/each}
                 </ul>
@@ -113,9 +184,9 @@
                 </div>
                 <div class="w-full flex justify-center">
                 <ul id="dropdown_3">
-                    {#each roles as role}
-                        <li class="display: inline">
-                            <button class="w-[100%]" name={role} on:click={updateRole}>{role}</button>
+                    {#each Array.from(roles) as [key, role]}
+                        <li>
+                            <button class="w-[100%] {role.selected == true ? 'bg-blue-200 hover:bg-blue-300' : 'bg-white hover:bg-purple-100'}" name={role.name} on:click={updateDocument}>{role.name}</button>
                         </li>
                     {/each}
                 </ul>
@@ -149,7 +220,6 @@
         text-decoration: none;
         padding: 5px;
     }
-    #dropdown_1 button:hover, #dropdown_2 button:hover, #dropdown_3 button:hover {background-color: oklch(94.6% 0.033 307.174);}
 
     #template:hover ul, #role:hover ul, #Vårdenhet:hover ul {
         display: flex;
@@ -163,7 +233,7 @@
         z-index: 50;
     }
     #template:hover, #role:hover, #Vårdenhet:hover {
-        background-color: oklch(94.6% 0.033 307.174);
+        background-color: lightskyblue;
     }
     #DateDiv {
         height: fit-content;
