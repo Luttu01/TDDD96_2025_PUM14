@@ -10,10 +10,12 @@ export type Note = {
   Tidsstämpel_för_sparat_dokument: string;
   Vårdenhet_Identifierare: string;
   Vårdenhet_Namn: string;
+  caseData?: string; // Renamed to caseData and made optional
+  error?: string;
 };
 
-// Add this:
-export type EhrNotes = {
+export type CaseNoteCollection = {
   ehrId: string;
-  data: Note[];
+  notes: Note[];
+  error?: string;
 };
