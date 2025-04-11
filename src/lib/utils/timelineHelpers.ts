@@ -3,8 +3,6 @@ import type { Year, Month, Day } from "$lib/models/dateHierarchy";
 
 export function buildDateHierarchy(notes: Note[]): Year[] {
     const hierarchy: Year[] = [];
-    console.log("Building date hierarchy...");
-    console.log("Notes:", notes);
     notes.forEach((note) => {
         const noteDate = new Date(note.DateTime);
         const noteYear = noteDate.getFullYear();
@@ -32,63 +30,44 @@ export function buildDateHierarchy(notes: Note[]): Year[] {
         dayGroup.notes.push(note);
     });
 
-    hierarchy.sort((a, b) => b.year - a.year);
-    hierarchy.forEach((y) => y.months.sort((a, b) => b.month - a.month));
+    hierarchy.sort((year1, year2) => year2.year - year1.year);
+    hierarchy.forEach((y) => y.months.sort((month1, month2) => month2.month - month1.month));
     hierarchy.forEach((y) =>
-        y.months.forEach((m) => m.days.sort((a, b) => b.day - a.day))
+        y.months.forEach((m) => m.days.sort((day1, day2) => day2.day - day1.day))
     );
 
     return hierarchy;
 }
 
-export function buildVisibleNotes(noteHierarchy: Year[]) {
-    let output = [];
+type VisibleItem = {
+    id: string;
+    type: "summary" | "note";
+    text: string;
+    date?: string;
+    context: any;
+};
+
+
+export function buildVisibleNotes(noteHierarchy: Year[]): VisibleItem[] {
+    const output: VisibleItem[] = [];
 
     for (const year of noteHierarchy) {
         if (year.isCollapsed) {
-            const count = year.months.reduce(
-                (sum, month) =>
-                    sum +
-                    month.days.reduce((daySum, day) => daySum + day.notes.length, 0),
-                0
-            );
-            output.push({
-                type: "summary",
-                text: `${year.year} (${count} anteckningar dolda)`,
-                year,
-            });
-        } else {
-            for (const month of year.months) {
-                if (month.isCollapsed) {
-                    const count = month.days.reduce(
-                        (sum, day) => sum + day.notes.length,
-                        0
-                    );
-                    output.push({
-                        type: "summary",
-                        text: `${new Date(year.year, month.month).toLocaleDateString(
-                            "sv-SE",
-                            {
-                                year: "numeric",
-                                month: "numeric",
-                            }
-                        )} (${count} anteckningar dolda)`,
-                        month,
-                    });
+            output.push(buildYearSummary(year));
+            continue;
+        }
+
+        for (const month of year.months) {
+            if (month.isCollapsed) {
+                output.push(buildMonthSummary(year.year, month));
+                continue;
+            }
+
+            for (const day of month.days) {
+                if (day.isCollapsed) {
+                    output.push(buildDaySummary(day));
                 } else {
-                    for (const day of month.days) {
-                        if (day.isCollapsed) {
-                            output.push({
-                                type: "summary",
-                                text: `${day.notes[0].DateTime} (${day.notes.length} anteckningar dolda)`,
-                                day,
-                            });
-                        } else {
-                            for (const note of day.notes) {
-                                output.push({ type: "note", note });
-                            }
-                        }
-                    }
+                    output.push(...buildNotes(day));
                 }
             }
         }
@@ -97,14 +76,70 @@ export function buildVisibleNotes(noteHierarchy: Year[]) {
     return output;
 }
 
+function buildYearSummary(year: Year): VisibleItem {
+    const count = year.months.reduce(
+        (sum, month) =>
+            sum + month.days.reduce((daySum, day) => daySum + day.notes.length, 0),
+        0
+    );
+
+    return {
+        id: `summary-year-${year.year}`,
+        type: "summary",
+        text: `${year.year} (${count} anteckningar dolda)`,
+        context: year,
+        date: `${year.year}`,
+    };
+}
+
+function buildMonthSummary(yearNumber: number, month: Month): VisibleItem {
+    const count = month.days.reduce((sum, day) => sum + day.notes.length, 0);
+    const date = new Date(yearNumber, month.month).toLocaleDateString("sv-SE", {
+        year: "numeric",
+        month: "numeric",
+    });
+
+    return {
+        id: `summary-month-${yearNumber}-${month.month}`,
+        type: "summary",
+        text: `${date} (${count} anteckningar dolda)`,
+        context: month,
+        date,
+    };
+}
+
+function buildDaySummary(day: Day): VisibleItem {
+    const date = day.notes[0]?.DateTime ?? "Okänd dag";
+
+    return {
+        id: `summary-day-${day.notes[0]?.DateTime}`,
+        type: "summary",
+        text: `${date} (${day.notes.length} anteckningar dolda)`,
+        context: day,
+        date,
+    };
+}
+
+function buildNotes(day: Day): VisibleItem[] {
+    return day.notes.map((note) => ({
+        id: `note-${note.Dokument_ID}`,
+        type: "note",
+        text: "",
+        context: note,
+        date: note.DateTime,
+    }));
+}
+
+
 export function countVisibleNotesWithinGroup(groups: (Year | Month | Day)[]): number {
+    // Tree traversal to count visible notes
     let count = 0;
-    for (const group of groups) {
-      if ("notes" in group) {
+    for (const group of groups) {       // for each year node
+      if ("notes" in group) {           // if the group is a day node, add all it's notes
         count += group.isCollapsed ? 1 : group.notes.length;
-      } else if ("days" in group) {
+      } else if ("days" in group) {     // if the group is a month node, traverse
         count += group.isCollapsed ? 1 : countVisibleNotesWithinGroup(group.days);
-      } else if ("months" in group) {
+      } else if ("months" in group) {   // if the group is a year node, traverse
         count += group.isCollapsed ? 1 : countVisibleNotesWithinGroup(group.months);
       }
     }
