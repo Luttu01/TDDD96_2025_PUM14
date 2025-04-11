@@ -5,12 +5,13 @@
 
     /**
      * TODO Sprint 2-3
-     * 1. Vid fler än X alternativ i en drop-down: lägg till overflow-scroll ist för oändligt lång lista
-     * 2. Flera filteralternativ ska kunna vara aktiva samtidigt från samma kategori, färgmarkerade
-     * 3. Varje kategori ska vara återställbar utan att påverka de andra kategorierna
-     * 4. Filtrering ska ske vid val av filter (just nu genom färgläggning av dok)
+     * 1. Vid fler än X alternativ i en drop-down: lägg till overflow-scroll ist för oändligt lång lista (DONE)
+     * 2. Flera filteralternativ ska kunna vara aktiva samtidigt från samma kategori, färgmarkerade (DONE)
+     * 3. Varje kategori ska vara återställbar utan att påverka de andra kategorierna (DONE)
+     * 4. Filtrering ska ske vid val av filter (just nu genom färgläggning av dok) (DONE)
+     * 5. Datum
      * 
-     * Rekommenderad arbetsordning: 4->2->3->1
+     * Rekommenderad arbetsordning: 4->2->3->1->5
      */
 
     let selectedFilters : Map<string, Set<filterSelect>> = new Map;
@@ -56,6 +57,20 @@
     let filteredUnits : Set<string> = new Set;
     let filteredRoles : Set<string> = new Set;
 
+    function updateFilter() {
+        allNotes.subscribe(notes => {
+            const filtered = notes.filter(
+                (note) => {
+                    return (templates.get(note.Dokumentnamn)!.selected || filteredTemplates.size == 0) &&
+                    (units.get(note.Vårdenhet_Namn)!.selected || filteredUnits.size == 0) &&
+                    (roles.get(note.Dokument_skapad_av_yrkestitel_Namn)!.selected || filteredRoles.size == 0);
+                }
+            );
+            filteredNotes.set(filtered);
+        })();
+        return;
+    }
+
     function updateDocument(event: MouseEvent) {
         /***
          * Uppdaterar dynamiskt antalet dokument som uppnår filterkrav
@@ -75,6 +90,7 @@
             } else {
                 filteredTemplates.delete(selectedFilter); // Remove from "keep track" list
             }
+            filteredTemplates = new Set(filteredTemplates);
         }
         // Repeat (look at template for brief)
         else if(units.has(selectedFilter)) {
@@ -87,6 +103,7 @@
             } else {
                 filteredUnits.delete(selectedFilter);
             }
+            filteredUnits = new Set(filteredUnits);
         }
         // Repeat (look at template for brief)
         else if(roles.has(selectedFilter)) {
@@ -99,38 +116,50 @@
             } else {
                 filteredRoles.delete(selectedFilter);
             }
+            filteredRoles = new Set(filteredRoles);
         } else { // If function called from somewhere not associated with filter
             return;
         }
         
         // Filter all notes by filter criteria 
-        allNotes.subscribe(notes => {
-            const filtered = notes.filter(
-                (note) => {
-                    return (templates.get(note.Dokumentnamn)!.selected || filteredTemplates.size == 0) &&
-                    (units.get(note.Vårdenhet_Namn)!.selected || filteredUnits.size == 0) &&
-                    (roles.get(note.Dokument_skapad_av_yrkestitel_Namn)!.selected || filteredRoles.size == 0);
-                }
-            );
-            filteredNotes.set(filtered);
-            console.log(filtered);
-        })();
+        updateFilter()
     }
 
-    function reset(event: MouseEvent) {
-        template = "Journalmall";
-        unit = "Vårdenhet";
-        role = "Yrkesroll";
-        const date1 = document.getElementById("OldestDate") as HTMLFormElement;
-        const date2 = document.getElementById("NewestDate") as HTMLFormElement;
-        date1.value = "";
-        date2.value = "";
-        updateDocument(event);
+    function reset(event : MouseEvent, arg : string) {
+        const newTemplates = new Map(templates);
+        const newUnits = new Map(units);
+        const newRoles = new Map(roles);
+        if(arg == template || arg == "") {
+            newTemplates.forEach(element => {
+                element.selected = false;
+            });
+            filteredTemplates.clear()
+            filteredTemplates = new Set(filteredTemplates);
+        }
+        if(arg == unit || arg == "") {
+            newUnits.forEach(element => {
+                element.selected = false;
+            });
+            filteredUnits.clear();
+            filteredUnits = new Set(filteredUnits);
+        }
+        if(arg == role || arg == "") {
+            newRoles.forEach(element => {
+                element.selected = false;
+            });
+            filteredRoles.clear();
+            filteredRoles = new Set(filteredRoles);
+        }
+        
+        templates = newTemplates;
+        units = newUnits;
+        roles = newRoles;
+        updateFilter();
     }
 </script>
 
 <div id="Header" class="flex flex-row justify-between outline-solid outline-gray-300 p-2 space-x-4">
-    <h1 id="ProjectTitle" class="hidden xl:flex text-2xl"><a href="/" on:click={reset}>Better<span class="text-purple-700">Care</span></a></h1>
+    <h1 id="ProjectTitle" class="hidden xl:flex text-2xl"><a href="/" onclick={(event) => reset(event, "")}>Better<span class="text-purple-700">Care</span></a></h1>
     <div id="Filtermenu" class="grid grid-flow-col grid-rows-2 lg:flex lg:flex-row lg:flex-grow text-md items-center justify-end gap-2">
             <div id="Search" class="max-w-[44em] rounded-md bg-white flex flex-grow">
                 <input class="pl-3 w-[100%] bg-white outline-1 outline-gray-300 rounded-md" type="text" placeholder="Sök:">
@@ -145,14 +174,18 @@
                     <button>
                         {template}
                     </button>
+                    {#if filteredTemplates.size != 0}
+                        <button onclick={(event) => reset(event, template)} class="text-red-600 text-1xl">X</button>
+                    {:else}
                     <i class="fa fa-caret-down pt-1"></i>
+                    {/if}
                 </div>
                 
                 <div class="w-full flex justify-center">
                 <ul id="dropdown_1">
                     {#each Array.from(templates) as [key, journal]}
                         <li>
-                            <button class="w-[100%] {journal.selected == true ? 'bg-blue-200 hover:bg-blue-300' : 'bg-white hover:bg-purple-100'}" name={journal.name} on:click={updateDocument}>{journal.name}</button>
+                            <button class="w-[100%] {journal.selected == true ? 'bg-blue-200 hover:bg-blue-300' : 'bg-white hover:bg-purple-100'}" name={journal.name} onclick={updateDocument}>{journal.name}</button>
                         </li>
                     {/each}
                 </ul>
@@ -163,13 +196,17 @@
                     <button>
                         {unit}
                     </button>
+                    {#if filteredUnits.size != 0}
+                        <button onclick={(event) => reset(event, unit)} class="text-red-600 text-1xl">X</button>
+                    {:else}
                     <i class="fa fa-caret-down pt-1"></i>
+                    {/if}
                 </div>
                 <div class="w-full flex justify-center">
                 <ul id="dropdown_2">
                     {#each Array.from(units) as [key, unit]}
                         <li>
-                            <button class="w-[100%] {unit.selected == true ? 'bg-blue-200 hover:bg-blue-300' : 'bg-white hover:bg-purple-100'}" name={unit.name} on:click={updateDocument}>{unit.name}</button>
+                            <button class="w-[100%] {unit.selected == true ? 'bg-blue-200 hover:bg-blue-300' : 'bg-white hover:bg-purple-100'}" name={unit.name} onclick={updateDocument}>{unit.name}</button>
                         </li>
                     {/each}
                 </ul>
@@ -180,20 +217,24 @@
                     <button>
                         {role}
                     </button>
+                    {#if filteredRoles.size != 0}
+                        <button onclick={(event) => reset(event, role)} class="text-red-600 text-1xl">X</button>
+                    {:else}
                     <i class="fa fa-caret-down pt-1"></i>
+                    {/if}
                 </div>
                 <div class="w-full flex justify-center">
                 <ul id="dropdown_3">
                     {#each Array.from(roles) as [key, role]}
                         <li>
-                            <button class="w-[100%] {role.selected == true ? 'bg-blue-200 hover:bg-blue-300' : 'bg-white hover:bg-purple-100'}" name={role.name} on:click={updateDocument}>{role.name}</button>
+                            <button class="w-[100%] {role.selected == true ? 'bg-blue-200 hover:bg-blue-300' : 'bg-white hover:bg-purple-100'}" name={role.name} onclick={updateDocument}>{role.name}</button>
                         </li>
                     {/each}
                 </ul>
             </div>
             </div>
     </div>
-    <button id="Reset" class="text-sm hover:text-purple-500 self-center" on:click={reset}>Återställ</button>
+    <button id="Reset" class="text-sm hover:text-purple-500 self-center" onclick={(event) => reset(event, "")}>Återställ</button>
 </div>
 
 <style>
@@ -231,6 +272,8 @@
         min-width: fit-content;
         box-shadow: 0px 10px 10px 0px rgba(0, 0, 0, 0.2);
         z-index: 50;
+        overflow-y: auto;
+        max-height: 20em;
     }
     #template:hover, #role:hover, #Vårdenhet:hover {
         background-color: lightskyblue;
