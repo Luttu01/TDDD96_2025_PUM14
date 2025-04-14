@@ -2,6 +2,7 @@
     import { onMount } from "svelte";
     import { allNotes } from "$lib/stores"
     import {derived, get } from "svelte/store"
+    import Search from "./Search.svelte";
 
 
     const filterNotes = derived(allNotes, $allNotes => {
@@ -24,6 +25,10 @@
     let template: string = "Journalmall";
     let unit: string = "Vårdenhet";
     let role: string = "Yrkesroll";
+
+    let searchQuery: string = "";
+    let searchInput: HTMLInputElement;
+
 
     function updateDocument() {
         /***
@@ -62,7 +67,8 @@
     <h1 id="ProjectTitle" class="hidden xl:flex text-2xl"><a href="/" on:click={reset}>Better<span class="text-purple-700">Care</span></a></h1>
     <div id="Filtermenu" class="grid grid-flow-col grid-rows-2 lg:flex lg:flex-row lg:flex-grow text-md items-center justify-end gap-2">
             <div id="Search" class="max-w-[44em] rounded-md bg-white flex flex-grow">
-                <input class="pl-3 w-[100%] bg-white outline-1 outline-gray-300 rounded-md" type="text" placeholder="Sök:">
+                <Search />
+                <!--<input class="pl-3 w-[100%] bg-white outline-1 outline-gray-300 rounded-md" type="text" placeholder="Sök:" bind:value={searchQuery}>-->
             </div>
             <div id="DateDiv" class="outline-1 outline-gray-300 rounded-md bg-white flex flex-row space-x-4 px-3">
                 <input type="date" name="OldestDate" id="OldestDate">
