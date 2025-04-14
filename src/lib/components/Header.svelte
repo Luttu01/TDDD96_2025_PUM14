@@ -9,7 +9,8 @@
      * 2. Flera filteralternativ ska kunna vara aktiva samtidigt från samma kategori, färgmarkerade (DONE)
      * 3. Varje kategori ska vara återställbar utan att påverka de andra kategorierna (DONE)
      * 4. Filtrering ska ske vid val av filter (just nu genom färgläggning av dok) (DONE)
-     * 5. Datum
+     * 5. Datum -> FilteredDocuments (Ska faktiskt ta bort)
+     * 6. Annan filtrering -> Sätt till "Filter" 
      * 
      * Rekommenderad arbetsordning: 4->2->3->1->5
      */
