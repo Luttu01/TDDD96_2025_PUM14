@@ -20,12 +20,41 @@
     selectedNotes.set(newSelectedNotes);
   }
 
+  /*
+   * Markerar sökord i anteckningar baserat på input.
+   * För att behålla strukturen på anteckningen skapas en temporär kopia med highlightad text
+   * som sedan byter ut orginalet. Detta görs för samtliga valda anteckningar. 
+   */
+  function highlightMatches(html: string, query: string): string {
+    if (!query) return html;
 
-  function highlightMatches(text: string, query: string): string {
-    if (!query) return text;
     const escapedQuery = query.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
     const regex = new RegExp(`(${escapedQuery})`, 'gi');
-    return text.replace(regex, '<mark>$1</mark>');
+
+    const container = document.createElement('div');
+    container.innerHTML = html;
+
+    function walk(node: Node) {
+      if (node.nodeType === Node.TEXT_NODE) {
+        const text = node.textContent;
+        if (text) {
+          const newText = text.replace(regex, '<mark>$1</mark>');
+          if (newText !== text) {
+            const span = document.createElement('span');
+            span.innerHTML = newText;
+            (node as ChildNode).replaceWith(...Array.from(span.childNodes));
+          }
+        }
+      } else if (node.nodeType === Node.ELEMENT_NODE) {
+        for (const child of Array.from(node.childNodes)) {
+          walk(child);
+        }
+      }
+    }
+
+    walk(container);
+
+    return container.innerHTML;
   }
   </script>
 

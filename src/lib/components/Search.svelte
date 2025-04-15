@@ -4,7 +4,7 @@
   
     let searchInput: HTMLInputElement;
     
-    /**
+    /*
      * Ctrl + f funktionalitet för senare.
     */
     onMount(() => {
