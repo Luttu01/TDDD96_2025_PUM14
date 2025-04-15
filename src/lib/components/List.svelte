@@ -1,84 +1,57 @@
 <script lang="ts">
-  import type { Document } from '$lib/models/note';
-  import { onMount, onDestroy } from 'svelte';
+  import type { Note } from '$lib/models';
+  import { onDestroy } from 'svelte';
+  import { allNotes, selectedNotes } from '$lib/stores';
 
-  const props = $props<{
-    items?: Document[];
-    onselect?: (selectedDocs: Document[]) => void;
-    initialWidth?: number; // Optional initial width prop
-  }>();
+  let localItems = $derived([...$allNotes]
+      .map((item, index) => ({
+        ...item,
+        uniqueId: item.CompositionId || `${index}-${Date.now()}` 
+      }))
+      .sort((a, b) => new Date(b.DateTime).getTime() - new Date(a.DateTime).getTime())
+  );
 
-  let localItems = $state<Array<Document & { uniqueId: string }>>([]);
-  let selectedDocuments = $state<Document[]>([]);
   let listContainerElement: HTMLDivElement;
-  let counter = 0; // Counter for unique IDs
-  let lastClickedIndex = $state(-1); // Index of the last item clicked without Shift
+  let lastClickedIndex = $state(-1);
 
-  let listWidth = $state(props.initialWidth || 300); 
+  let listWidth = $state(300);
   let isDragging = $state(false);
   let initialX = $state(0);
   let initialWidth = $state(0);
 
-  $effect(() => {
-    if (props.items) {
-      localItems = [...props.items]
-        .map(item => ({
-          ...item,
-          uniqueId: `${item.id}-${counter++}`
-        }))
-        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-      // Reset last clicked index if items change
-      lastClickedIndex = -1;
-      
-    }
-  });
-
-  function formatDate(dateString: string): string {
-    return new Date(dateString).toLocaleDateString('sv-SE');
+  function formatDate(dateTimeString: string): string {
+    return new Date(dateTimeString).toLocaleDateString('sv-SE');
   }
 
-  function handleDocumentClick(clickedDocument: Document, event: MouseEvent) {
+  function handleDocumentClick(clickedNote: Note, event: MouseEvent) {
     event.stopPropagation();
 
-    const currentIndex = localItems.findIndex(item => item.id === clickedDocument.id);
-    if (currentIndex === -1) return; // Should not happen
+    const currentIndex = localItems.findIndex(item => item.CompositionId === clickedNote.CompositionId);
+    if (currentIndex === -1) return;
 
     if (event.shiftKey && lastClickedIndex !== -1) {
-      // Shift+Click logic for range selection
       const start = Math.min(lastClickedIndex, currentIndex);
       const end = Math.max(lastClickedIndex, currentIndex);
-      // Select all items between lastClickedIndex and currentIndex, inclusive
-      selectedDocuments = localItems.slice(start, end + 1);
+      selectedNotes.set(localItems.slice(start, end + 1));
     } else {
-      // Normal click OR the first click in a potential shift-click sequence
-      const isAlreadySelected = selectedDocuments.some(doc => doc.id === clickedDocument.id);
+      const isAlreadySelected = $selectedNotes.some(note => note.CompositionId === clickedNote.CompositionId);
 
       if (isAlreadySelected) {
-        // Item is already selected, remove it (toggle off)
-        selectedDocuments = selectedDocuments.filter(doc => doc.id !== clickedDocument.id);
-        // Reset lastClickedIndex if we just deselected the anchor point
+        selectedNotes.update(current => current.filter(note => note.CompositionId !== clickedNote.CompositionId));
         if (lastClickedIndex === currentIndex) {
           lastClickedIndex = -1;
         }
       } else {
-        // Item is not selected, add it (toggle on)
-        selectedDocuments = [...selectedDocuments, clickedDocument];
-        // Set the anchor point for future Shift+Clicks
+        selectedNotes.update(current => [...current, clickedNote]);
         lastClickedIndex = currentIndex;
       }
     }
-
-    if (props.onselect) {
-      props.onselect(selectedDocuments);
-    }
   }
 
-  // --- Resizing Handlers --- //
   function handleMouseDown(event: MouseEvent) {
     isDragging = true;
     initialX = event.clientX;
     initialWidth = listContainerElement.offsetWidth;
-    // Add listeners to window to capture mouse movements everywhere
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mouseup', handleMouseUp);
   }
@@ -88,26 +61,18 @@
     const currentX = event.clientX;
     const dx = currentX - initialX;
     const newWidth = initialWidth + dx;
-    // Set minimum width (e.g., 150px)
     listWidth = Math.max(150, newWidth);
   }
 
   function handleMouseUp() {
     if (isDragging) {
       isDragging = false;
-      // Remove listeners from window
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
-      // Optional: Save width (e.g., localStorage.setItem('listWidth', listWidth.toString());)
     }
   }
 
-  onMount(() => {
-  
-  });
-
   onDestroy(() => {
-    // Ensure listeners are removed if component is destroyed while dragging
     if (isDragging) {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
@@ -115,36 +80,34 @@
   });
 </script>
 
-<!-- Add a wrapper div for positioning -->
-<div class="list-container" bind:this={listContainerElement} style="width: {listWidth}px;">
-  <ul class="list-view" role="listbox">
-    {#each localItems as item (item.uniqueId)}
-      <li role="option" aria-selected={selectedDocuments.some(doc => doc.id === item.id)} class="document-list-item">
+<div data-testid="list-view-container" class="list-container" bind:this={listContainerElement} style="width: {listWidth}px;">
+  <ul data-testid="list-view" class="list-view" role="listbox">
+    {#each localItems as item (item.CompositionId)}
+      <li data-testid="list-item-{item.CompositionId}" role="option" aria-selected={$selectedNotes.some(note => note.CompositionId === item.CompositionId)} class="document-list-item">
         <button
+          data-testid="list-item-button-{item.CompositionId}"
           type="button"
           class="document-button"
-          class:selected={selectedDocuments.some(doc => doc.id === item.id)}
+          class:selected={$selectedNotes.some(note => note.CompositionId === item.CompositionId)}
           onclick={(e) => handleDocumentClick(item, e)}
         >
           <div class="document-item">
-            <h3>{item.title}</h3>
+            <h3>{item.Dokumentnamn}</h3>
             <div class="document-meta">
-              <span class="type">{item.type}</span>
-              <span class="category">{item.category}</span>
-              <span class="date">{formatDate(item.date)}</span>
+              <span class="type">{item.Dokumentationskod}</span>
+              <span class="date">{formatDate(item.DateTime)}</span>
             </div>
             <div class="document-details">
-              <span class="professional">{item.professional}</span>
-              <span class="unit">Unit: {item.unit}</span>
+              <span class="professional">{item.Dokument_skapad_av_yrkestitel_Namn}</span>
+              <span class="unit">Unit: {item.Vårdenhet_Namn}</span>
             </div>
-            <p class="abstract">{item.abstract}</p>
           </div>
         </button>
       </li>
     {/each}
   </ul>
-  <!-- Add the drag handle with accessibility attributes -->
   <button 
+    data-testid="resize-handle" 
     class="resize-handle" 
     onmousedown={handleMouseDown}
     aria-label="Resize list width"
@@ -153,7 +116,6 @@
 </div>
 
 <style>
-  /* Container for positioning the handle and setting width */
   .list-container {
     position: relative;
     overflow: hidden; 
@@ -215,8 +177,7 @@
   }
 
   .document-meta,
-  .document-details,
-  .abstract {
+  .document-details {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -242,7 +203,7 @@
     color: #777;
   }
 
-  .type, .category {
+  .type {
     background-color: #f0f0f0;
     padding: 0.15rem 0.4rem;
     border-radius: 3px;
@@ -252,13 +213,6 @@
 
   .date, .professional {
     color: #555;
-  }
-
-  .abstract {
-    margin: 0.5rem 0 0 0;
-    color: #444;
-    font-size: 0.9rem;
-    line-height: 1.4;
   }
 
   .resize-handle {
