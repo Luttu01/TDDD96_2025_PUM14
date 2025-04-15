@@ -1,27 +1,17 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { derived, writable } from "svelte/store";
+  import { writable } from "svelte/store";
 
-  import type { Note, Year, Month, Day } from "$lib/models";
-  import {
-    buildDateHierarchy,
-    buildVisibleNotes,
-    countVisibleNotesWithinGroup,
-  } from "$lib/utils";
+  import type { Note, Year } from "$lib/models";
+  import { buildDateHierarchy, countVisibleNotesWithinGroup } from "$lib/utils";
   import { allNotes, selectedNotes } from "$lib/stores";
 
   let scale: number = 1;
-  const ZOOMSPEED: number = 0.01;
-  const MINSCALE: number = 0.2;
-  const MAXSCALE: number = 2;
-  const BASEWIDTH: number = 320;
-  const DATEGROUPPADDING: number = 40;
-  const NOTESPACING: number = 4;
+  const ZOOMSPEED: number = 0.06;
+  const MINSCALE: number = 1;
+  const MAXSCALE: number = $allNotes.length / 4;
 
   const noteHierarchy = writable<Year[]>(buildDateHierarchy($allNotes));
-  const visibleNotes = derived(noteHierarchy, ($noteHierarchy) => {
-    return buildVisibleNotes($noteHierarchy);
-  });
 
   let enableTransition = writable(false);
   $: scale, enableTransition.set(false);
@@ -36,29 +26,12 @@
     noteHierarchy.update((n) => [...n]);
   }
 
-  function calculateWidth(group: Year | Month | Day) {
-    const groupsNotesWidth =
-      countVisibleNotesWithinGroup([group]) * (BASEWIDTH * scale + NOTESPACING);
-    // If the group is a month or day, we need to reduce width including it's parents padding
-    const groupsWidthReduction =
-      DATEGROUPPADDING * ("month" in group ? 2 : "day" in group ? 3 : 1);
-
-    return groupsNotesWidth - groupsWidthReduction;
-  }
-
   function handleZoom(event: WheelEvent): void {
     if (event.ctrlKey) {
       event.preventDefault();
       scale -= event.deltaY * ZOOMSPEED;
       scale = Math.min(MAXSCALE, Math.max(MINSCALE, scale));
     }
-  }
-
-  function calculateNoteXPosition(item: { note?: Note; type: string }) {
-    const index = $visibleNotes.findIndex((n) => n === item);
-    const halfNoteWidth = (BASEWIDTH * scale) / 2;
-    const notePosition = index * (BASEWIDTH * scale + NOTESPACING);
-    return notePosition + halfNoteWidth;
   }
 
   onMount(() => {
@@ -87,13 +60,13 @@
   }
 </script>
 
-<div class="relative h-full bg-gray-100 overflow-x-auto">
+<div class="relative h-full bg-gray-100 overflow-x-auto overflow-y-hidden">
   <div
-    class="relative flex space-x-4 h-full px-2"
-    style="width: calc(600vw * {scale});"
+    class="relative flex h-full @container"
+    style="width: calc(100vw * {scale});"
   >
     <!-- Hierarchical Date Structure -->
-    <div class="relative flex flex-grow h-full px-2 space-x-4">
+    <div class="relative flex flex-grow h-full">
       {#each $noteHierarchy as yearGroup}
         <div
           class="relative flex flex-col"
@@ -101,20 +74,22 @@
             $allNotes.length) *
             100}%"
         >
-          <div class="flex bg-purple-200 py-1 px-2 rounded-b-md">
+          <div class="flex bg-purple-200 py-1 px-2 outline-1 outline-gray-100">
             <div class="text-lg sticky left-0 w-10 font-bold text-gray-900">
               {yearGroup.year}
             </div>
           </div>
-          <div class="relative flex space-x-4 flex-grow px-2 @container">
+          <div class="relative flex flex-grow">
             {#each yearGroup.months as monthGroup}
               <div
-                class="transition-all duration-400 ease-in-out transform scale-y-0 opacity-0 @3xl:scale-y-100 @3xl:opacity-100 origin-top flex flex-col"
+                class="flex flex-col"
                 style="width: {(countVisibleNotesWithinGroup([monthGroup]) /
                   countVisibleNotesWithinGroup([yearGroup])) *
                   100}%"
               >
-                <div class="relative flex bg-purple-300 py-1 px-2 rounded-b-md">
+                <div
+                  class="relative bg-purple-300 py-1 px-2 outline-1 outline-gray-100 hidden @min-[200vw]:flex"
+                >
                   <div
                     class="text-md sticky left-0 w-20 font-medium text-gray-800"
                   >
@@ -123,48 +98,20 @@
                     })}
                   </div>
                 </div>
-                <div class="relative flex space-x-4 flex-grow px-2 @container">
+                <div class="relative flex flex-grow">
                   {#each monthGroup.days as dayGroup}
-                    <div
-                      class="transition-all duration-400 ease-in-out transform scale-y-0 opacity-0 @xs:scale-y-100 @xs:opacity-100 origin-top flex flex-col"
-                      style="width: {(countVisibleNotesWithinGroup([dayGroup]) /
-                        countVisibleNotesWithinGroup([monthGroup])) *
-                        100}%"
-                    >
-                      <div
-                        class="relative flex bg-purple-400 py-1 px-6 rounded-b-md"
-                      >
-                        <div class="text-sm sticky left-0 w-10 text-gray-800">
-                          Dag {dayGroup.day + 1}
-                        </div>
-                      </div>
-                      <div
-                        class="flex flex-grow flex-wrap gap-2 p-2 @container"
-                      >
-                      {#each dayGroup.notes as note}
-                      <div
-                        class="
-                          flex-grow rounded-md
-                          bg-white p-2 @2xs:block hidden
-                        "
-                      >
-                        <h3>{note.Dokumentnamn}</h3>
-                        <div class="text-xs text-gray-500">
-                          {note.Dokument_skapad_av_yrkestitel_Namn}
-                        </div>
-                      </div>
-                  
-                      <!-- Dot version: hidden on medium+ containers -->
-                      <div
-                        class="
-                          w-4 h-4 rounded-full bg-purple-800
-                          @2xs:hidden
-                        "
-                        title="{note.Dokumentnamn}"
-                      ></div>
-                    {/each}
-                      </div>
-                    </div>
+                  <div
+                  class="flex flex-col"
+                  style="width: {(countVisibleNotesWithinGroup([dayGroup]) /
+                    countVisibleNotesWithinGroup([monthGroup])) *
+                    100}%"
+                >
+                  <div
+                    class="relative bg-purple-500 py-1 px-2 outline-1 outline-gray-100 hidden @min-[300vw]:flex"
+                  >
+                  {dayGroup.day}
+                  </div>
+                  </div>
                   {/each}
                 </div>
               </div>
