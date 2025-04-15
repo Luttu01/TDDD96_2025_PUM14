@@ -5,13 +5,19 @@
   const props = $props<{
     items?: Document[];
     onselect?: (selectedDocs: Document[]) => void;
+    initialWidth?: number; // Optional initial width prop
   }>();
 
   let localItems = $state<Array<Document & { uniqueId: string }>>([]);
   let selectedDocuments = $state<Document[]>([]);
-  let listViewElement: HTMLElement;
+  let listContainerElement: HTMLDivElement;
   let counter = 0; // Counter for unique IDs
   let lastClickedIndex = $state(-1); // Index of the last item clicked without Shift
+
+  let listWidth = $state(props.initialWidth || 300); 
+  let isDragging = $state(false);
+  let initialX = $state(0);
+  let initialWidth = $state(0);
 
   $effect(() => {
     if (props.items) {
@@ -23,8 +29,7 @@
         .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
       // Reset last clicked index if items change
       lastClickedIndex = -1;
-      // Also reset selection if items change? Optional, depends on desired UX.
-      // selectedDocuments = [];
+      
     }
   });
 
@@ -44,7 +49,6 @@
       const end = Math.max(lastClickedIndex, currentIndex);
       // Select all items between lastClickedIndex and currentIndex, inclusive
       selectedDocuments = localItems.slice(start, end + 1);
-      // Do not update lastClickedIndex on Shift+Click to keep the original anchor
     } else {
       // Normal click OR the first click in a potential shift-click sequence
       const isAlreadySelected = selectedDocuments.some(doc => doc.id === clickedDocument.id);
@@ -69,75 +73,103 @@
     }
   }
 
-  /* Remove outside click handler
-  function handleOutsideClick(event: MouseEvent) {
-    if (listViewElement && !listViewElement.contains(event.target as Node)) {
-      if (selectedDocuments.length > 0) {
-        selectedDocuments = [];
-        lastClickedIndex = -1; // Reset last clicked index on outside click
-        if (props.onselect) {
-          props.onselect([]);
-        }
-      }
+  // --- Resizing Handlers --- //
+  function handleMouseDown(event: MouseEvent) {
+    isDragging = true;
+    initialX = event.clientX;
+    initialWidth = listContainerElement.offsetWidth;
+    // Add listeners to window to capture mouse movements everywhere
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+  }
+
+  function handleMouseMove(event: MouseEvent) {
+    if (!isDragging) return;
+    const currentX = event.clientX;
+    const dx = currentX - initialX;
+    const newWidth = initialWidth + dx;
+    // Set minimum width (e.g., 150px)
+    listWidth = Math.max(150, newWidth);
+  }
+
+  function handleMouseUp() {
+    if (isDragging) {
+      isDragging = false;
+      // Remove listeners from window
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+      // Optional: Save width (e.g., localStorage.setItem('listWidth', listWidth.toString());)
     }
   }
-  */
 
   onMount(() => {
-    // Remove event listener for outside click
-    /*
-    if (typeof window !== 'undefined') {
-      window.addEventListener('click', handleOutsideClick);
-    }
-    */
+  
   });
 
   onDestroy(() => {
-    // Remove event listener for outside click
-    /*
-    if (typeof window !== 'undefined') {
-      window.removeEventListener('click', handleOutsideClick);
+    // Ensure listeners are removed if component is destroyed while dragging
+    if (isDragging) {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
     }
-    */
   });
 </script>
 
-<ul class="list-view" bind:this={listViewElement} role="listbox">
-  {#each localItems as item (item.uniqueId)}
-    <li role="option" aria-selected={selectedDocuments.some(doc => doc.id === item.id)} class="document-list-item">
-      <button
-        type="button"
-        class="document-button"
-        class:selected={selectedDocuments.some(doc => doc.id === item.id)}
-        onclick={(e) => handleDocumentClick(item, e)}
-      >
-        <div class="document-item">
-          <h3>{item.title}</h3>
-          <div class="document-meta">
-            <span class="type">{item.type}</span>
-            <span class="category">{item.category}</span>
-            <span class="date">{formatDate(item.date)}</span>
+<!-- Add a wrapper div for positioning -->
+<div class="list-container" bind:this={listContainerElement} style="width: {listWidth}px;">
+  <ul class="list-view" role="listbox">
+    {#each localItems as item (item.uniqueId)}
+      <li role="option" aria-selected={selectedDocuments.some(doc => doc.id === item.id)} class="document-list-item">
+        <button
+          type="button"
+          class="document-button"
+          class:selected={selectedDocuments.some(doc => doc.id === item.id)}
+          onclick={(e) => handleDocumentClick(item, e)}
+        >
+          <div class="document-item">
+            <h3>{item.title}</h3>
+            <div class="document-meta">
+              <span class="type">{item.type}</span>
+              <span class="category">{item.category}</span>
+              <span class="date">{formatDate(item.date)}</span>
+            </div>
+            <div class="document-details">
+              <span class="professional">{item.professional}</span>
+              <span class="unit">Unit: {item.unit}</span>
+            </div>
+            <p class="abstract">{item.abstract}</p>
           </div>
-          <div class="document-details">
-            <span class="professional">{item.professional}</span>
-            <span class="unit">Unit: {item.unit}</span>
-          </div>
-          <p class="abstract">{item.abstract}</p>
-        </div>
-      </button>
-    </li>
-  {/each}
-</ul>
+        </button>
+      </li>
+    {/each}
+  </ul>
+  <!-- Add the drag handle with accessibility attributes -->
+  <button 
+    class="resize-handle" 
+    onmousedown={handleMouseDown}
+    aria-label="Resize list width"
+    type="button"
+  ></button>
+</div>
 
 <style>
+  /* Container for positioning the handle and setting width */
+  .list-container {
+    position: relative;
+    overflow: hidden; 
+    height: 100%; 
+    min-width: 150px; 
+    border: 1px solid #ccc; 
+    background-color: white;
+    border-radius: 4px;
+  }
+
   .list-view {
     list-style: none;
     padding: 0;
     margin: 0;
-    background-color: white;
-    border: 1px solid #e0e0e0;
-    border-radius: 4px;
-    overflow: hidden;
+   height: 100%; 
+    overflow-y: auto; 
   }
 
   .document-list-item {
@@ -177,6 +209,17 @@
     margin: 0 0 0.5rem 0;
     color: #333;
     font-size: 1rem;
+    white-space: nowrap; 
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .document-meta,
+  .document-details,
+  .abstract {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .document-meta {
@@ -216,5 +259,19 @@
     color: #444;
     font-size: 0.9rem;
     line-height: 1.4;
+  }
+
+  .resize-handle {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 5px; 
+    cursor: col-resize;
+    background-color: rgba(0, 0, 0, 0.1); 
+  }
+
+  .resize-handle:hover {
+    background-color: rgba(0, 0, 0, 0.3);
   }
 </style>
