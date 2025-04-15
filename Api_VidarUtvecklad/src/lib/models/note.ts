@@ -10,7 +10,7 @@ export type Note = {
   Tidsstämpel_för_sparat_dokument: string;
   Vårdenhet_Identifierare: string;
   Vårdenhet_Namn: string;
-  CaseData?: string | null | undefined // Renamed to caseData and made optional
+  CaseData?: string | null | undefined 
   error?: string;
 };
 

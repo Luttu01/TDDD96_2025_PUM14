@@ -39,10 +39,7 @@ interface CaseNoteDetail {
   CaseData?: string; // Made optional to align with the code and Note type
 }
 
-/**
- * GET handler for the API endpoint.
- * @returns A JSON response containing an array of CaseNoteCollection objects.
- */
+
 export async function GET() {
   const authHeader = createBasicAuth(config.username, config.password);
   const caseNoteCollections: CaseNoteCollection[] = [];
@@ -86,7 +83,7 @@ export async function GET() {
             }
 
             const detailData = await detailRes.json() as CaseNoteDetail[];
-            const CaseData = detailData[0]?.CaseData ?? null; // Use null to indicate missing data
+            const CaseData = detailData[0]?.CaseData ?? null; 
             return { ...note, CaseData };
           })
         );
