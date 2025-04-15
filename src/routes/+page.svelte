@@ -15,7 +15,7 @@
   <aside
     class={$expandTimeline
       ? "w-0 flex-none transition-all duration-500 overflow-hidden border-r-1 border-gray-200"
-      : "w-60 flex-none h-full transition-all duration-500 overflow-y-auto border-r-1 border-gray-200"}
+      : "flex-none h-full transition-all duration-500 overflow-y-auto border-r-1 border-gray-200"}
   >
     <List/>
   </aside>
