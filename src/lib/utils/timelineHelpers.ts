@@ -7,17 +7,16 @@ export function buildDateHierarchy(notes: Note[]): Year[] {
         const noteDate = new Date(note.DateTime);
         const noteYear = noteDate.getFullYear();
         const noteMonth = noteDate.getMonth();
-        const noteDay = noteDate.getDay();
 
         let yearGroup = hierarchy.find((y) => y.year === noteYear);
         if (!yearGroup) {
-            yearGroup = { year: noteYear, months: [], isCollapsed: false };
+            yearGroup = { year: noteYear, months: [], isCollapsed: true };
             hierarchy.push(yearGroup);
         }
 
         let monthGroup = yearGroup.months.find((m) => m.month === noteMonth);
         if (!monthGroup) {
-            monthGroup = { month: noteMonth, notes: [], isCollapsed: false };
+            monthGroup = { month: noteMonth, notes: [], isCollapsed: true };
             yearGroup.months.push(monthGroup);
         }
 
@@ -34,17 +33,3 @@ export function buildDateHierarchy(notes: Note[]): Year[] {
 
     return hierarchy;
 }
-
-
-export function countVisibleNotesWithinGroup(groups: (Year | Month)[]): number {
-    // Tree traversal to count visible notes
-    let count = 0;
-    for (const group of groups) {       // for each year node
-      if ("notes" in group) {           // if the group is a day node, add all it's notes
-        count += group.isCollapsed ? 1 : group.notes.length;
-      } else if ("months" in group) {   // if the group is a year node, traverse
-        count += group.isCollapsed ? 1 : countVisibleNotesWithinGroup(group.months);
-      }
-    }
-    return count;
-  }
