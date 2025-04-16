@@ -11,6 +11,8 @@
      * 4. Filtrering ska ske vid val av filter (just nu genom färgläggning av dok) (DONE)
      * 5. Datum -> FilteredDocuments (Ska faktiskt ta bort) (DONE)
      * 6. Annan filtrering -> Sätt till "Filter" (DONE)
+     * 7. Sätt min och max datum från början (sådant att det inkapslar alla dokument för patienten)
+     * 8. Färgkodning
      * 
      * Rekommenderad arbetsordning: 4->2->3->1->5
      */
