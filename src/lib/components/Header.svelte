@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { allNotes, filteredNotes } from "$lib/stores"
+    import { allNotes, filteredNotes, filter } from "$lib/stores"
     import type { filterSelect } from "$lib/models";
     import { derived, get } from "svelte/store"
 
@@ -9,12 +9,11 @@
      * 2. Flera filteralternativ ska kunna vara aktiva samtidigt från samma kategori, färgmarkerade (DONE)
      * 3. Varje kategori ska vara återställbar utan att påverka de andra kategorierna (DONE)
      * 4. Filtrering ska ske vid val av filter (just nu genom färgläggning av dok) (DONE)
-     * 5. Datum -> FilteredDocuments (Ska faktiskt ta bort)
-     * 6. Annan filtrering -> Sätt till "Filter" 
+     * 5. Datum -> FilteredDocuments (Ska faktiskt ta bort) (DONE)
+     * 6. Annan filtrering -> Sätt till "Filter" (DONE)
      * 
      * Rekommenderad arbetsordning: 4->2->3->1->5
      */
-
     let selectedFilters : Map<string, Set<filterSelect>> = new Map;
     selectedFilters.set("Vårdenhet", new Set<filterSelect>);
     selectedFilters.set("Journalmall", new Set<filterSelect>);
@@ -58,17 +57,30 @@
     let filteredUnits : Set<string> = new Set;
     let filteredRoles : Set<string> = new Set;
 
+    let minDate = ""
+    let maxDate = ""
+
     function updateFilter() {
         allNotes.subscribe(notes => {
             const filtered = notes.filter(
                 (note) => {
-                    return (templates.get(note.Dokumentnamn)!.selected || filteredTemplates.size == 0) &&
+                    return (minDate < note.DateTime || minDate == "") && 
+                    (minDate > note.DateTime || maxDate == "");
+                    /*(templates.get(note.Dokumentnamn)!.selected || filteredTemplates.size == 0) &&
                     (units.get(note.Vårdenhet_Namn)!.selected || filteredUnits.size == 0) &&
-                    (roles.get(note.Dokument_skapad_av_yrkestitel_Namn)!.selected || filteredRoles.size == 0);
+                    (roles.get(note.Dokument_skapad_av_yrkestitel_Namn)!.selected || filteredRoles.size == 0) &&*/
                 }
             );
             filteredNotes.set(filtered);
         })();
+        let activeFilters : Map<string, Set<string>> = new Map;
+        activeFilters.set(template, filteredTemplates);
+        activeFilters.set(unit, filteredUnits);
+        activeFilters.set(role, filteredRoles);
+        filter.set(activeFilters);
+        console.log(minDate, maxDate);
+        console.log(filteredNotes);
+        console.log(filter);
         return;
     }
 
@@ -151,6 +163,8 @@
             filteredRoles.clear();
             filteredRoles = new Set(filteredRoles);
         }
+        minDate = "";
+        maxDate = "";
         
         templates = newTemplates;
         units = newUnits;
@@ -166,9 +180,9 @@
                 <input class="pl-3 w-[100%] bg-white outline-1 outline-gray-300 rounded-md" type="text" placeholder="Sök:">
             </div>
             <div id="DateDiv" class="outline-1 outline-gray-300 rounded-md bg-white flex flex-row space-x-4 px-3">
-                <input type="date" name="OldestDate" id="OldestDate">
+                <input type="date" name="OldestDate" id="OldestDate" oninput={updateFilter} bind:value={minDate} />
                 <p>-</p>
-                <input type="date" name="NewestDate" id="NewestDate">
+                <input type="date" name="NewestDate" id="NewestDate" oninput={updateFilter} bind:value={maxDate}>
             </div>
             <div id="template" class="outline-1 outline-gray-300 rounded-md bg-white">
                 <div id="dropdown_button" class="px-3 flex flex-row justify-between">
