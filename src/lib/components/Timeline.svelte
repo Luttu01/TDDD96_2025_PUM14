@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { flip } from "svelte/animate";
   import { writable } from "svelte/store";
 
   import type { Note, Year } from "$lib/models";
@@ -13,18 +14,7 @@
 
   const noteHierarchy = writable<Year[]>(buildDateHierarchy($allNotes));
 
-  let enableTransition = writable(false);
-  $: scale, enableTransition.set(false);
-
-  function toggleCollapse(
-    group: { isCollapsed: boolean },
-    event?: Event
-  ): void {
-    if (event) event.stopPropagation();
-    setTimeout(() => enableTransition.set(true), 300);
-    group.isCollapsed = !group.isCollapsed;
-    noteHierarchy.update((n) => [...n]);
-  }
+  $: scale;
 
   function handleZoom(event: WheelEvent): void {
     if (event.ctrlKey) {
@@ -69,23 +59,17 @@
     <div class="relative flex flex-grow h-full">
       {#each $noteHierarchy as yearGroup}
         <div
-          class="relative flex flex-col"
-          style="width: {(countVisibleNotesWithinGroup([yearGroup]) /
-            $allNotes.length) *
-            100}%"
+          class="relative flex flex-col flex-grow"
         >
-          <div class="flex bg-purple-200 py-1 px-2 outline-1 outline-gray-100">
+          <div class="flex bg-purple-200 py-1 px-2 outline-1 outline-gray-100 justify-between">
             <div class="text-lg sticky left-0 w-10 font-bold text-gray-900">
               {yearGroup.year}
             </div>
           </div>
-          <div class="relative flex flex-grow">
+          <div class="relative flex flex-1 flex-col @min-[200vw]:flex-row">
             {#each yearGroup.months as monthGroup}
-              <div
-                class="flex flex-col"
-                style="width: {(countVisibleNotesWithinGroup([monthGroup]) /
-                  countVisibleNotesWithinGroup([yearGroup])) *
-                  100}%"
+                <div
+                class="flex-col flex @min-[200vw]:flex-1"
               >
                 <div
                   class="relative bg-purple-300 py-1 px-2 outline-1 outline-gray-100 hidden @min-[200vw]:flex"
@@ -98,20 +82,16 @@
                     })}
                   </div>
                 </div>
-                <div class="relative flex flex-grow">
-                  {#each monthGroup.days as dayGroup}
-                  <div
-                  class="flex flex-col"
-                  style="width: {(countVisibleNotesWithinGroup([dayGroup]) /
-                    countVisibleNotesWithinGroup([monthGroup])) *
-                    100}%"
-                >
-                  <div
-                    class="relative bg-purple-500 py-1 px-2 outline-1 outline-gray-100 hidden @min-[300vw]:flex"
-                  >
-                  {dayGroup.day}
-                  </div>
-                  </div>
+                <div class="relative flex-col">
+                  {#each monthGroup.notes as note (note.Dokument_ID)}
+                    <div class="bg-white p-1 m-1 rounded-full shadow-sm h-6 text-sm justify-between flex-row flex">
+                      <p class="overflow-hidden">{note.Dokumentnamn}</p>
+                      <button 
+                        class="rounded-full bg-green-500 w-4 h-4 text-white text-xs"
+                        on:click={() => handleNoteClick(note)}
+                        aria-label="Remove note {note.Dokumentnamn}"
+                      >^</button>
+                    </div>
                   {/each}
                 </div>
               </div>
