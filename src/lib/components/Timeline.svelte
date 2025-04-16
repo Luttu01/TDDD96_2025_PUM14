@@ -127,7 +127,11 @@
   {currentDate}
 </div>
 
-<div class="h-full bg-gray-100 flex overflow-x-auto no-scrollbar relative" bind:this={timelineContainer}>
+<div class="h-full bg-gray-100 flex overflow-x-auto no-scrollbar relative" 
+     bind:this={timelineContainer}
+     role="region" 
+     aria-label="Timeline view"
+     data-testid="timeline-container">
   <!-- Dot overlay above all content -->
   <div class="absolute top-0 left-0 pointer-events-none z-10">
     {#each $visibleNotes as item}
@@ -138,6 +142,7 @@
             left: {calculateNoteXPosition(item)}px;
             top: 0.5rem;
           "
+          data-testid={`timeline-dot-${item.note?.CompositionId}`}
         ></div>
       {/if}
     {/each}
@@ -146,6 +151,8 @@
     <div
       class="flex relative min-w-max px-[20px] justify-between"
       transition:fade={{ duration: 150 }}
+      role="list"
+      aria-label="Timeline groups"
     >
       {#each $noteHierarchy as yearGroup}
         <button
@@ -155,11 +162,15 @@
           style="width: {calculateWidth(yearGroup)}px;"
           data-date={yearGroup.year}
           aria-label="Toggle year group"
+          aria-expanded={!yearGroup.isCollapsed}
+          data-testid={`year-group-${yearGroup.year}`}
         >
           {#if !yearGroup.isCollapsed}
             <div
               class="flex justify-between px-[20px]"
               transition:fade={{ duration: 150 }}
+              role="list"
+              aria-label="Month groups"
             >
               {#each yearGroup.months as monthGroup}
                 <!-- svelte-ignore node_invalid_placement_ssr -->
@@ -170,11 +181,15 @@
                   style="width: {calculateWidth(monthGroup)}px; opacity: {monthGroup.days.length > 1 ? 1 : 0}; pointer-events: {monthGroup.days.length > 1 ? 'auto' : 'none'}"
                   data-date={monthGroup.month}
                   aria-label="Toggle month group"
+                  aria-expanded={!monthGroup.isCollapsed}
+                  data-testid={`month-group-${monthGroup.month}`}
                 >
                   {#if !monthGroup.isCollapsed}
                     <div
                       class="flex justify-between px-[20px]"
                       transition:fade={{ duration: 150 }}
+                      role="list"
+                      aria-label="Day groups"
                     >
                       {#each monthGroup.days as dayGroup}
                         <button
@@ -185,8 +200,10 @@
                           style="width: {calculateWidth(dayGroup)}px; opacity: {dayGroup.notes.length > 1 ? 1 : 0}; pointer-events: {dayGroup.notes.length > 1 ? 'auto' : 'none'}"
                           data-date={dayGroup.notes[0].DateTime}
                           aria-label="Toggle day group"
+                          aria-expanded={!dayGroup.isCollapsed}
+                          data-testid={`day-group-${dayGroup.notes[0].DateTime}`}
                         >
-                      </button>
+                        </button>
                       {/each}
                     </div>
                   {/if}
@@ -197,7 +214,7 @@
         </button>
       {/each}
     </div>
-    <div class="flex flex-grow space-x-1 overflow-hidden">
+    <div class="flex flex-grow space-x-1 overflow-hidden" role="list" aria-label="Timeline notes">
       {#each $visibleNotes as item (item.type === "note" ? item.note?.DateTime : item.text)}
         <div class="flex flex-grow overflow-hidden" animate:flip={{ duration: 250 }}>
           {#if item.type === "summary"}
@@ -220,18 +237,22 @@
               transition:fade={{ duration: 150 }}
                 class="flex-none p-4 rounded-md shadow-sm overflow-x-hidden { $selectedNotes?.find(n => n.CaseData === item.note?.CaseData) ? 'bg-purple-100' : 'bg-white' }"
               style="width: {baseWidth * scale}px;"
+              data-testid={`timeline-note-${item.note?.CompositionId}`}
+              aria-selected={!!$selectedNotes?.find(n => n.CaseData === item.note?.CaseData)}
             >
               <div class="text-left text-sm text-gray-500 flex justify-between">
                 {item.note?.DateTime}
-                <button class="h-6 w-6 rounded-md fa text-white { $selectedNotes?.find(n => n.CaseData === item.note?.CaseData) ? 'bg-red-500 fa-caret-down' : 'bg-green-500 fa-caret-up' }"
-                on:click={() => item.note?.CaseData && handleNoteClick(item.note)} 
-              class:selected={$selectedNotes?.find(n => n.CaseData === item.note?.CaseData)}
-              aria-label="select note"
+                <button 
+                  class="h-6 w-6 rounded-md fa text-white { $selectedNotes?.find(n => n.CaseData === item.note?.CaseData) ? 'bg-red-500 fa-caret-down' : 'bg-green-500 fa-caret-up' }"
+                  on:click={() => item.note?.CaseData && handleNoteClick(item.note)} 
+                  class:selected={$selectedNotes?.find(n => n.CaseData === item.note?.CaseData)}
+                  aria-label="select note"
+                  data-testid={`timeline-note-button-${item.note?.CompositionId}`}
                 ></button>
               </div>
               <div class="h-full overflow-y-auto">
                 {@html item.note?.CaseData}
-                </div>
+              </div>
             </div>
           {/if}
         </div>
