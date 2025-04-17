@@ -12,9 +12,6 @@
      * 5. Datum -> FilteredDocuments (Ska faktiskt ta bort) (DONE)
      * 6. Annan filtrering -> Sätt till "Filter" (DONE)
      * 7. Sätt min och max datum från början (sådant att det inkapslar alla dokument för patienten)
-     * 8. Färgkodning
-     * 
-     * Rekommenderad arbetsordning: 4->2->3->1->5
      */
     let selectedFilters : Map<string, Set<filterSelect>> = new Map;
     selectedFilters.set("Vårdenhet", new Set<filterSelect>);
@@ -33,6 +30,8 @@
         notes.set("Vårdenhet", new Map<string, filterSelect>);
         notes.set("Journalmall", new Map<string, filterSelect>);
         notes.set("Yrkesroll", new Map<string, filterSelect>);
+        notes.set("Äldsta dokument", new Map<string, filterSelect>);
+        notes.set("Nyaste dokument", new Map<string, filterSelect>);
         $allNotes.forEach(note => {
             notes.get("Vårdenhet")!.set(
                 note.Vårdenhet_Namn, 
@@ -46,6 +45,43 @@
                 note.Dokument_skapad_av_yrkestitel_Namn, 
                 {name: note.Dokument_skapad_av_yrkestitel_Namn, selected : false}
             );
+
+            // Set min and max date for notes
+            if(notes.get("Nyaste dokument")!.size == 0 && notes.get("Äldsta dokument")!.size == 0) {
+                notes.get("Nyaste dokument")!.set(
+                    "Nyast", 
+                    {
+                        name: note.DateTime,
+                        selected : false
+                    }
+                );
+                notes.get("Äldsta dokument")!.set(
+                    "Äldst", 
+                    {
+                        name: note.DateTime,
+                        selected : false
+                    }
+                );
+            } else {
+                if(notes.get("Nyaste dokument")!.get("Nyast")!.name < note.DateTime) {
+                    notes.get("Nyaste dokument")!.set(
+                        "Nyast",
+                        {
+                            name: note.DateTime,
+                            selected : false
+                        }
+                    );
+                }
+                if(notes.get("Äldsta dokument")!.get("Äldst")!.name > note.DateTime) {
+                    notes.get("Äldsta dokument")!.set(
+                        "Äldst",
+                        {
+                            name: note.DateTime,
+                            selected : false
+                        }
+                    );
+                }
+            }
         });
         return notes;
     });
@@ -54,20 +90,20 @@
     let templates: Map<string, filterSelect> = readNotes.get("Journalmall")!;
     let units: Map<string, filterSelect> = readNotes.get("Vårdenhet")!;
     let roles: Map<string, filterSelect> = readNotes.get("Yrkesroll")!;
-
+    let minDate: string = readNotes.get("Äldsta dokument")!.get("Äldst")!.name.substring(0, 10);
+    let maxDate: string = readNotes.get("Nyaste dokument")!.get("Nyast")!.name.substring(0, 10);
+    const absMax = maxDate; // Reset value
+    const absMin = minDate; // Reset value
     let filteredTemplates : Set<string> = new Set;
     let filteredUnits : Set<string> = new Set;
     let filteredRoles : Set<string> = new Set;
-
-    let minDate = ""
-    let maxDate = ""
 
     function updateFilter() {
         allNotes.subscribe(notes => {
             const filtered = notes.filter(
                 (note) => {
-                    return (minDate < note.DateTime || minDate == "") && 
-                    (minDate > note.DateTime || maxDate == "");
+                    return (minDate <= note.DateTime || minDate == "") && 
+                    (minDate >= note.DateTime || maxDate == "");
                     /*(templates.get(note.Dokumentnamn)!.selected || filteredTemplates.size == 0) &&
                     (units.get(note.Vårdenhet_Namn)!.selected || filteredUnits.size == 0) &&
                     (roles.get(note.Dokument_skapad_av_yrkestitel_Namn)!.selected || filteredRoles.size == 0) &&*/
@@ -80,15 +116,12 @@
         activeFilters.set(unit, filteredUnits);
         activeFilters.set(role, filteredRoles);
         filter.set(activeFilters);
-        console.log(minDate, maxDate);
-        console.log(filteredNotes);
-        console.log(filter);
         return;
     }
 
     function updateDocument(event: MouseEvent) {
         /***
-         * Uppdaterar dynamiskt antalet dokument som uppnår filterkrav
+         * Dynamically update selected filter options for templates, units and roles. 
         */
         const button = event.target as HTMLButtonElement;
         let selectedFilter = button.name; 
@@ -165,8 +198,8 @@
             filteredRoles.clear();
             filteredRoles = new Set(filteredRoles);
         }
-        minDate = "";
-        maxDate = "";
+        minDate = absMin;
+        maxDate = absMax;
         
         templates = newTemplates;
         units = newUnits;
@@ -182,9 +215,9 @@
                 <input class="pl-3 w-[100%] bg-white outline-1 outline-gray-300 rounded-md" type="text" placeholder="Sök:">
             </div>
             <div id="DateDiv" class="outline-1 outline-gray-300 rounded-md bg-white flex flex-row space-x-4 px-3">
-                <input type="date" name="OldestDate" id="OldestDate" oninput={updateFilter} bind:value={minDate} />
+                <input type="date" name="OldestDate" id="OldestDate" min={absMin} max={maxDate} oninput={updateFilter} bind:value={minDate}/>
                 <p>-</p>
-                <input type="date" name="NewestDate" id="NewestDate" oninput={updateFilter} bind:value={maxDate}>
+                <input type="date" name="NewestDate" id="NewestDate" min={minDate} max={absMax} oninput={updateFilter} bind:value={maxDate}>
             </div>
             <div id="template" class="outline-1 outline-gray-300 rounded-md bg-white">
                 <div id="dropdown_button" class="px-3 flex flex-row justify-between">
