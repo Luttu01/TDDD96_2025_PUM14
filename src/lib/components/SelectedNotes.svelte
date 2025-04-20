@@ -3,6 +3,8 @@
     import { derived, writable } from "svelte/store";
     import type { Note } from "$lib/models";
     import { searchQuery } from '$lib/stores/searchStore';
+    import SearchInput from "./SearchInput.svelte";
+    import { onMount } from "svelte";
     
     function handleNoteClick(noteData: Note) {
     $selectedNotes = $selectedNotes || []; 
@@ -56,10 +58,29 @@
 
     return container.innerHTML;
   }
+
+  /**
+   * Show search field after ctrl+f / cmd+f
+  */
+  let showSearchInput = false;
+
+  onMount(() => {
+    window.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+        e.preventDefault();
+        showSearchInput = true;
+      }
+    });
+  });
   </script>
 
 
 <div class="h-full bg-gray-100 flex">
+  {#if showSearchInput}
+    <div id="SearchInput" class="fixed top-10 left-1/2 transform -translate-x-1/2 z-50 bg-white rounded-md shadow-lg max-w-md w-[90%] p-2">
+      <SearchInput on:close={() => showSearchInput = false} />
+    </div>
+  {/if}
     <div class="flex-1 overflow-x-auto p-2">
       <div class="flex space-x-2 h-full min-w-full">
         {#each $selectedNotes as note (note.CaseData)}

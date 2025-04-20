@@ -1,13 +1,15 @@
 <script lang="ts">
-    import { selectedNotes } from '$lib/stores/storedNotes';
+    import { allNotes } from '$lib/stores';
     import { extractBoldTitlesFromHTML } from '$lib/utils/keywords';
     import { searchQuery } from '$lib/stores/searchStore';
+    import { get } from 'svelte/store';
   
-    let selectedTitle = "Sök i rubriker";
+    let selectedTitle = "Sökord";
   
-    $: allTitles = $selectedNotes.flatMap(note =>
+    $: allTitles = get(allNotes).flatMap(note =>
       extractBoldTitlesFromHTML(note.CaseData)
     );
+  
     $: sortedTitles = Array.from(new Set(allTitles)).sort((a, b) =>
       a.localeCompare(b, 'sv')
     );
@@ -40,42 +42,44 @@
   
   <style>
     #SearchDropdown {
-      list-style: none;
-      position: relative;
-      display: block;
-      text-align: left;
-      height: fit-content;
-      width: 15em;
+        list-style: none;
+        position: relative;
+        display: block;
+        text-align: left;
+        height: fit-content;
+        width: 15em;
     }
   
     #dropdown_search_titles {
-      display: none;
-      text-align: left;
+        display: none;
+        text-align: left;
     }
   
     #SearchDropdown:hover ul {
-      display: flex;
-      position: absolute;
-      flex-direction: column;
-      font-size: 15px;
-      background: white;
-      width: 90%;
-      min-width: fit-content;
-      box-shadow: 0px 10px 10px 0px rgba(0, 0, 0, 0.2);
-      z-index: 50;
+        display: flex;
+        position: absolute;
+        flex-direction: column;
+        font-size: 15px;
+        background: white;
+        width: 90%;
+        min-width: fit-content;
+        box-shadow: 0px 10px 10px 0px rgba(0, 0, 0, 0.2);
+        z-index: 50;
+        max-height: 400px;
+        overflow-y: auto; 
     }
   
     #SearchDropdown:hover {
-      background-color: oklch(94.6% 0.033 307.174);
+        background-color: oklch(94.6% 0.033 307.174);
     }
   
     #dropdown_search_titles button {
-      color: black;
-      text-decoration: none;
-      padding: 5px;
+        color: black;
+        text-decoration: none;
+        padding: 5px;
     }
   
     #dropdown_search_titles button:hover {
-      background-color: oklch(94.6% 0.033 307.174);
+        background-color: oklch(94.6% 0.033 307.174);
     }
   </style>
