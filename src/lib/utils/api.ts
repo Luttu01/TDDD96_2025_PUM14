@@ -43,6 +43,7 @@ export async function fetchDocuments(params: FilterParams = {}): Promise<Documen
         
         const data = await response.json();
         console.log('Raw API response:', data);
+        console.log('First document example:', data.documents?.[0]);
         
         // Check if data has a documents property
         if (!data.documents) {
