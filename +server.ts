@@ -1,14 +1,16 @@
 /**
- * This file defines an API endpoint for fetching case notes and their details 
+ * This file defines an API endpoint for fetching case notes, their details, and associated keywords 
  * for a given EHR (Electronic Health Record) ID. It performs the following steps:
  * 
  * 1. Retrieves a list of case notes associated with the provided `ehrId` by making a GET request to an API.
  * 2. For each case note, it attempts to fetch detailed information using the composition ID from the case note.
- * 3. If any error occurs at any point (e.g., missing composition ID, failed fetch request, or missing case data), 
+ * 3. Fetches a list of keywords associated with the provided `ehrId` by making a separate GET request to an API.
+ * 4. If any error occurs at any point (e.g., missing composition ID, failed fetch request, or missing case data), 
  *    appropriate error messages are added to the response with specific styles for visual distinction.
- * 4. The response contains either the enriched case notes (with data or error messages) or a network error if something 
- *    fails during the process.
+ * 5. The response contains the enriched case notes (with data or error messages), the list of keywords, 
+ *    or a network error if something fails during the process.
  * 
+ * The file uses basic authentication for API access and employs HTML styles to show error messages in the response.
  * The file uses basic authentication for API access and employs HTML styles to show error messages in the response.
  */
 
@@ -30,11 +32,13 @@ const getCaseNoteListUrl = (ehrId: string): string =>
 const getCaseNoteDetailUrl = (ehrId: string, compositionId: string): string =>
   `${BASE_URL}${ehrId}/RSK.View.CaseNote?compId=${compositionId}`;
 
-const styleError = 'color: red; font-style: italic;'; 
-const styleNotFound = 'text-indent:10px; margin-bottom:10px;'; 
+const getKeywordsUrl = (ehrId: string): string =>
+  `${BASE_URL}${ehrId}/RSK.View.Keywords`;
+
+const styleError = 'color: red; font-style: italic;';
+const styleNotFound = 'text-indent:10px; margin-bottom:10px;';
 
 const ehrId = "2b8d6cc8-0e30-439f-aeaa-0b0edfa09127";
-//const ehrId ="d5da0dca-e915-4e55-bc0c-02e06eb0a92b"
 
 export async function GET() {
   const authHeader = createBasicAuth(config.username, config.password);
@@ -54,15 +58,34 @@ export async function GET() {
 
     const notes = await res.json();
 
+    // Hämta nyckelord separat
+    const keywordsUrl = getKeywordsUrl(ehrId);
+    let keywords: any[] = [];
+    try {
+      const keywordsRes = await fetch(keywordsUrl, {
+        method: 'GET',
+        headers: {
+          Authorization: authHeader,
+        },
+      });
+
+      if (keywordsRes.ok) {
+        keywords = await keywordsRes.json();
+      }
+    } catch (e) {
+      console.error('Error fetching keywords:', e);
+      keywords = [];
+    }
+
     const enrichedNotes = await Promise.all(
       notes.map(async (note: any) => {
         const compositionId = note.CompositionId;
 
         if (!compositionId) {
-          return { 
-            ...note, 
-            CaseData: `<div style="${styleError}">Missing compositionId for EHR ID: ${ehrId}</div>`, 
-            error: 'Missing compositionId' 
+          return {
+            ...note,
+            CaseData: `<div style="${styleError}">Missing compositionId for EHR ID: ${ehrId}</div>`,
+            error: 'Missing compositionId',
           };
         }
 
@@ -80,7 +103,7 @@ export async function GET() {
             const errorText = `Failed to fetch detail for EHR ID: ${ehrId}, Composition ID: ${compositionId} - ${detailRes.status} ${detailRes.statusText}`;
             return {
               ...note,
-              CaseData: `<div style="${styleError}">${errorText}</div>`, 
+              CaseData: `<div style="${styleError}">${errorText}</div>`,
               error: errorText,
             };
           }
@@ -88,7 +111,7 @@ export async function GET() {
           const detailData = await detailRes.json();
           const caseData: string =
             detailData[0]?.CaseData ??
-            `<div style="${styleNotFound}">Case data not found in successful response for EHR ID: ${ehrId}, Composition ID: ${compositionId}</div>`; // <-- updated
+            `<div style="${styleNotFound}">Case data not found in successful response for EHR ID: ${ehrId}, Composition ID: ${compositionId}</div>`;
 
           return { ...note, CaseData: caseData };
         } catch (e) {
@@ -96,14 +119,14 @@ export async function GET() {
           const errorText = `Error fetching detail for EHR ID: ${ehrId}, Composition ID: ${compositionId} - ${errorMessage}`;
           return {
             ...note,
-            CaseData: `<div style="${styleError}">${errorText}</div>`, 
+            CaseData: `<div style="${styleError}">${errorText}</div>`,
             error: errorText,
           };
         }
       })
     );
 
-    return json({ ehrId, notes: enrichedNotes });
+    return json({ ehrId, notes: enrichedNotes, keywords });
   } catch (e) {
     const errorMessage = e instanceof Error ? e.message : String(e);
     return json({ ehrId, error: `Network error: ${errorMessage}` }, { status: 500 });
