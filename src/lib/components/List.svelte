@@ -2,9 +2,10 @@
   import type { Note } from '$lib/models';
   import { onDestroy } from 'svelte';
   import { allNotes, selectedNotes, filteredNotes, filter } from '$lib/stores';
+  import NotePreview from './NotePreview.svelte';
 
   // Get notes from global store and sort them by date 
-  let localItems = $derived([...$filteredNotes]
+  let localItems : Note[] = $derived([...$filteredNotes]
       .map((item, index) => ({
         ...item,
         uniqueId: item.CompositionId || `${index}-${Date.now()}` 
@@ -164,7 +165,7 @@
 <div data-testid="list-view-container" class="list-container" bind:this={listContainerElement} style="width: {listWidth}px;">
   <ul data-testid="list-view" class="list-view" role="listbox" aria-multiselectable="true" aria-label="Clinical notes list">
     <!-- Iterate through sorted notes using CompositionId as unique key -->
-    {#each localItems as item (item.CompositionId)}
+    {#each localItems as item}
       <!-- List item-->
       <li data-testid="list-item-{item.CompositionId}" role="option" aria-selected={$selectedNotes.some(note => note.CompositionId === item.CompositionId)} class="document-list-item">
         <button
@@ -172,12 +173,10 @@
           type="button"
           class="document-button"
           class:selected={$selectedNotes.some(note => note.CompositionId === item.CompositionId)}
-          class:template-match={getFilterMatchType(item) === 'template-match'}
-          class:unit-match={getFilterMatchType(item) === 'unit-match'}
-          class:role-match={getFilterMatchType(item) === 'role-match'}
           onclick={(e) => handleDocumentClick(item, e)}
         >
           <div class="document-item">
+            <NotePreview note={ item }/>
             <h3>{item.Dokumentnamn}</h3>
             <div class="document-meta">
               <span class="type">{item.Dokumentationskod}</span>

@@ -2,7 +2,7 @@
     import { allNotes, filteredNotes, filter } from "$lib/stores"
     import type { filterSelect } from "$lib/models";
     import { derived, get } from "svelte/store"
-    import { onMount } from "svelte";
+    import {getPropertyForFilter} from "$lib/models"
 
     /**
      * TODO Sprint 2-3
@@ -134,6 +134,8 @@
         let selectedFilter = button.name; 
         let selectedFilterOption : filterSelect
 
+        console.log(selectedFilter)
+
         // Check if selected filter is a template filter 
         if(templates.has(selectedFilter)) {
             const newTemplates = new Map(templates); // create temporary placeholder for templates
@@ -244,7 +246,9 @@
                 <ul id="dropdown_1">
                     {#each Array.from(templates) as [key, journal]}
                         <li>
-                            <button class="w-[100%] {journal.selected == true ? 'bg-blue-200 hover:bg-blue-300' : 'bg-white hover:bg-purple-100'}" name={journal.name} onclick={updateDocument}>{journal.name}</button>
+                            <button class="w-[100%] flex row justify-between {journal.selected == true ? 'bg-blue-200 hover:bg-blue-300' : 'bg-white hover:bg-purple-100'}" name={journal.name} onclick={updateDocument}>{journal.name}
+                                <div class={`w-0 h-0 border-l-6 border-r-6 border-b-12 border-transparent border-b-current ${getPropertyForFilter("Journalmall", journal.name)}`}></div>
+                            </button>
                         </li>
                     {/each}
                 </ul>
@@ -265,7 +269,9 @@
                 <ul id="dropdown_2">
                     {#each Array.from(units) as [key, unit]}
                         <li>
-                            <button class="w-[100%] {unit.selected == true ? 'bg-blue-200 hover:bg-blue-300' : 'bg-white hover:bg-purple-100'}" name={unit.name} onclick={updateDocument}>{unit.name}</button>
+                            <button class="w-[100%] flex row justify-between {unit.selected == true ? 'bg-blue-200 hover:bg-blue-300' : 'bg-white hover:bg-purple-100'}" name={unit.name} onclick={updateDocument}>{unit.name}
+                                <div class={`w-3 h-3 rounded-full ${getPropertyForFilter("Vårdenhet", unit.name)}`}></div>
+                            </button>
                         </li>
                     {/each}
                 </ul>
@@ -286,7 +292,9 @@
                 <ul id="dropdown_3">
                     {#each Array.from(roles) as [key, role]}
                         <li>
-                            <button class="w-[100%] {role.selected == true ? 'bg-blue-200 hover:bg-blue-300' : 'bg-white hover:bg-purple-100'}" name={role.name} onclick={updateDocument}>{role.name}</button>
+                            <button class="w-[100%] flex row justify-between {role.selected == true ? 'bg-blue-200 hover:bg-blue-300' : 'bg-white hover:bg-purple-100'}" name={role.name} onclick={updateDocument}>{role.name}
+                                <div class={`w-3 h-3 ${getPropertyForFilter("Yrkesroll", role.name)}`}></div>
+                            </button>
                         </li>
                     {/each}
                 </ul>
