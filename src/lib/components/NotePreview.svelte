@@ -82,16 +82,16 @@
 </script>
 
 
-<div class="flex items-center space-x-1 ml-2">
+<div class="flex items-center space-x-1">
 {#each matchingIndicators as indicator}
     {#if indicator.shape === "Circle"}
-    <div class={`w-2 h-2 rounded-full ${indicator.color}`}></div>
+    <div class={`w-3 h-3 rounded-full ${indicator.color}`}></div>
     {:else if indicator.shape === "Triangle"}
     <div
-        class={`w-0 h-0 border-l-4 border-r-4 border-b-8 border-transparent border-b-current ${indicator.color}`}
+        class={`w-0 h-0 border-l-6 border-r-6 border-b-12 border-transparent border-b-current ${indicator.color}`}
     ></div>
     {:else if indicator.shape === "Square"}
-    <div class={`w-2 h-2 ${indicator.color}`}></div>
+    <div class={`w-3 h-3 ${indicator.color}`}></div>
     {/if}
 {/each}
 </div>
