@@ -1,1 +1,1 @@
-export {buildDateHierarchy, buildVisibleNotes, countVisibleNotesWithinGroup} from './timelineHelpers';
+export {buildDateHierarchy} from './timelineHelpers';

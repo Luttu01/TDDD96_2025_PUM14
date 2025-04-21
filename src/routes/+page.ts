@@ -1,4 +1,4 @@
-import { allNotes } from '$lib/stores';
+import { allNotes, filteredNotes } from '$lib/stores';
 
 export async function load({ fetch }) {
     try {
@@ -31,6 +31,7 @@ export async function load({ fetch }) {
 
     if (allData) {
       allNotes.set(allData.notes);
+      filteredNotes.set(allData.notes);
     } else {
       allNotes.set([]);
     }
