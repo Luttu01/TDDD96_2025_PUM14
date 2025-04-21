@@ -1,10 +1,10 @@
 <script lang="ts">
   import type { Note } from '$lib/models';
   import { onDestroy } from 'svelte';
-  import { allNotes, selectedNotes } from '$lib/stores';
+  import { allNotes, selectedNotes, filteredNotes, filter } from '$lib/stores';
 
   // Get notes from global store and sort them by date 
-  let localItems = $derived([...$allNotes]
+  let localItems = $derived([...$filteredNotes]
       .map((item, index) => ({
         ...item,
         uniqueId: item.CompositionId || `${index}-${Date.now()}` 
@@ -24,6 +24,69 @@
   let isDragging = $state(false);
   let initialX = $state(0);
   let initialWidth = $state(0);
+
+  // Check if note matches any filter criteria
+  function matchesFilter(note: Note) {
+    // Check if there are any filters selected
+    const templateFilters = $filter.get("Journalmall");
+    const unitFilters = $filter.get("Vårdenhet");
+    const roleFilters = $filter.get("Yrkesroll");
+    
+    // If no filters are active, don't highlight anything
+    const hasTemplateFilters = templateFilters && templateFilters.size > 0;
+    const hasUnitFilters = unitFilters && unitFilters.size > 0;
+    const hasRoleFilters = roleFilters && roleFilters.size > 0;
+    
+    if (!hasTemplateFilters && !hasUnitFilters && !hasRoleFilters) {
+      return false;
+    }
+    
+    // Check if note matches template filter
+    const matchesTemplate = hasTemplateFilters ? 
+      templateFilters!.has(note.Dokumentnamn) : false;
+    
+    // Check if note matches unit filter
+    const matchesUnit = hasUnitFilters ? 
+      unitFilters!.has(note.Vårdenhet_Namn) : false;
+    
+    // Check if note matches role filter
+    const matchesRole = hasRoleFilters ? 
+      roleFilters!.has(note.Dokument_skapad_av_yrkestitel_Namn) : false;
+    
+    return (hasTemplateFilters && matchesTemplate) || 
+           (hasUnitFilters && matchesUnit) ||
+           (hasRoleFilters && matchesRole);
+  }
+
+  // Determine specific filter match type for color highlighting
+  function getFilterMatchType(note: Note) {
+    // Check if there are any filters selected
+    const templateFilters = $filter.get("Journalmall");
+    const unitFilters = $filter.get("Vårdenhet");
+    const roleFilters = $filter.get("Yrkesroll");
+    
+    // Check for active filters
+    const hasTemplateFilters = templateFilters && templateFilters.size > 0;
+    const hasUnitFilters = unitFilters && unitFilters.size > 0;
+    const hasRoleFilters = roleFilters && roleFilters.size > 0;
+    
+    // Match specific filter types
+    const matchesTemplate = hasTemplateFilters ? 
+      templateFilters!.has(note.Dokumentnamn) : false;
+    
+    const matchesUnit = hasUnitFilters ? 
+      unitFilters!.has(note.Vårdenhet_Namn) : false;
+    
+    const matchesRole = hasRoleFilters ? 
+      roleFilters!.has(note.Dokument_skapad_av_yrkestitel_Namn) : false;
+    
+    // Priority: template > unit > role (if matches multiple filters)
+    if (matchesTemplate) return 'template-match';
+    if (matchesUnit) return 'unit-match';
+    if (matchesRole) return 'role-match';
+    
+    return '';
+  }
 
   function formatDate(dateTimeString: string): string {
     return new Date(dateTimeString).toLocaleDateString('sv-SE');
@@ -109,6 +172,9 @@
           type="button"
           class="document-button"
           class:selected={$selectedNotes.some(note => note.CompositionId === item.CompositionId)}
+          class:template-match={getFilterMatchType(item) === 'template-match'}
+          class:unit-match={getFilterMatchType(item) === 'unit-match'}
+          class:role-match={getFilterMatchType(item) === 'role-match'}
           onclick={(e) => handleDocumentClick(item, e)}
         >
           <div class="document-item">
@@ -191,6 +257,39 @@
 
   .document-button.selected:hover {
     background-color: #bbdefb;
+  }
+  
+  /* Template filter match styling (yellow) */
+  .document-button.template-match {
+    background-color: #ffecb3;
+    border-left: 4px solid #ffc107;
+    padding-left: calc(1rem - 4px);
+  }
+
+  .document-button.template-match:hover {
+    background-color: #ffe082;
+  }
+
+  /* Unit filter match styling (green) */
+  .document-button.unit-match {
+    background-color: #c8e6c9;
+    border-left: 4px solid #4caf50;
+    padding-left: calc(1rem - 4px);
+  }
+
+  .document-button.unit-match:hover {
+    background-color: #a5d6a7;
+  }
+
+  /* Role filter match styling (purple) */
+  .document-button.role-match {
+    background-color: #e1bee7;
+    border-left: 4px solid #9c27b0;
+    padding-left: calc(1rem - 4px);
+  }
+
+  .document-button.role-match:hover {
+    background-color: #ce93d8;
   }
 
   /* Document title styling with text overflow handling */

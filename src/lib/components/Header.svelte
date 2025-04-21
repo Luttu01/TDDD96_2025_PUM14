@@ -2,6 +2,7 @@
     import { allNotes, filteredNotes, filter } from "$lib/stores"
     import type { filterSelect } from "$lib/models";
     import { derived, get } from "svelte/store"
+    import { onMount } from "svelte";
 
     /**
      * TODO Sprint 2-3
@@ -98,12 +99,16 @@
     let filteredUnits : Set<string> = new Set;
     let filteredRoles : Set<string> = new Set;
 
+    allNotes.subscribe(notes => {
+        filteredNotes.set(notes);
+    })();
+
     function updateFilter() {
         allNotes.subscribe(notes => {
             const filtered = notes.filter(
                 (note) => {
-                    return (minDate <= note.DateTime || minDate == "") && 
-                    (minDate >= note.DateTime || maxDate == "");
+                    return (minDate <= note.DateTime.substring(0, 10) || minDate === "") && 
+                    (maxDate >= note.DateTime.substring(0, 10) || maxDate === "");
                     /*(templates.get(note.Dokumentnamn)!.selected || filteredTemplates.size == 0) &&
                     (units.get(note.Vårdenhet_Namn)!.selected || filteredUnits.size == 0) &&
                     (roles.get(note.Dokument_skapad_av_yrkestitel_Namn)!.selected || filteredRoles.size == 0) &&*/
@@ -116,6 +121,8 @@
         activeFilters.set(unit, filteredUnits);
         activeFilters.set(role, filteredRoles);
         filter.set(activeFilters);
+        
+        console.log(filteredNotes);
         return;
     }
 
@@ -197,9 +204,11 @@
             });
             filteredRoles.clear();
             filteredRoles = new Set(filteredRoles);
+        } 
+        if(arg == "") {
+            minDate = absMin;
+            maxDate = absMax;
         }
-        minDate = absMin;
-        maxDate = absMax;
         
         templates = newTemplates;
         units = newUnits;
@@ -209,7 +218,7 @@
 </script>
 
 <div id="Header" class="flex flex-row justify-between outline-solid outline-gray-300 p-2 space-x-4">
-    <h1 id="ProjectTitle" class="hidden xl:flex text-2xl"><a href="/" onclick={(event) => reset(event, "")}>Better<span class="text-purple-700">Care</span></a></h1>
+    <h1 id="ProjectTitle" class="hidden xl:flex text-2xl"><a href="/" onclick={(event) => reset(event, "")}>Demo<span class="text-purple-700"> 2</span></a></h1>
     <div id="Filtermenu" class="grid grid-flow-col grid-rows-2 lg:flex lg:flex-row lg:flex-grow text-md items-center justify-end gap-2">
             <div id="Search" class="max-w-[44em] rounded-md bg-white flex flex-grow">
                 <input class="pl-3 w-[100%] bg-white outline-1 outline-gray-300 rounded-md" type="text" placeholder="Sök:">
