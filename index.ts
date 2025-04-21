@@ -1,1 +1,1 @@
-export {allNotes, filteredNotes, selectedNotes, filter, allKeywords} from './storedNotes';
+export {allNotes, filteredNotes, selectedNotes, filter, allKeywords,  CaseNoteFilter} from './storedNotes';

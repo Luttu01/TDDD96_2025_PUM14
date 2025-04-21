@@ -1,19 +1,3 @@
-/**
- * This file defines an API endpoint for fetching case notes, their details, and associated keywords 
- * for a given EHR (Electronic Health Record) ID. It performs the following steps:
- * 
- * 1. Retrieves a list of case notes associated with the provided `ehrId` by making a GET request to an API.
- * 2. For each case note, it attempts to fetch detailed information using the composition ID from the case note.
- * 3. Fetches a list of keywords associated with the provided `ehrId` by making a separate GET request to an API.
- * 4. If any error occurs at any point (e.g., missing composition ID, failed fetch request, or missing case data), 
- *    appropriate error messages are added to the response with specific styles for visual distinction.
- * 5. The response contains the enriched case notes (with data or error messages), the list of keywords, 
- *    or a network error if something fails during the process.
- * 
- * The file uses basic authentication for API access and employs HTML styles to show error messages in the response.
- * The file uses basic authentication for API access and employs HTML styles to show error messages in the response.
- */
-
 import { json } from '@sveltejs/kit';
 
 const config = {
@@ -34,6 +18,9 @@ const getCaseNoteDetailUrl = (ehrId: string, compositionId: string): string =>
 
 const getKeywordsUrl = (ehrId: string): string =>
   `${BASE_URL}${ehrId}/RSK.View.Keywords`;
+
+const getCaseNoteFilterUrl = (ehrId: string): string =>
+  `${BASE_URL}${ehrId}/RSK.View.CaseNoteFilter`;
 
 const styleError = 'color: red; font-style: italic;';
 const styleNotFound = 'text-indent:10px; margin-bottom:10px;';
@@ -75,6 +62,25 @@ export async function GET() {
     } catch (e) {
       console.error('Error fetching keywords:', e);
       keywords = [];
+    }
+
+    // Hämta CaseNoteFilter
+    const caseNoteFilterUrl = getCaseNoteFilterUrl(ehrId);
+    let caseNoteFilter: any[] = [];
+    try {
+      const filterRes = await fetch(caseNoteFilterUrl, {
+        method: 'GET',
+        headers: {
+          Authorization: authHeader,
+        },
+      });
+
+      if (filterRes.ok) {
+        caseNoteFilter = await filterRes.json();
+      }
+    } catch (e) {
+      console.error('Error fetching CaseNoteFilter:', e);
+      caseNoteFilter = [];
     }
 
     const enrichedNotes = await Promise.all(
@@ -126,7 +132,7 @@ export async function GET() {
       })
     );
 
-    return json({ ehrId, notes: enrichedNotes, keywords });
+    return json({ ehrId, notes: enrichedNotes, keywords, caseNoteFilter });
   } catch (e) {
     const errorMessage = e instanceof Error ? e.message : String(e);
     return json({ ehrId, error: `Network error: ${errorMessage}` }, { status: 500 });

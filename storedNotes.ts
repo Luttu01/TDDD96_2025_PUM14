@@ -6,5 +6,5 @@ export const allNotes = writable<Note[]>([]);
 export const selectedNotes = writable<Note[]>([]);
 export const filter = writable([]);
 
-// All keywords from all notes added - connected to specific EhrId
 export const allKeywords = writable<any[]>([]);
+export const CaseNoteFilter = writable<any[]>([]);

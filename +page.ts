@@ -1,23 +1,8 @@
-/**
- * This file is responsible for loading data from the backend API and updating the Svelte stores (`allNotes` and `allKeywords`) 
- * with the retrieved case notes and associated keywords.
- * 
- * The `load` function is called to fetch data from the `/api` endpoint. The response is then checked:
- * - If the request is successful (`res.ok`), the `notes` data is extracted from the response and stored in the Svelte store (`allNotes`).
- *   Additionally, the `keywords` data is extracted and stored in the Svelte store (`allKeywords`).
- * - If the request fails or returns an error status, a descriptive error message is thrown based on the status code.
- * - If the response data doesn't contain valid notes or keywords, or if there's an error in processing, the respective stores 
- *   are cleared (set to empty arrays).
- * 
- * The error handling provides detailed messages for common HTTP errors (e.g., 400, 401, 403, 408), and the front-end 
- * can display these error messages accordingly.
- */
-
-import { allNotes, allKeywords } from '$lib/stores';
+import { allNotes, allKeywords, CaseNoteFilter } from '$lib/stores';
 
 export async function load({ fetch }) {
   try {
-    const res = await fetch('/api');
+    const res = await fetch('/api'); 
 
     if (!res.ok) {
       const errorMessages: Record<number, string> = {
@@ -45,8 +30,13 @@ export async function load({ fetch }) {
       allKeywords.set([]);
     }
 
-    return {};
+    if (Array.isArray(allData?.caseNoteFilter)) {
+      CaseNoteFilter.set(allData.caseNoteFilter);
+    } else {
+      CaseNoteFilter.set([]);
+    }
 
+    return {};
   } catch (e: unknown) {
     const errorMessage = e instanceof Error ? e.message : String(e);
 
@@ -54,6 +44,7 @@ export async function load({ fetch }) {
 
     allNotes.set([]);
     allKeywords.set([]);
+    CaseNoteFilter.set([]);
 
     return { error: errorMessage };
   }
