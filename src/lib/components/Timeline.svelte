@@ -42,7 +42,7 @@
   }
 </script>
 
-<div class="relative h-full bg-gray-100 overflow-x-auto overflow-y-hidden">
+<div class="relative flex h-full bg-gray-100 overflow-x-auto overflow-y-hidden">
   <div class="flex flex-row w-max h-full space-x-[2px]">
     {#each $noteHierarchy as yearGroup (yearGroup.year)}
       <div class="relative h-full flex flex-col">
@@ -56,19 +56,19 @@
           </div>
         </button>
         <div
-          class="flex flex-grow flex-row overflow-y-hidden space-x-[2px]"
+          class="flex flex-grow flex-row space-x-[2px]"
         >
           {#each yearGroup.months as monthGroup}
             <div class="flex flex-col">
               <button
                 class="{yearGroup.isCollapsed
-                  ? 'hidden'
-                  : 'flex'} bg-purple-300 py-1 px-1 justify-between w-full shadow-xs"
+                  ? 'h-0 py-0'
+                  : 'h-6 py-1'} flex bg-purple-300 px-1 justify-between w-full shadow-xs transition-all duration-300"
                 on:click={() => toggleGroup(monthGroup)}
                 aria-label="Toggle month {monthGroup.month}"
               >
                 <div
-                  class="text-sm sticky left-1 px-1 w-10 font-semibold text-gray-900 text-left"
+                  class="{yearGroup.isCollapsed ? 'text-transparent' : 'text-gray-900'} text-sm sticky left-1 px-1 w-10 font-semibold text-left"
                 >
                     {new Date(0, monthGroup.month).toLocaleString("sv-SE", {
                     month: "short",
@@ -81,16 +81,19 @@
               {#each monthGroup.notes as note}
               {#key note.Dokument_ID}
                 <button
-                  class={`transition-all duration-300 ease-in-out border border-gray-200 rounded-md shadow-xs bg-white ${
+                  class={`transition-all mt-2 duration-300 border border-gray-200 rounded-md shadow-xs bg-white relative ${
                     getNoteSizeState(yearGroup, monthGroup) === 'compact'
                       ? 'flex flex-col py-2 px-1 w-13 h-full space-y-1'
                       : getNoteSizeState(yearGroup, monthGroup) === 'medium'
                       ? 'flex flex-col py-1 px-2 w-45 text-sm text-left'
-                      : 'flex justify-between p-2 w-120 h-full overflow-y-auto'
+                      : 'flex justify-between p-2 w-100'
                   }`}
                   on:click={() => handleNoteClick(note)}
                   aria-label="Select note {note.Dokument_ID}"
                 >
+                <div class="absolute -top-2 left-1/2 -translate-x-1/2 w-0 h-0 
+              border-l-10 border-r-10 border-b-10 border-transparent border-b-white">
+  </div>
                   {#if getNoteSizeState(yearGroup, monthGroup) === 'compact'}
                     <span class="text-[10px] text-gray-700">
                       {new Date(note.DateTime).toLocaleDateString("sv-SE", {
@@ -98,11 +101,11 @@
                         day: "2-digit",
                       })}
                     </span>
-                    <span class="text-[10px] font-bold border border-gray-200 rounded-md h-18">
+                    <span class="text-[10px] font-bold border-t-2 border-gray-200 h-18">
                       Filter
                       <NotePreview {note} />
                     </span>
-                    <span class="text-[10px] font-bold border border-gray-200 rounded-md flex-grow">
+                    <span class="text-[10px] font-bold border-t-2 border-gray-200 flex-grow">
                       Sökord
                     </span>
             
@@ -119,9 +122,11 @@
                     </div>
             
                   {:else}
-                    <div class="text-gray-900 min-w-80 max-w-120 text-left text-xs">
+                    <div class="text-gray-900 text-left text-xs">
                       <NotePreview {note} />
+                      <div class="overflow-y-auto max-h-60">
                       {@html note.CaseData}
+                    </div>
                     </div>
                   {/if}
                 </button>
