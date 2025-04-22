@@ -257,39 +257,6 @@
   .document-button.selected:hover {
     background-color: #bbdefb;
   }
-  
-  /* Template filter match styling (yellow) */
-  .document-button.template-match {
-    background-color: #ffecb3;
-    border-left: 4px solid #ffc107;
-    padding-left: calc(1rem - 4px);
-  }
-
-  .document-button.template-match:hover {
-    background-color: #ffe082;
-  }
-
-  /* Unit filter match styling (green) */
-  .document-button.unit-match {
-    background-color: #c8e6c9;
-    border-left: 4px solid #4caf50;
-    padding-left: calc(1rem - 4px);
-  }
-
-  .document-button.unit-match:hover {
-    background-color: #a5d6a7;
-  }
-
-  /* Role filter match styling (purple) */
-  .document-button.role-match {
-    background-color: #e1bee7;
-    border-left: 4px solid #9c27b0;
-    padding-left: calc(1rem - 4px);
-  }
-
-  .document-button.role-match:hover {
-    background-color: #ce93d8;
-  }
 
   /* Document title styling with text overflow handling */
   .document-item h3 {
@@ -309,8 +276,7 @@
   }
 
   /* Metadata sections with overflow handling */
-  .document-meta,
-  .document-details {
+  .document-meta {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -328,15 +294,6 @@
   .unit {
     font-style: italic;
     color: #555;
-  }
-
-  /* Document type badge styling */
-  .type {
-    background-color: #f0f0f0;
-    padding: 0.15rem 0.2rem;
-    border-radius: 3px;
-    font-weight: 500;
-    font-size: 0.8rem;
   }
 
   /* Date and professional styling */
