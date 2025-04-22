@@ -2,7 +2,7 @@ import { allNotes, allKeywords, CaseNoteFilter } from '$lib/stores';
 
 export async function load({ fetch }) {
   try {
-    const res = await fetch('/api'); 
+    const res = await fetch('/api');
 
     if (!res.ok) {
       const errorMessages: Record<number, string> = {
@@ -16,25 +16,11 @@ export async function load({ fetch }) {
       throw new Error(errorMessage);
     }
 
-    const allData = await res.json();
+    const { notes = [], keywords = [], caseNoteFilter = [] } = await res.json();
 
-    if (Array.isArray(allData?.notes)) {
-      allNotes.set(allData.notes);
-    } else {
-      allNotes.set([]);
-    }
-
-    if (Array.isArray(allData?.keywords)) {
-      allKeywords.set(allData.keywords);
-    } else {
-      allKeywords.set([]);
-    }
-
-    if (Array.isArray(allData?.caseNoteFilter)) {
-      CaseNoteFilter.set(allData.caseNoteFilter);
-    } else {
-      CaseNoteFilter.set([]);
-    }
+    allNotes.set(notes);
+    allKeywords.set(keywords);
+    CaseNoteFilter.set(caseNoteFilter);
 
     return {};
   } catch (e: unknown) {

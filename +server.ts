@@ -29,108 +29,77 @@ const ehrId = "2b8d6cc8-0e30-439f-aeaa-0b0edfa09127";
 
 export async function GET() {
   const authHeader = createBasicAuth(config.username, config.password);
+
   const caseNoteListUrl = getCaseNoteListUrl(ehrId);
+  const keywordsUrl = getKeywordsUrl(ehrId);
+  const caseNoteFilterUrl = getCaseNoteFilterUrl(ehrId);
 
   try {
-    const res = await fetch(caseNoteListUrl, {
-      method: 'GET',
-      headers: {
-        Authorization: authHeader,
-      },
-    });
+    const [notesRes, keywordsRes, filterRes] = await Promise.all([
+      fetch(caseNoteListUrl, { method: 'GET', headers: { Authorization: authHeader } }),
+      fetch(keywordsUrl, { method: 'GET', headers: { Authorization: authHeader } }),
+      fetch(caseNoteFilterUrl, { method: 'GET', headers: { Authorization: authHeader } }),
+    ]);
 
-    if (!res.ok) {
-      return json({ ehrId, error: `Failed to fetch case note list: ${res.status}` }, { status: res.status });
+    if (!notesRes.ok) {
+      return json({ ehrId, error: `Failed to fetch case note list: ${notesRes.status}` }, { status: notesRes.status });
     }
 
-    const notes = await res.json();
+    const notes = await notesRes.json();
+    const keywords = keywordsRes.ok ? await keywordsRes.json() : [];
+    const caseNoteFilter = filterRes.ok ? await filterRes.json() : [];
 
-    // Hämta nyckelord separat
-    const keywordsUrl = getKeywordsUrl(ehrId);
-    let keywords: any[] = [];
-    try {
-      const keywordsRes = await fetch(keywordsUrl, {
-        method: 'GET',
-        headers: {
-          Authorization: authHeader,
-        },
-      });
+    const enrichedNotes: any[] = [];
 
-      if (keywordsRes.ok) {
-        keywords = await keywordsRes.json();
+    for (const note of notes) {
+      const compositionId = note.CompositionId;
+
+      if (!compositionId) {
+        enrichedNotes.push({
+          ...note,
+          CaseData: `<div style="${styleError}">Missing compositionId for EHR ID: ${ehrId}</div>`,
+          error: 'Missing compositionId',
+        });
+        continue;
       }
-    } catch (e) {
-      console.error('Error fetching keywords:', e);
-      keywords = [];
-    }
 
-    // Hämta CaseNoteFilter
-    const caseNoteFilterUrl = getCaseNoteFilterUrl(ehrId);
-    let caseNoteFilter: any[] = [];
-    try {
-      const filterRes = await fetch(caseNoteFilterUrl, {
-        method: 'GET',
-        headers: {
-          Authorization: authHeader,
-        },
-      });
+      const detailUrl = getCaseNoteDetailUrl(ehrId, compositionId);
 
-      if (filterRes.ok) {
-        caseNoteFilter = await filterRes.json();
-      }
-    } catch (e) {
-      console.error('Error fetching CaseNoteFilter:', e);
-      caseNoteFilter = [];
-    }
+      try {
+        const detailRes = await fetch(detailUrl, {
+          method: 'GET',
+          headers: { Authorization: authHeader },
+        });
 
-    const enrichedNotes = await Promise.all(
-      notes.map(async (note: any) => {
-        const compositionId = note.CompositionId;
-
-        if (!compositionId) {
-          return {
-            ...note,
-            CaseData: `<div style="${styleError}">Missing compositionId for EHR ID: ${ehrId}</div>`,
-            error: 'Missing compositionId',
-          };
-        }
-
-        const detailUrl = getCaseNoteDetailUrl(ehrId, compositionId);
-
-        try {
-          const detailRes = await fetch(detailUrl, {
-            method: 'GET',
-            headers: {
-              Authorization: authHeader,
-            },
-          });
-
-          if (!detailRes.ok) {
-            const errorText = `Failed to fetch detail for EHR ID: ${ehrId}, Composition ID: ${compositionId} - ${detailRes.status} ${detailRes.statusText}`;
-            return {
-              ...note,
-              CaseData: `<div style="${styleError}">${errorText}</div>`,
-              error: errorText,
-            };
+        if (!detailRes.ok) {
+          if (detailRes.status === 500) {
+            // Skip this note entirely on server error
+            continue;
           }
 
-          const detailData = await detailRes.json();
-          const caseData: string =
-            detailData[0]?.CaseData ??
-            `<div style="${styleNotFound}">Case data not found in successful response for EHR ID: ${ehrId}, Composition ID: ${compositionId}</div>`;
-
-          return { ...note, CaseData: caseData };
-        } catch (e) {
-          const errorMessage = e instanceof Error ? e.message : String(e);
-          const errorText = `Error fetching detail for EHR ID: ${ehrId}, Composition ID: ${compositionId} - ${errorMessage}`;
-          return {
+          const errorText = `Failed to fetch detail for Composition ID: ${compositionId} - ${detailRes.status} ${detailRes.statusText}`;
+          enrichedNotes.push({
             ...note,
             CaseData: `<div style="${styleError}">${errorText}</div>`,
             error: errorText,
-          };
+          });
+          continue;
         }
-      })
-    );
+
+        const detailData = await detailRes.json();
+        const caseData = detailData[0]?.CaseData ?? `<div style="${styleNotFound}">Case data not found</div>`;
+        enrichedNotes.push({ ...note, CaseData: caseData });
+
+      } catch (e) {
+        const errorMessage = e instanceof Error ? e.message : String(e);
+        const errorText = `Error fetching detail for Composition ID: ${compositionId} - ${errorMessage}`;
+        enrichedNotes.push({
+          ...note,
+          CaseData: `<div style="${styleError}">${errorText}</div>`,
+          error: errorText,
+        });
+      }
+    }
 
     return json({ ehrId, notes: enrichedNotes, keywords, caseNoteFilter });
   } catch (e) {
