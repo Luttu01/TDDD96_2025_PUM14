@@ -1,4 +1,4 @@
-import { allNotes } from '$lib/stores';
+import { allNotes, allKeywords } from '$lib/stores';
 
 export async function load({ fetch }) {
     try {
@@ -35,12 +35,20 @@ export async function load({ fetch }) {
       allNotes.set([]);
     }
 
+    if (Array.isArray(allData?.keywords)) {
+      allKeywords.set(allData.keywords);
+    } else {
+      allKeywords.set([]);
+    }
+
+
     return {};
 
   } catch (e: unknown) {
     const errorMessage = e instanceof Error ? e.message : String(e);
     console.error('Error loading data:', errorMessage);
     allNotes.set([]);
+    allKeywords.set([])
 
     return {};
   }

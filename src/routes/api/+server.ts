@@ -13,10 +13,11 @@ const ehrId = '2b8d6cc8-0e30-439f-aeaa-0b0edfa09127';
 
 export async function GET() {
   const authHeader = createBasicAuth(config.username, config.password);
+  const baseUrl = `https://open-platform-migration.service.tietoevry.com/ehr/rest/v1/view/`
   const caseNoteListUrl = `https://open-platform-migration.service.tietoevry.com/ehr/rest/v1/view/${ehrId}/RSK.View.CaseNoteList`;
 
   try {
-    const res = await fetch(caseNoteListUrl, {
+    const res = await fetch(`${baseUrl}${ehrId}/RSK.View.CaseNoteList`, {
       method: 'GET',
       headers: {
         'Authorization': authHeader,
@@ -28,6 +29,25 @@ export async function GET() {
     }
 
     const notes = await res.json();
+
+    let keywords: any[] = [];
+    try {
+      const keywordsRes = await fetch(`${baseUrl}${ehrId}/RSK.View.Keywords`, {
+        method: 'GET',
+        headers: {
+          Authorization: authHeader,
+        },
+      });
+
+      if (keywordsRes.ok) {
+        keywords = await keywordsRes.json();
+      }
+    } catch (e) {
+      console.error('Error fetching keywords:', e);
+      keywords = [];
+    }
+    $: console.log("Keywords list: ", keywords)
+
     const enrichedNotes = [];
 
     for (const note of notes) {
@@ -65,7 +85,7 @@ export async function GET() {
       }
     }
 
-    return json({ ehrId, notes: enrichedNotes });
+    return json({ ehrId, notes: enrichedNotes, keywords });
 
   } catch (e) {
     const errorMessage = e instanceof Error ? e.message : String(e);

@@ -1,10 +1,14 @@
 <script lang="ts">
-    import { allNotes } from '$lib/stores';
-    import { extractBoldTitlesFromHTML } from '$lib/utils/keywords';
+    import { allNotes, allKeywords } from '$lib/stores';
+    import { extractBoldTitlesFromHTML, getSortedUniqueKeywordNames } from '$lib/utils/keywords';
     import { searchQuery } from '$lib/stores/searchStore';
     import { get } from 'svelte/store';
   
     let selectedTitle = "Sökord";
+
+    $: console.log('All Keywords list: ', $allKeywords);
+
+    const sortedNames = getSortedUniqueKeywordNames(get(allKeywords));
   
     $: allTitles = get(allNotes).flatMap(note =>
       extractBoldTitlesFromHTML(note.CaseData)
@@ -29,7 +33,7 @@
   
     <div class="w-full flex justify-center">
       <ul id="dropdown_search_titles">
-        {#each sortedTitles as title}
+        {#each sortedNames as title}
           <li>
             <button class="w-[100%]" name={title} on:click={updateTitle}>
               {title}
