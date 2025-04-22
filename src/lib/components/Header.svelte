@@ -2,7 +2,7 @@
     import { allNotes, filteredNotes, filter } from "$lib/stores"
     import type { filterSelect } from "$lib/models";
     import { derived, get } from "svelte/store"
-    import {getPropertyForFilter} from "$lib/models"
+    import { getPropertyForFilter } from "$lib/models"
 
     /**
      * TODO Sprint 2-3
@@ -14,6 +14,7 @@
      * 6. Annan filtrering -> Sätt till "Filter" (DONE)
      * 7. Sätt min och max datum från början (sådant att det inkapslar alla dokument för patienten)
      */
+    
     let selectedFilters : Map<string, Set<filterSelect>> = new Map;
     selectedFilters.set("Vårdenhet", new Set<filterSelect>);
     selectedFilters.set("Journalmall", new Set<filterSelect>);

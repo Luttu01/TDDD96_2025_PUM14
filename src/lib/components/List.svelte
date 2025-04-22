@@ -179,12 +179,9 @@
             <NotePreview note={ item }/>
             <h3>{item.Dokumentnamn}</h3>
             <div class="document-meta">
-              <span class="type">{item.Dokumentationskod}</span>
               <span class="date">{formatDate(item.DateTime)}</span>
-            </div>
-            <div class="document-details">
               <span class="professional">{item.Dokument_skapad_av_yrkestitel_Namn}</span>
-              <span class="unit">Unit: {item.Vårdenhet_Namn}</span>
+              <span class="unit">{item.Vårdenhet_Namn}</span>
             </div>
           </div>
         </button>
@@ -208,6 +205,7 @@
     overflow: hidden; 
     height: 100%; 
     min-width: 150px; 
+    max-width: 500px;
     border: 1px solid #ccc; 
     background-color: white;
     border-radius: 4px;
@@ -226,6 +224,7 @@
   .document-list-item {
     margin: 0;
     border-bottom: 1px solid #e0e0e0;
+    height: 4rem;
   }
 
   .document-list-item:last-child {
@@ -235,7 +234,7 @@
   /* Button styling for each document in the list */
   .document-button {
     width: 100%;
-    padding: 1rem;
+    padding: 0.5rem;
     background: none;
     border: none;
     cursor: pointer;
@@ -293,7 +292,7 @@
 
   /* Document title styling with text overflow handling */
   .document-item h3 {
-    margin: 0 0 0.5rem 0;
+    margin: 0 0 0.1rem 0;
     color: #333;
     font-size: 1rem;
     white-space: nowrap; 
@@ -312,18 +311,9 @@
   /* Document metadata (type and date) */
   .document-meta {
     display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem 1rem;
+    flex-wrap: row;
+    gap: 0.2rem 0.4rem;
     font-size: 0.85rem;
-  }
-
-  /* Document details (professional and unit) */
-  .document-details {
-    display: flex;
-    gap: 1rem;
-    margin-bottom: 0.5rem;
-    font-size: 0.85rem;
-    color: #666;
   }
 
   /* Style for unit name */
@@ -335,7 +325,7 @@
   /* Document type badge styling */
   .type {
     background-color: #f0f0f0;
-    padding: 0.15rem 0.4rem;
+    padding: 0.15rem 0.2rem;
     border-radius: 3px;
     font-weight: 500;
     font-size: 0.8rem;
