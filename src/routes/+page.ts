@@ -1,56 +1,37 @@
-import { allNotes, allKeywords } from '$lib/stores';
+import { allNotes, allKeywords, CaseNoteFilter } from '$lib/stores';
 
 export async function load({ fetch }) {
-    try {
-      const res = await fetch('/api');
-  
-      if (!res.ok) {
-        let errorMessage = '';
-        switch (res.status) {
-          case 200:
-            return { data: await res.json() };
-          case 400:
-            errorMessage = 'Bad Request: The requested view does not exist.';
-            break;
-          case 401:
-            errorMessage = 'Unauthorized: Could not authenticate the user.';
-            break;
-          case 403:
-            errorMessage = 'Forbidden: You do not have the required permissions.';
-            break;
-          case 408:
-            errorMessage = 'Request Timeout: View processing took too long and was canceled.';
-            break;
-          default:
-            errorMessage = `Error: ${res.status} - ${res.statusText}`;
-        }
-        throw new Error(errorMessage);
-      }
-      
-    const allData = await res.json();
+  try {
+    const res = await fetch('/api');
 
-    if (allData) {
-      allNotes.set(allData.notes);
-    } else {
-      allNotes.set([]);
+    if (!res.ok) {
+      const errorMessages: Record<number, string> = {
+        400: 'Bad Request: The requested view does not exist.',
+        401: 'Unauthorized: Could not authenticate the user.',
+        403: 'Forbidden: You do not have the required permissions.',
+        408: 'Request Timeout: View processing took too long and was canceled.',
+      };
+
+      const errorMessage = errorMessages[res.status] || `Error: ${res.status} - ${res.statusText}`;
+      throw new Error(errorMessage);
     }
 
-    if (Array.isArray(allData?.keywords)) {
-      allKeywords.set(allData.keywords);
-    } else {
-      allKeywords.set([]);
-    }
+    const { notes = [], keywords = [], caseNoteFilter = [] } = await res.json();
 
+    allNotes.set(notes);
+    allKeywords.set(keywords);
+    CaseNoteFilter.set(caseNoteFilter);
 
     return {};
-
   } catch (e: unknown) {
     const errorMessage = e instanceof Error ? e.message : String(e);
-    console.error('Error loading data:', errorMessage);
-    allNotes.set([]);
-    allKeywords.set([])
 
-    return {};
+    console.error('Error loading data:', errorMessage);
+
+    allNotes.set([]);
+    allKeywords.set([]);
+    CaseNoteFilter.set([]);
+
+    return { error: errorMessage };
   }
 }
-  

@@ -1,3 +1,2 @@
-export {allNotes, filteredNotes, selectedNotes, filter} from './storedNotes';
-export {allKeywords} from './searchStore'
-export {dummyNotes} from './dummyNotes';
+export { allNotes, filteredNotes, selectedNotes, filter, CaseNoteFilter } from './storedNotes';
+export { allKeywords, selectedKeywords } from './searchStore'

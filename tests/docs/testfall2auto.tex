@@ -1,0 +1,366 @@
+\section{Automatiserade testfall}
+
+Detta dokument beskriver automatiserade testfall för journalsystemet. Testerna är implementerade med pytest-playwright, som möjliggör testning av webbgränssnittet på ett sätt som efterliknar verkliga användarinteraktioner.
+
+\subsection{Testmiljö}
+
+\subsubsection{Installationskrav}
+För att köra de automatiserade testerna behövs följande:
+
+\begin{itemize}
+    \item Python 3.8 eller senare
+    \item pytest
+    \item playwright för Python
+    \item pytest-playwright-plugin
+\end{itemize}
+
+\begin{lstlisting}[language=bash]
+# Installation av testmiljö
+pip install pytest pytest-playwright
+playwright install
+\end{lstlisting}
+
+\subsubsection{Teststruktur}
+Testerna är organiserade i flera Python-filer, var och en fokuserar på olika aspekter av applikationen:
+
+\begin{itemize}
+    \item \texttt{list\_tests.py} - Tester för listvy och dokumentpresentation
+    \item \texttt{filter\_list\_tests.py} - Tester för filterinteraktion med listvyn
+    \item \texttt{timeline\_tests.py} - Tester specifikt för tidslinjevyn
+\end{itemize}
+
+\subsubsection{Körning av tester}
+Testerna kan köras med följande kommandon:
+
+\begin{lstlisting}[language=bash]
+# Kör alla tester
+pytest tests/
+
+# Kör specifika testfiler
+pytest tests/list_tests.py
+pytest tests/filter_list_tests.py
+pytest tests/timeline_tests.py
+
+# Kör enskilda testfall (exempel)
+pytest tests/list_tests.py::test_1_1_lista_existerar
+\end{lstlisting}
+
+\subsection{Testmönster och best practices}
+
+\subsubsection{ARIA-attribut för testbarhet}
+Testerna använder ARIA-attribut för att identifiera element, vilket förbättrar både tillgänglighet och testbarhet:
+
+\begin{lstlisting}[language=json]
+// För listvyns element
+[role="listbox"]         // För huvudlistan
+[role="option"]          // För enskilda journalanteckningar
+[role="group"]           // För grupperingar i listan
+[aria-selected="true"]   // För markerade element
+[aria-expanded="true"]   // För expanderade grupper
+[aria-labelledby]        // För att koppla element till rubriker
+
+// För tidslinjens element
+[data-testid="timeline-container"]  // Tidslinjens huvudcontainer
+[data-testid="year-button"]         // Årsknappar
+[data-testid="month-button"]        // Månadsknappar
+[data-testid="day-button"]          // Dagknappar
+[data-date]                         // Datumattribut för tidsinformation
+\end{lstlisting}
+
+\subsubsection{Fixtures för testdata}
+Testerna använder fixtures för att skapa konsistent testdata:
+
+\begin{lstlisting}[language=python]
+@pytest.fixture
+def test_items():
+    """Fixture providing test data with specific dates"""
+    base_date = datetime(2024, 1, 1, 12, 0)  # Fixed date for testing
+    return [
+        {
+            "CompositionId": "1",
+            "DateTime": (base_date - timedelta(days=2)).isoformat(),
+            "DisplayDateTime": (base_date - timedelta(days=2)).strftime("%Y-%m-%d %H:%M"),
+            "Dokument_ID": "DOC001",
+            "Dokument_skapad_av_yrkestitel_ID": "L001",
+            "Dokument_skapad_av_yrkestitel_Namn": "Läkare",
+            "Dokumentationskod": "Läkaranteckning",
+            "Dokumentnamn": "Läkaranteckning 1",
+            "Vårdenhet_Identifierare": "KK001",
+            "Vårdenhet_Namn": "Kardiologiska kliniken"
+        },
+        # ... fler testdataposter
+    ]
+\end{lstlisting}
+
+\subsubsection{API-mockning}
+Testerna använder Playwright's routing-funktion för att mocka API-anrop:
+
+\begin{lstlisting}[language=python]
+@pytest.fixture
+def setup_page(page: Page, test_items):
+    """Setup the page for testing with mock data"""
+    # Mock the fetch response before navigation
+    page.route("**/api/journals", lambda route: route.fulfill(
+        status=200,
+        content_type="application/json",
+        body=json.dumps(test_items)
+    ))
+
+    page.goto("http://localhost:5173")
+    page.wait_for_selector(".list-view", state="visible", timeout=5000)
+    return page
+\end{lstlisting}
+
+\subsection{Implementerade testfall}
+
+\subsubsection{Listvy-tester (L1-L5)}
+
+\begin{lstlisting}[language=python]
+# L1: Lista - Översiktlig
+def test_1_1_lista_existerar(setup_page: Page):
+    """Test 1.1: Lista existerar - Navigera till basvyn, journallistan renderas och är synlig"""
+    list_container = setup_page.locator("ul.list-view")
+    expect(list_container).to_be_visible()
+
+# L5: Visa i lista
+def test_l5_kronologisk_ordning(setup_page: Page):
+    """Test L5: Journals appear in chronological order in the list view"""
+    # Expand all units
+    unit_headers = setup_page.locator(".unit-header").all()
+    for header in unit_headers:
+        header.click()
+    
+    # Get all document dates and check that they're in descending order
+    date_elements = setup_page.locator(".date").all()
+    dates = []
+    for date_el in date_elements:
+        date_text = date_el.text_content()
+        dates.append(datetime.strptime(date_text, "%Y-%m-%d"))
+    
+    for i in range(len(dates) - 1):
+        assert dates[i] >= dates[i + 1], "Dates should be in descending order"
+\end{lstlisting}
+
+\subsubsection{Tidslinje-tester (T1-T7)}
+
+\begin{lstlisting}[language=python]
+# T1/T2: Tidslinje - Detaljerad/Översiktlig
+def test_t1_t2_timeline_views(setup_page: Page):
+    """Test T1/T2: Timeline shows detailed and overview journal views"""
+    # Navigate to timeline view
+    timeline_nav = page.locator("text=Tidslinje").first
+    timeline_nav.click()
+    
+    # Verify timeline container exists
+    timeline_container = page.locator("[data-testid='timeline-container']")
+    expect(timeline_container).to_be_visible()
+    
+    # Test zooming functionality
+    timeline_container.press("Control+0")  # Reset zoom
+    
+    # Get initial width of a note element
+    note_elements = page.locator(".bg-white").all()
+    initial_width = note_elements[0].evaluate("node => node.offsetWidth")
+    
+    # Zoom in and verify elements become larger
+    page.keyboard.down("Control")
+    timeline_container.mouse.wheel(0, -100)  # Scroll up to zoom in
+    page.keyboard.up("Control")
+    
+    new_width = note_elements[0].evaluate("node => node.offsetWidth")
+    assert new_width > initial_width, "Elements should be larger when zooming in"
+
+# T4: Slider/Scrolla
+def test_t4_horizontal_scroll(setup_timeline_page: Page):
+    """Test T4: Horizontal scrolling functionality in timeline view"""
+    timeline_container = page.locator("[data-testid='timeline-container']")
+    
+    # Get initial scroll position
+    initial_scroll = timeline_container.evaluate("node => node.scrollLeft")
+    
+    # Perform horizontal scroll
+    timeline_container.hover()
+    page.mouse.wheel(100, 0)  # Scroll horizontally
+    
+    # Verify scrolling occurred
+    new_scroll = timeline_container.evaluate("node => node.scrollLeft")
+    assert new_scroll != initial_scroll, "Timeline should scroll horizontally"
+\end{lstlisting}
+
+\subsubsection{Filter-tester (F1-F11)}
+
+\begin{lstlisting}[language=python]
+# F2: Filtrera
+def test_f2_filtrera_basfunction(setup_page: Page):
+    """Test F2: Filter panel is usable for limiting displayed journals"""
+    # Get initial document count
+    initial_docs = setup_page.locator(".document-button").count()
+    
+    # Apply a document type filter
+    filter_dropdown = setup_page.locator("#template button").first
+    filter_dropdown.click()
+    
+    # Select a specific document type
+    filter_option = setup_page.locator("#dropdown_1 button:has-text('Läkaranteckning')").first
+    filter_option.click()
+    
+    # Check that document count has changed
+    filtered_docs = setup_page.locator(".document-button").count()
+    assert filtered_docs < initial_docs, "Filter should reduce the visible documents"
+
+# F8: Kombinera filter
+def test_f8_kombinera_filter(setup_page: Page):
+    """Test F8: Multiple filters can be combined to narrow results further"""
+    # Apply first filter - journal type
+    journal_type_dropdown = setup_page.locator("#template button").first
+    journal_type_dropdown.click()
+    type_option = setup_page.locator("#dropdown_1 button:has-text('Läkaranteckning')").first
+    type_option.click()
+    
+    # Get count after first filter
+    first_filter_docs = setup_page.locator(".document-button").count()
+    
+    # Apply second filter - professional role
+    role_dropdown = setup_page.locator("#role button").first
+    role_dropdown.click()
+    role_option = setup_page.locator("#dropdown_3 button:has-text('Läkare')").first
+    role_option.click()
+    
+    # Verify filters narrow results together
+    combined_filter_docs = setup_page.locator(".document-button").count()
+    assert combined_filter_docs <= first_filter_docs, "Combined filters should narrow results further"
+\end{lstlisting}
+
+\subsubsection{Vy-tester (S1-S2)}
+
+\begin{lstlisting}[language=python]
+# S1: Basvy
+def test_s1_basvy_exists(setup_page: Page):
+    """Test S1: Base view (list and detail) is loaded as the default view"""
+    # Check that list view is visible
+    list_view = setup_page.locator(".list-view")
+    expect(list_view).to_be_visible()
+    
+    # There should be a detail view component
+    detail_view = setup_page.locator(".detail-view") 
+    if not detail_view.count():
+        main_content = setup_page.locator("main")
+        expect(main_content).to_be_visible()
+
+# S2: Tidslinjevy
+def test_s2_tidslinjevy_access(setup_page: Page):
+    """Test S2: Timeline view is accessible from the interface"""
+    # Find and click the timeline view button/link
+    timeline_nav = setup_page.locator("text=Tidslinje").first
+    timeline_nav.click()
+    
+    # Verify timeline view appears
+    timeline_container = setup_page.locator("[data-testid='timeline-container']")
+    expect(timeline_container).to_be_visible()
+\end{lstlisting}
+
+\subsection{Integrerade tester}
+
+\subsubsection{Lista-Filter (F-L)}
+
+\begin{lstlisting}[language=python]
+# Integration: Filter påverkar listvyn
+def test_f4_filtrera_journaltyp(setup_page: Page):
+    """Test F4: Filter by journal type shows only journals of selected type"""
+    # Apply document type filter
+    journal_type_dropdown = setup_page.locator("#template button").first
+    journal_type_dropdown.click()
+    
+    # Select "Case Report" type
+    case_report_option = setup_page.locator("#dropdown_1 button:has-text('Case Report')").first
+    case_report_option.click()
+    
+    # Check that only "Case Report" documents are visible in list
+    visible_docs = setup_page.locator(".document-button").all()
+    for doc in visible_docs:
+        type_text = doc.locator(".type").text_content()
+        assert "Case Report" in type_text, "Only filtered documents should be visible"
+\end{lstlisting}
+
+\subsubsection{Tidslinje-Filter (TF)}
+
+\begin{lstlisting}[language=python]
+# TF1: Filter i tidslinjevyn
+def test_tf1_filter_in_timeline(setup_page: Page):
+    """Test TF1: Filter panel is available in timeline view"""
+    # Navigate to timeline view
+    timeline_nav = page.locator("text=Tidslinje").first
+    timeline_nav.click()
+    
+    # Verify timeline loads
+    timeline_container = page.locator("[data-testid='timeline-container']")
+    expect(timeline_container).to_be_visible()
+    
+    # Check if filter components are visible in timeline view
+    filter_container = page.locator("#Filtermenu")
+    expect(filter_container).to_be_visible()
+    
+    # Specifically check for search and filter dropdowns
+    search_input = page.locator("#Search input")
+    expect(search_input).to_be_visible()
+\end{lstlisting}
+
+\subsection{Kontinuerlig integration}
+
+För att integrera dessa tester i ett kontinuerligt integrationssystem (CI), kan följande konfiguration för GitHub Actions användas:
+
+\begin{lstlisting}[language=yaml]
+name: Playwright Tests
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+      - name: Install dependencies
+        run: npm ci
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps
+      - name: Build application
+        run: npm run build
+      - name: Start application
+        run: npm run preview &
+      - name: Install Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Install pytest and plugins
+        run: pip install pytest pytest-playwright
+      - name: Run tests
+        run: pytest tests/
+\end{lstlisting}
+
+\subsection{Sammanfattning}
+
+De automatiserade testerna täcker alla viktiga användarscenarier som definieras i kravspecifikationen, inklusive:
+
+\begin{itemize}
+    \item Listvisning och dokumenthantering
+    \item Tidslinjenavigering och zoomfunktionalitet
+    \item Filtreringsmöjligheter för olika dokumentegenskaper
+    \item Integration mellan olika vyer och funktioner
+\end{itemize}
+
+Genom att använda pytest-playwright istället för exempelvis Jest, blir testerna mer robusta eftersom de simulerar verklig användarinteraktion med webbgränssnittet. Detta gör testerna både mer tillförlitliga och enklare att underhålla.
+
+För att lägga till nya testfall, följ mönstret för befintliga tester:
+\begin{enumerate}
+    \item Skapa en testfunktion med beskrivande namn
+    \item Använd fixtures för att förbereda testmiljön
+    \item Interagera med UI-element via selektorer (helst ARIA-attribut)
+    \item Verifiera resultatet med assertions
+\end{enumerate} 
