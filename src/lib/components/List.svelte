@@ -176,11 +176,13 @@
           onclick={(e) => handleDocumentClick(item, e)}
         >
           <div class="document-item">
-            <NotePreview note={ item }/>
-            <h3>{item.Dokumentnamn}</h3>
+            <div id="document-header">
+              <h3>{item.Dokumentnamn}</h3>
+              <NotePreview note={ item }/>
+            </div>
             <div class="document-meta">
-              <span class="date">{formatDate(item.DateTime)}</span>
-              <span class="professional">{item.Dokument_skapad_av_yrkestitel_Namn}</span>
+              <span class="date">{formatDate(item.DateTime)} -</span>
+              <span class="professional">{item.Dokument_skapad_av_yrkestitel_Namn} -</span>
               <span class="unit">{item.Vårdenhet_Namn}</span>
             </div>
           </div>
@@ -224,7 +226,6 @@
   .document-list-item {
     margin: 0;
     border-bottom: 1px solid #e0e0e0;
-    height: 4rem;
   }
 
   .document-list-item:last-child {
@@ -298,6 +299,13 @@
     white-space: nowrap; 
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+
+  #document-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
   }
 
   /* Metadata sections with overflow handling */
