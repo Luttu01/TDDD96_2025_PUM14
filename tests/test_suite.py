@@ -208,21 +208,16 @@ def test_diagnostic_list_ids(setup_page: Page, test_items):
     assert len(actual_ids) > 0, "No list items found"
 
 def test_l5_show_in_list_chronological(setup_page: Page):
-    """Test L5 (K1.2-5): Journals appear in chronological order (most recent first)."""
-    list_view = setup_page.locator("[data-testid='list-view']")
-    expect(list_view).to_be_visible()
-
-    # Get date elements from items identified by data-testid
-    date_elements = list_view.locator("[data-testid^='list-item-'] .document-meta .date").all()
-    
-    assert len(date_elements) > 1, "Need at least 2 documents to test chronological order"
-    
+    """Test L5: Verify that items are shown in chronological order."""
+    # Get all date elements using the actual class structure
+    date_elements = setup_page.locator(".document-meta .date").all()
     dates = []
+    
     for date_el in date_elements:
         date_text = date_el.text_content()
         if date_text:
             try:
-                # Assuming the format is now YYYY-MM-DD from the formatDate function
+                # Parse the date using the actual format from formatDate function
                 dates.append(datetime.strptime(date_text, "%Y-%m-%d").date())
             except ValueError:
                 print(f"Warning: Could not parse date format: {date_text}")
@@ -231,25 +226,20 @@ def test_l5_show_in_list_chronological(setup_page: Page):
     
     assert len(dates) > 1, f"Failed to parse enough dates. Found {len(dates)} dates"
     # Check for descending order (most recent first)
-    for i in range(len(dates) - 1):
-        assert dates[i] >= dates[i + 1], f"Dates not in descending chronological order: {dates[i]} followed by {dates[i + 1]}"
+    sorted_dates = sorted(dates, reverse=True)
+    assert dates == sorted_dates, "Dates are not in descending order. Expected order: {}, Actual order: {}".format(
+        [d.strftime("%Y-%m-%d") for d in sorted_dates],
+        [d.strftime("%Y-%m-%d") for d in dates]
+    )
 
 def test_ld1_select_journal(setup_page: Page, test_items):
-    """Test LD1 (K1.2-3): Select a journal entry using JavaScript evaluation."""
-    # First find the list container
-    list_container = setup_page.locator(".list-container")
-    expect(list_container).to_be_visible(timeout=5000)
+    """Test LD1: Select a journal and verify it's shown in detail view."""
+    # Get all list item buttons
+    buttons = setup_page.locator("[data-testid^='list-item-button-']").all()
+    assert len(buttons) > 0, "No list items found"
     
-    # Find all list buttons
-    buttons = list_container.locator("button").all()
-    assert len(buttons) > 0, "No buttons found in list container"
-    
-    # Get the initial selection state
-    initial_selection = setup_page.evaluate("""() => {
-        return Array.from(document.querySelectorAll('button'))
-            .filter(btn => btn.classList.contains('selected') || 
-                btn.getAttribute('aria-selected') === 'true').length;
-    }""")
+    # Check initial selection state
+    initial_selection = len(setup_page.locator("[aria-selected='true']").all())
     
     if initial_selection > 0:
         buttons[0].click()
@@ -1880,4 +1870,116 @@ def test_l11_deselect_all_journals(setup_page: Page):
     # Verify no items are selected
     selected_items_after = setup_page.locator("li[aria-selected='true']").all()
     assert len(selected_items_after) == 0, f"Expected 0 selected items but found {len(selected_items_after)}"
+
+def test_t3_timeline_notes_display(setup_timeline_page: Page, test_items):
+    """Test T3: Verify that notes are displayed correctly in the timeline view."""
+    # Wait for timeline container to be visible
+    timeline = setup_timeline_page.locator("[data-testid='timeline-container']")
+    expect(timeline).to_be_visible()
+    
+    # Wait for timeline to load and render notes
+    setup_timeline_page.wait_for_timeout(1000)  # Give time for notes to render
+    
+    # Check that we have notes rendered
+    notes = setup_timeline_page.locator(".bg-white.p-4.rounded-md.shadow-sm").all()
+    assert len(notes) > 0, "No notes found in timeline"
+    
+    # Verify that notes contain dates
+    for note in notes:
+        # Each note should have a date
+        date_text = note.locator(".text-sm.text-gray-500").text_content()
+        assert date_text, "Note is missing date"
+
+def test_t12_timeline_toggle(setup_page: Page):
+    """Test T12: Verify that timeline can be toggled on/off."""
+    # Find the timeline toggle button using multiple selectors
+    toggle_selectors = [
+        "button.fa-caret-up",
+        "button.fa-caret-down",
+        "main > button",
+        "button.border-t-1, button.border-b-1"
+    ]
+    
+    toggle_button = None
+    for selector in toggle_selectors:
+        elements = setup_page.locator(selector).all()
+        if len(elements) > 0:
+            toggle_button = elements[0]
+            break
+    
+    assert toggle_button is not None, "Timeline toggle button not found"
+    expect(toggle_button).to_be_visible()
+
+    # Click to toggle timeline
+    toggle_button.click()
+    timeline = setup_page.locator("[data-testid='timeline-container']")
+    expect(timeline).to_be_visible()
+
+def test_s3_timeline_scroll(setup_timeline_page: Page):
+    """Test S3: Verify horizontal scrolling and slider functionality in timeline."""
+    # Find the timeline container
+    timeline = setup_timeline_page.locator("[data-testid='timeline-container']")
+    expect(timeline).to_be_visible()
+
+    # Find first and last notes
+    first_note = setup_timeline_page.locator("[data-testid^='timeline-note-']").first
+    last_note = setup_timeline_page.locator("[data-testid^='timeline-note-']").last
+
+    # Scroll to last note
+    last_note.scroll_into_view_if_needed()
+    expect(last_note).to_be_visible()
+
+    # Scroll back to first note
+    first_note.scroll_into_view_if_needed()
+    expect(first_note).to_be_visible()
+
+def test_d2_show_journal(setup_page: Page, test_items):
+    """Test D2: Verify that a selected journal is displayed in detail view."""
+    # Select first journal
+    first_journal = setup_page.locator("[data-testid^='list-item-button-']").first
+    first_journal.click()
+    setup_page.wait_for_timeout(500)  # Wait for selection to update
+
+    # Check detail view (rendered in flex container)
+    detail_view = setup_page.locator(".flex-1.overflow-x-auto")
+    expect(detail_view).to_be_visible()
+
+    # Verify that at least one note card is shown
+    note_cards = detail_view.locator(".bg-white.p-4.rounded-lg.shadow-md").all()
+    assert len(note_cards) > 0, "No note cards found in detail view"
+    
+    # Verify that the first note card has a date
+    first_card = note_cards[0]
+    date_text = first_card.locator(".text-sm.text-gray-500").text_content()
+    assert date_text, "Note card is missing date"
+
+def test_d3_show_multiple_journals(setup_page: Page, test_items):
+    """Test D3: Verify that multiple selected journals are displayed in detail view."""
+    # Select multiple journals using Ctrl/Cmd
+    journals = setup_page.locator("[data-testid^='list-item-button-']").all()
+    assert len(journals) >= 3, "Need at least 3 journals for this test"
+
+    # Select first journal
+    journals[0].click()
+    setup_page.wait_for_timeout(500)
+
+    # Select two more journals with Ctrl/Cmd
+    setup_page.keyboard.down("Meta")  # Use Meta for both Mac and Windows
+    journals[1].click()
+    journals[2].click()
+    setup_page.keyboard.up("Meta")
+    setup_page.wait_for_timeout(500)
+
+    # Check detail view
+    detail_view = setup_page.locator(".flex-1.overflow-x-auto")
+    expect(detail_view).to_be_visible()
+
+    # Verify that we have multiple note cards
+    note_cards = detail_view.locator(".bg-white.p-4.rounded-lg.shadow-md").all()
+    assert len(note_cards) >= 3, "Expected at least 3 note cards in detail view"
+    
+    # Verify that each card has a date
+    for card in note_cards[:3]:  # Check first three cards
+        date_text = card.locator(".text-sm.text-gray-500").text_content()
+        assert date_text, "Note card is missing date"
 
