@@ -46,7 +46,7 @@
 </script>
 
 
-<div class="flex items-center space-x-1">
+<div class="flex flex-col items-center space-y-1">
 {#each matchingIndicators as indicator}
     {#if indicator.shape === "Circle"}
     <div class={`w-3 h-3 rounded-full ${indicator.color}`}></div>

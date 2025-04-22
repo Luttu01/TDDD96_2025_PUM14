@@ -186,14 +186,18 @@
         aria-label="Draggable note"
       >
         <div
-          class="text-left text-sm text-gray-500 flex justify-between p-4 border-b bg-gray-50 cursor-move"
+          class="text-left text-sm text-gray-500 flex justify-between p-2 border-b border-gray-200 cursor-move"
         >
-          {note?.DateTime}
+            {new Date(note?.DateTime).toLocaleDateString('sv-SE', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            })}
           <button
-            class="h-6 w-6 bg-red-500 rounded-md fa fa-caret-down text-white"
+            class="h-4 w-4 bg-red-500 rounded-full text-[10px] font-bold text-red-500 hover:text-red-700"
             on:click={() => handleNoteClick(note)}
             aria-label="deselect note"
-          ></button>
+          >X</button>
         </div>
         <div class="flex-1 overflow-y-auto p-4 text-sm">
           {@html highlightMatches(note.CaseData, $searchQuery)}
@@ -205,19 +209,23 @@
       <div class="flex-1 overflow-x-auto p-2">
         <div class="flex space-x-2 h-full min-w-full">
           {#each $selectedNotes as note (note.CaseData)}
-            <div class="w-[100vw] bg-white p-4 rounded-lg shadow-md">
-              <div class="text-left text-sm text-gray-500 flex justify-between">
-                {note?.DateTime}
+            <div class="w-[100vw] bg-white rounded-lg shadow-md">
+              <div class="text-left text-sm text-gray-500 flex justify-between border-b border-gray-200 p-2">
+                {new Date(note?.DateTime).toLocaleDateString('sv-SE', {
+                  year: 'numeric',
+                  month: '2-digit',
+                  day: '2-digit',
+                  })}
                 <button
-                  class="h-6 w-6 bg-red-500 rounded-md fa fa-caret-down text-white"
+                  class="h-4 w-4 bg-red-500 rounded-full text-[10px] font-bold text-red-500 hover:text-red-700"
                   on:click={() => note?.CaseData && handleNoteClick(note)}
                   class:selected={$selectedNotes?.find(
                     (n) => n.CaseData === note?.CaseData
                   )}
                   aria-label="deselect note"
-                ></button>
+                >X</button>
               </div>
-              <div class="h-full overflow-y-auto">
+              <div class="h-full overflow-y-auto text-sm p-2">
                 {@html highlightMatches(note.CaseData, $searchQuery)}
               </div>
             </div>

@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { Note } from '$lib/models';
   import { onDestroy } from 'svelte';
-  import { allNotes, selectedNotes, filteredNotes, filter } from '$lib/stores';
+  import { selectedNotes, filteredNotes, filter } from '$lib/stores';
   import NotePreview from './NotePreview.svelte';
 
   // Get notes from global store and sort them by date 
@@ -20,74 +20,11 @@
 
   // State for resizable list width functionality
   const MIN_LIST_WIDTH = 150; 
-  const DEFAULT_LIST_WIDTH = 300; 
+  const DEFAULT_LIST_WIDTH = 280; 
   let listWidth = $state(DEFAULT_LIST_WIDTH);
   let isDragging = $state(false);
   let initialX = $state(0);
   let initialWidth = $state(0);
-
-  // Check if note matches any filter criteria
-  function matchesFilter(note: Note) {
-    // Check if there are any filters selected
-    const templateFilters = $filter.get("Journalmall");
-    const unitFilters = $filter.get("Vårdenhet");
-    const roleFilters = $filter.get("Yrkesroll");
-    
-    // If no filters are active, don't highlight anything
-    const hasTemplateFilters = templateFilters && templateFilters.size > 0;
-    const hasUnitFilters = unitFilters && unitFilters.size > 0;
-    const hasRoleFilters = roleFilters && roleFilters.size > 0;
-    
-    if (!hasTemplateFilters && !hasUnitFilters && !hasRoleFilters) {
-      return false;
-    }
-    
-    // Check if note matches template filter
-    const matchesTemplate = hasTemplateFilters ? 
-      templateFilters!.has(note.Dokumentnamn) : false;
-    
-    // Check if note matches unit filter
-    const matchesUnit = hasUnitFilters ? 
-      unitFilters!.has(note.Vårdenhet_Namn) : false;
-    
-    // Check if note matches role filter
-    const matchesRole = hasRoleFilters ? 
-      roleFilters!.has(note.Dokument_skapad_av_yrkestitel_Namn) : false;
-    
-    return (hasTemplateFilters && matchesTemplate) || 
-           (hasUnitFilters && matchesUnit) ||
-           (hasRoleFilters && matchesRole);
-  }
-
-  // Determine specific filter match type for color highlighting
-  function getFilterMatchType(note: Note) {
-    // Check if there are any filters selected
-    const templateFilters = $filter.get("Journalmall");
-    const unitFilters = $filter.get("Vårdenhet");
-    const roleFilters = $filter.get("Yrkesroll");
-    
-    // Check for active filters
-    const hasTemplateFilters = templateFilters && templateFilters.size > 0;
-    const hasUnitFilters = unitFilters && unitFilters.size > 0;
-    const hasRoleFilters = roleFilters && roleFilters.size > 0;
-    
-    // Match specific filter types
-    const matchesTemplate = hasTemplateFilters ? 
-      templateFilters!.has(note.Dokumentnamn) : false;
-    
-    const matchesUnit = hasUnitFilters ? 
-      unitFilters!.has(note.Vårdenhet_Namn) : false;
-    
-    const matchesRole = hasRoleFilters ? 
-      roleFilters!.has(note.Dokument_skapad_av_yrkestitel_Namn) : false;
-    
-    // Priority: template > unit > role (if matches multiple filters)
-    if (matchesTemplate) return 'template-match';
-    if (matchesUnit) return 'unit-match';
-    if (matchesRole) return 'role-match';
-    
-    return '';
-  }
 
   function formatDate(dateTimeString: string): string {
     return new Date(dateTimeString).toLocaleDateString('sv-SE');
@@ -181,9 +118,9 @@
               <NotePreview note={ item }/>
             </div>
             <div class="document-meta">
-              <span class="date">{formatDate(item.DateTime)} -</span>
-              <span class="professional">{item.Dokument_skapad_av_yrkestitel_Namn} -</span>
-              <span class="unit">{item.Vårdenhet_Namn}</span>
+              <span>{formatDate(item.DateTime)} -</span>
+              <span>{item.Dokument_skapad_av_yrkestitel_Namn} -</span>
+              <span>{item.Vårdenhet_Namn}</span>
             </div>
           </div>
         </button>
@@ -210,7 +147,6 @@
     max-width: 500px;
     border: 1px solid #ccc; 
     background-color: white;
-    border-radius: 4px;
   }
 
   /* Scrollable list of documents */
@@ -225,7 +161,7 @@
   /* Individual list items with border between them */
   .document-list-item {
     margin: 0;
-    border-bottom: 1px solid #e0e0e0;
+    border-bottom: 2px solid #e0e0e0;
   }
 
   .document-list-item:last-child {
@@ -235,7 +171,7 @@
   /* Button styling for each document in the list */
   .document-button {
     width: 100%;
-    padding: 0.5rem;
+    padding: 0.2rem 1rem;
     background: none;
     border: none;
     cursor: pointer;
@@ -262,7 +198,8 @@
   .document-item h3 {
     margin: 0 0 0.1rem 0;
     color: #333;
-    font-size: 1rem;
+    font-size: 0.85rem;
+    font-weight: 700;
     white-space: nowrap; 
     overflow: hidden;
     text-overflow: ellipsis;
@@ -272,7 +209,6 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 0.5rem;
   }
 
   /* Metadata sections with overflow handling */
@@ -286,18 +222,8 @@
   .document-meta {
     display: flex;
     flex-wrap: row;
-    gap: 0.2rem 0.4rem;
-    font-size: 0.85rem;
-  }
-
-  /* Style for unit name */
-  .unit {
-    font-style: italic;
-    color: #555;
-  }
-
-  /* Date and professional styling */
-  .date, .professional {
+    font-size: 0.75rem;
+    font-weight: 400;
     color: #555;
   }
 
