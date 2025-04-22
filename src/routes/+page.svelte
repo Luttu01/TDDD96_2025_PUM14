@@ -28,7 +28,7 @@
     </button>
     <div
       class={$expandTimeline
-        ? "h-6/8 transition-all duration-500"
+        ? "h-1/2 transition-all duration-500"
         : "h-8 transition-all duration-500"}
     >
       <Timeline />

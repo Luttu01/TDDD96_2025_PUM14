@@ -2,9 +2,10 @@
   import type { Note } from '$lib/models';
   import { onDestroy } from 'svelte';
   import { allNotes, selectedNotes, filteredNotes, filter } from '$lib/stores';
+  import NotePreview from './NotePreview.svelte';
 
   // Get notes from global store and sort them by date 
-  let localItems = $derived([...$filteredNotes]
+  let localItems : Note[] = $derived([...$filteredNotes]
       .map((item, index) => ({
         ...item,
         uniqueId: item.CompositionId || `${index}-${Date.now()}` 
@@ -164,7 +165,7 @@
 <div data-testid="list-view-container" class="list-container" bind:this={listContainerElement} style="width: {listWidth}px;">
   <ul data-testid="list-view" class="list-view" role="listbox" aria-multiselectable="true" aria-label="Clinical notes list">
     <!-- Iterate through sorted notes using CompositionId as unique key -->
-    {#each localItems as item (item.CompositionId)}
+    {#each localItems as item}
       <!-- List item-->
       <li data-testid="list-item-{item.CompositionId}" role="option" aria-selected={$selectedNotes.some(note => note.CompositionId === item.CompositionId)} class="document-list-item">
         <button
@@ -172,20 +173,17 @@
           type="button"
           class="document-button"
           class:selected={$selectedNotes.some(note => note.CompositionId === item.CompositionId)}
-          class:template-match={getFilterMatchType(item) === 'template-match'}
-          class:unit-match={getFilterMatchType(item) === 'unit-match'}
-          class:role-match={getFilterMatchType(item) === 'role-match'}
           onclick={(e) => handleDocumentClick(item, e)}
         >
           <div class="document-item">
-            <h3>{item.Dokumentnamn}</h3>
-            <div class="document-meta">
-              <span class="type">{item.Dokumentationskod}</span>
-              <span class="date">{formatDate(item.DateTime)}</span>
+            <div id="document-header">
+              <h3>{item.Dokumentnamn}</h3>
+              <NotePreview note={ item }/>
             </div>
-            <div class="document-details">
-              <span class="professional">{item.Dokument_skapad_av_yrkestitel_Namn}</span>
-              <span class="unit">Unit: {item.Vårdenhet_Namn}</span>
+            <div class="document-meta">
+              <span class="date">{formatDate(item.DateTime)} -</span>
+              <span class="professional">{item.Dokument_skapad_av_yrkestitel_Namn} -</span>
+              <span class="unit">{item.Vårdenhet_Namn}</span>
             </div>
           </div>
         </button>
@@ -209,6 +207,7 @@
     overflow: hidden; 
     height: 100%; 
     min-width: 150px; 
+    max-width: 500px;
     border: 1px solid #ccc; 
     background-color: white;
     border-radius: 4px;
@@ -236,7 +235,7 @@
   /* Button styling for each document in the list */
   .document-button {
     width: 100%;
-    padding: 1rem;
+    padding: 0.5rem;
     background: none;
     border: none;
     cursor: pointer;
@@ -258,43 +257,10 @@
   .document-button.selected:hover {
     background-color: #bbdefb;
   }
-  
-  /* Template filter match styling (yellow) */
-  .document-button.template-match {
-    background-color: #ffecb3;
-    border-left: 4px solid #ffc107;
-    padding-left: calc(1rem - 4px);
-  }
-
-  .document-button.template-match:hover {
-    background-color: #ffe082;
-  }
-
-  /* Unit filter match styling (green) */
-  .document-button.unit-match {
-    background-color: #c8e6c9;
-    border-left: 4px solid #4caf50;
-    padding-left: calc(1rem - 4px);
-  }
-
-  .document-button.unit-match:hover {
-    background-color: #a5d6a7;
-  }
-
-  /* Role filter match styling (purple) */
-  .document-button.role-match {
-    background-color: #e1bee7;
-    border-left: 4px solid #9c27b0;
-    padding-left: calc(1rem - 4px);
-  }
-
-  .document-button.role-match:hover {
-    background-color: #ce93d8;
-  }
 
   /* Document title styling with text overflow handling */
   .document-item h3 {
-    margin: 0 0 0.5rem 0;
+    margin: 0 0 0.1rem 0;
     color: #333;
     font-size: 1rem;
     white-space: nowrap; 
@@ -302,9 +268,15 @@
     text-overflow: ellipsis;
   }
 
+  #document-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+  }
+
   /* Metadata sections with overflow handling */
-  .document-meta,
-  .document-details {
+  .document-meta {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -313,33 +285,15 @@
   /* Document metadata (type and date) */
   .document-meta {
     display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem 1rem;
+    flex-wrap: row;
+    gap: 0.2rem 0.4rem;
     font-size: 0.85rem;
-  }
-
-  /* Document details (professional and unit) */
-  .document-details {
-    display: flex;
-    gap: 1rem;
-    margin-bottom: 0.5rem;
-    font-size: 0.85rem;
-    color: #666;
   }
 
   /* Style for unit name */
   .unit {
     font-style: italic;
     color: #555;
-  }
-
-  /* Document type badge styling */
-  .type {
-    background-color: #f0f0f0;
-    padding: 0.15rem 0.4rem;
-    border-radius: 3px;
-    font-weight: 500;
-    font-size: 0.8rem;
   }
 
   /* Date and professional styling */
