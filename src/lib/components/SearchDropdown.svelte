@@ -1,6 +1,6 @@
 <script lang="ts">
     import { allNotes, allKeywords } from '$lib/stores';
-    import { extractBoldTitlesFromHTML, getSortedUniqueKeywordNames } from '$lib/utils/keywords';
+    import { extractBoldTitlesFromHTML, getSortedUniqueKeywordNames } from '$lib/utils/keywordHelper';
     import { searchQuery } from '$lib/stores/searchStore';
     import { get } from 'svelte/store';
   

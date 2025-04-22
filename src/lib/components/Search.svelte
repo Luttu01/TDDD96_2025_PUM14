@@ -1,7 +1,7 @@
 <script lang="ts">
   import { searchQuery } from '$lib/stores/searchStore';
   import { onMount } from 'svelte';
-  import { extractBoldTitlesFromHTML } from '$lib/utils/keywords';
+  import { extractBoldTitlesFromHTML } from '$lib/utils/keywordHelper';
   import { selectedNotes } from '$lib/stores/storedNotes';
 
   let searchInput: HTMLInputElement;

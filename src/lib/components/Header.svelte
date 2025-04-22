@@ -6,7 +6,7 @@
     import SearchInput from "./SearchInput.svelte";
     import { searchQuery } from '$lib/stores/searchStore';
     import SearchDropdown from "./SearchDropdown.svelte";
-    import { extractBoldTitlesFromHTML } from "$lib/utils/keywords";
+    import { extractBoldTitlesFromHTML } from "$lib/utils/keywordHelper";
 
 
     const filterNotes = derived(allNotes, $allNotes => {
