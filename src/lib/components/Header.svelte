@@ -239,7 +239,7 @@
                         {template}
                     </button>
                     {#if filteredTemplates.size != 0}
-                        <button onclick={(event) => reset(event, template)} class="text-red-600 text-1xl">X</button>
+                        <button onclick={(event) => reset(event, template)} class="text-red-500 text-sm font-bold">X</button>
                     {:else}
                     <i class="fa fa-caret-down pt-1"></i>
                     {/if}
@@ -263,7 +263,7 @@
                         {unit}
                     </button>
                     {#if filteredUnits.size != 0}
-                        <button onclick={(event) => reset(event, unit)} class="text-red-600 text-1xl">X</button>
+                        <button onclick={(event) => reset(event, unit)} class="text-red-500 text-sm font-bold">X</button>
                     {:else}
                     <i class="fa fa-caret-down pt-1"></i>
                     {/if}
@@ -286,7 +286,7 @@
                         {role}
                     </button>
                     {#if filteredRoles.size != 0}
-                        <button onclick={(event) => reset(event, role)} class="text-red-600 text-1xl">X</button>
+                        <button onclick={(event) => reset(event, role)} class="text-red-500 text-sm font-bold">X</button>
                     {:else}
                     <i class="fa fa-caret-down pt-1"></i>
                     {/if}

@@ -4,8 +4,8 @@
   import List from "$lib/components/List.svelte";
   import { onDestroy } from "svelte";
 
-  const MIN_TIMELINE_HEIGHT = 130;
-  const DEFAULT_TIMELINE_HEIGHT = 200;
+  const MIN_TIMELINE_HEIGHT = 140;
+  const DEFAULT_TIMELINE_HEIGHT = 180;
 
   let timelineHeight = $state(DEFAULT_TIMELINE_HEIGHT);
   let lastExpandedHeight = $state(DEFAULT_TIMELINE_HEIGHT); // to restore on expand
@@ -76,13 +76,6 @@
     <div class="flex-grow flex flex-col transition-all duration-500 overflow-hidden relative">
       <SelectedNotes />
     </div>
-    <button
-      onclick={toggleTimeline}
-      class="w-full bg-white text-center"
-      aria-label="Toggle timeline view"
-    >
-      <i class="fa text-xs {isCollapsed ? 'fa-caret-up' : 'fa-caret-down'}"></i>
-    </button>
     {#if !isCollapsed}
       <button
         class="w-full h-2 cursor-row-resize bg-gray-200 hover:bg-gray-300"

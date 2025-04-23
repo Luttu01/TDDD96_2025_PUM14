@@ -47,7 +47,7 @@
     {#each $noteHierarchy as yearGroup (yearGroup.year)}
       <div class="relative h-full flex flex-col">
         <button
-          class="flex bg-purple-200 py-1 text-left px-2 w-full shadow-xs"
+          class="flex bg-purple-200 py-1 text-left text-sm px-2 w-full shadow-xs"
           on:click={() => toggleGroup(yearGroup)}
           aria-label="Toggle year {yearGroup.year}"
         >
@@ -68,10 +68,10 @@
                 <div
                   class="{yearGroup.isCollapsed
                     ? 'text-transparent'
-                    : 'text-gray-900'} text-sm sticky left-1 px-1 w-10 font-semibold text-left"
+                    : 'text-gray-900'} text-xs sticky left-1 px-1 w-10 font-semibold text-left"
                 >
                   {new Date(0, monthGroup.month).toLocaleString("sv-SE", {
-                    month: "short",
+                    month: "long",
                   })}
                 </div>
               </button>
@@ -147,7 +147,7 @@
                             <NotePreview note={note} />
                           </div>
                           <!-- Temporary fix with max-h -->
-                          <div class="overflow-y-auto w-full max-h-[250px]">
+                          <div class="overflow-y-auto w-full max-h-[280px]">
                             {@html note.CaseData}
                           </div>
                         </div>
