@@ -21,17 +21,15 @@
     selectedFilters.set("Vårdenhet", new Set<filterSelect>);
     selectedFilters.set("Journalmall", new Set<filterSelect>);
     selectedFilters.set("Yrkesroll", new Set<filterSelect>);
-    selectedFilters.set("Sökord", new Set<filterSelect>);
 
     let template: string = "Journalmall";
     let unit: string = "Vårdenhet";
     let role: string = "Yrkesroll";
-    let search: string = "Sökord";
 
     /**
      * Skapa map till keywords.
      * Sortera set i alfabetiskordring med funktionen getSortedUniqueKeywordNames.
-     * Lägger endast till keywords som faktiskt finns i notes. Alla sökord träffar minst en anteckning nu. 
+     * Lägger endast till keywords som faktiskt finns i notes. Alla sökord träffar minst en anteckning. 
      */
     let keywordsMap: Map<string, filterSelect> = new Map();
     let filteredKeywords: Set<string> = new Set();
@@ -204,27 +202,22 @@
             }
             filteredRoles = new Set(filteredRoles);
         } 
-
+        // Uppdaterar filter för sökord.
         else if (keywordsMap.has(selectedFilter)) {
             const newKeywords = new Map(keywordsMap);
-            const prev = newKeywords.get(selectedFilter);
-            if (prev) {
-                const updated = { ...prev, selected: !prev.selected };
-                newKeywords.set(selectedFilter, updated);
-
-                if (updated.selected) {
-                    filteredKeywords.add(selectedFilter);
-                } else {
-                    filteredKeywords.delete(selectedFilter);
-                }
-
-                keywordsMap = newKeywords; // 🔁 This triggers reactivity
-                filteredKeywords = new Set(filteredKeywords); // 🔁 Re-trigger here too
-            }
+            selectedFilterOption = keywordsMap.get(selectedFilter) as filterSelect;
+            newKeywords.set(selectedFilter, { name: selectedFilter, selected: !selectedFilterOption.selected });
+            keywordsMap = newKeywords;
+ 
+             if (!selectedFilterOption.selected) {
+                 filteredKeywords.add(selectedFilter);
+             } else {
+                 filteredKeywords.delete(selectedFilter);
+             }
+             filteredKeywords = new Set(filteredKeywords);
         } else { // If function called from somewhere not associated with filter
             return;
         }
-        
         // Filter all notes by filter criteria 
         updateFilter()
     }
