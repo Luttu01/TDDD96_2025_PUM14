@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { allNotes, filteredNotes, filter } from "$lib/stores"
+    import { allNotes, filteredNotes, filter, resetFilter } from "$lib/stores"
     import type { filterSelect } from "$lib/models";
     import { derived, get } from "svelte/store"
     import { getPropertyForFilter } from "$lib/models"
@@ -220,6 +220,10 @@
     }
 </script>
 
+{#if $resetFilter}
+{reset(new MouseEvent(""), "")}
+{/if}
+
 <div id="Header" class="flex flex-row justify-between outline-solid outline-gray-300 p-2 space-x-4">
     <h1 id="ProjectTitle" class="hidden xl:flex text-2xl"><a href="/" onclick={(event) => reset(event, "")}>Demo<span class="text-purple-700"> 2</span></a></h1>
     <div id="Filtermenu" class="grid grid-flow-col grid-rows-2 lg:flex lg:flex-row lg:flex-grow text-md items-center justify-end gap-2">
@@ -300,9 +304,9 @@
                     {/each}
                 </ul>
             </div>
-            </div>
+        </div>
     </div>
-    <button id="Reset" class="text-sm hover:text-purple-500 self-center" onclick={(event) => reset(event, "")}>Återställ</button>
+
 </div>
 
 <style>
