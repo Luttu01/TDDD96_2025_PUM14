@@ -1,11 +1,11 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import interact from "interactjs";
-  import { writable } from "svelte/store";
-  import { selectedNotes } from "$lib/stores/storedNotes";
+  import { selectedNotes } from "$lib/stores";
   import type { Note } from "$lib/models";
+  import { powerMode } from "$lib/stores";
 
-  const powerMode = writable(false);
+  
   let interactInstance: any;
   let initialPositions = new Map<string, { x: number; y: number }>();
 
@@ -98,19 +98,6 @@
     interactInstance = null;
   }
 </script>
-
-<!-- 🔘 Toggle Power Mode -->
-<div class="p-2 flex items-center gap-2">
-  <label for="powerModeToggle" class="text-sm font-medium"
-    >PowerPoint Mode</label
-  >
-  <input
-    id="powerModeToggle"
-    type="checkbox"
-    bind:checked={$powerMode}
-    class="toggle"
-  />
-</div>
 
 <!-- 🧭 Main Layout -->
 <div
