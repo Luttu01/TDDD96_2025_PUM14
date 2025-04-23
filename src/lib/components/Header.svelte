@@ -3,6 +3,9 @@
     import type { filterSelect } from "$lib/models";
     import { derived, get } from "svelte/store"
     import { getPropertyForFilter } from "$lib/models"
+    import SearchDropdown from "./SearchDropdown.svelte";
+    import { allKeywords } from "$lib/stores";
+    import { extractBoldTitlesFromHTML, getSortedUniqueKeywordNames } from '$lib/utils/keywordHelper';
 
     /**
      * TODO Sprint 2-3
@@ -23,6 +26,20 @@
     let template: string = "Journalmall";
     let unit: string = "Vårdenhet";
     let role: string = "Yrkesroll";
+
+    /**
+     * Skapa map till keywords.
+     * Sortera set i alfabetiskordring med funktionen getSortedUniqueKeywordNames.
+     */
+    let keywordsMap: Map<string, filterSelect> = new Map();
+    let filteredKeywords: Set<string> = new Set();
+    
+    $: {
+        const keywordNames = getSortedUniqueKeywordNames(get(allKeywords));
+        keywordNames.forEach(name => {
+            keywordsMap.set(name, { name, selected: false });
+        });
+    }
 
     const filterNotes = derived(allNotes, $allNotes => {
         /**
@@ -108,8 +125,10 @@
         allNotes.subscribe(notes => {
             const filtered = notes.filter(
                 (note) => {
+                    const titleMatches = Array.from(filteredKeywords).every(keyword => note.CaseData.includes(keyword));
                     return (minDate <= note.DateTime.substring(0, 10) || minDate === "") && 
-                    (maxDate >= note.DateTime.substring(0, 10) || maxDate === "");
+                    (maxDate >= note.DateTime.substring(0, 10) || maxDate === "") &&
+                    (filteredKeywords.size === 0 || titleMatches);
                     /*(templates.get(note.Dokumentnamn)!.selected || filteredTemplates.size == 0) &&
                     (units.get(note.Vårdenhet_Namn)!.selected || filteredUnits.size == 0) &&
                     (roles.get(note.Dokument_skapad_av_yrkestitel_Namn)!.selected || filteredRoles.size == 0) &&*/
@@ -175,6 +194,20 @@
                 filteredRoles.delete(selectedFilter);
             }
             filteredRoles = new Set(filteredRoles);
+        } 
+
+        else if (keywordsMap.has(selectedFilter)) {
+            const newKeywords = new Map(keywordsMap);
+            selectedFilterOption = keywordsMap.get(selectedFilter) as filterSelect;
+            newKeywords.set(selectedFilter, { name: selectedFilter, selected: !selectedFilterOption.selected });
+            keywordsMap = newKeywords;
+
+            if (!selectedFilterOption.selected) {
+                filteredKeywords.add(selectedFilter);
+            } else {
+                filteredKeywords.delete(selectedFilter);
+            }
+            filteredKeywords = new Set(filteredKeywords);
         } else { // If function called from somewhere not associated with filter
             return;
         }
@@ -212,6 +245,15 @@
             minDate = absMin;
             maxDate = absMax;
         }
+        if (arg == "Sökord" || arg == "") {
+            const newKeywords = new Map(keywordsMap);
+            newKeywords.forEach((element) => {
+                element.selected = false
+            });
+            keywordsMap = newKeywords;
+            filteredKeywords.clear();
+            filteredKeywords = new Set(filteredKeywords);
+        }
         
         templates = newTemplates;
         units = newUnits;
@@ -227,9 +269,29 @@
 <div id="Header" class="flex flex-row justify-between outline-solid outline-gray-300 p-2 space-x-4">
     <h1 id="ProjectTitle" class="hidden xl:flex text-2xl"><a href="/" onclick={(event) => reset(event, "")}>Demo<span class="text-purple-700"> 2</span></a></h1>
     <div id="Filtermenu" class="grid grid-flow-col grid-rows-2 lg:flex lg:flex-row lg:flex-grow text-md items-center justify-end gap-2">
-            <div id="Search" class="max-w-[44em] rounded-md bg-white flex flex-grow">
-                <input class="pl-3 w-[100%] bg-white outline-1 outline-gray-300 rounded-md" type="text" placeholder="Sök:">
+            <!-- Keywords dropdown -->
+            <div id="keywords" class="outline-1 outline-gray-300 rounded-md bg-white justify-center">
+                <div id="dropdown_button" class="px-3 flex flex-row justify-between">
+                    <button>Sökord</button>
+                    {#if filteredKeywords.size != 0}
+                        <button onclick={(event) => reset(event, 'Sökord')} class="text-red-600 text-1xl">X</button>
+                    {:else}
+                        <i class="fa fa-caret-down pt-1"></i>
+                    {/if}
+                </div>
+                <div class="w-full flex justify-center">
+                    <ul id="dropdown_keywords">
+                        {#each Array.from(keywordsMap) as [key, kw]}
+                            <li>
+                                <button class="w-[100%] flex row justify-between {kw.selected == true ? 'bg-blue-200 hover:bg-blue-300' : 'bg-white hover:bg-purple-100'}" name={kw.name} onclick={updateDocument}>
+                                    {kw.name}
+                                </button>
+                            </li>
+                        {/each}
+                    </ul>
+                </div>
             </div>
+
             <div id="DateDiv" class="outline-1 outline-gray-300 rounded-md bg-white flex flex-row space-x-4 px-3">
                 <input type="date" name="OldestDate" id="OldestDate" min={absMin} max={maxDate} oninput={updateFilter} bind:value={minDate}/>
                 <p>-</p>
@@ -241,7 +303,7 @@
                         {template}
                     </button>
                     {#if filteredTemplates.size != 0}
-                        <button onclick={(event) => reset(event, template)} class="text-red-600 text-1xl">X</button>
+                        <button onclick={(event) => reset(event, template)} class="text-red-500 text-sm font-bold">X</button>
                     {:else}
                     <i class="fa fa-caret-down pt-1"></i>
                     {/if}
@@ -251,7 +313,7 @@
                 <ul id="dropdown_1">
                     {#each Array.from(templates) as [key, journal]}
                         <li>
-                            <button class="w-[100%] flex row justify-between {journal.selected == true ? 'bg-blue-200 hover:bg-blue-300' : 'bg-white hover:bg-purple-100'}" name={journal.name} onclick={updateDocument}>{journal.name}
+                            <button class="w-[100%] flex row justify-between text-left {journal.selected == true ? 'bg-purple-200 hover:bg-purple-300' : 'bg-white hover:bg-purple-100'}" name={journal.name} onclick={updateDocument}>{journal.name}
                                 <div class={`w-0 h-0 border-l-6 border-r-6 border-b-12 border-transparent border-b-current ${getPropertyForFilter("Journalmall", journal.name)}`}></div>
                             </button>
                         </li>
@@ -265,7 +327,7 @@
                         {unit}
                     </button>
                     {#if filteredUnits.size != 0}
-                        <button onclick={(event) => reset(event, unit)} class="text-red-600 text-1xl">X</button>
+                        <button onclick={(event) => reset(event, unit)} class="text-red-500 text-sm font-bold">X</button>
                     {:else}
                     <i class="fa fa-caret-down pt-1"></i>
                     {/if}
@@ -274,7 +336,7 @@
                 <ul id="dropdown_2">
                     {#each Array.from(units) as [key, unit]}
                         <li>
-                            <button class="w-[100%] flex row justify-between {unit.selected == true ? 'bg-blue-200 hover:bg-blue-300' : 'bg-white hover:bg-purple-100'}" name={unit.name} onclick={updateDocument}>{unit.name}
+                            <button class="w-[100%] flex row justify-between text-left {unit.selected == true ? 'bg-purple-200 hover:bg-purple-300' : 'bg-white hover:bg-purple-100'}" name={unit.name} onclick={updateDocument}>{unit.name}
                                 <div class={`w-3 h-3 rounded-full ${getPropertyForFilter("Vårdenhet", unit.name)}`}></div>
                             </button>
                         </li>
@@ -288,7 +350,7 @@
                         {role}
                     </button>
                     {#if filteredRoles.size != 0}
-                        <button onclick={(event) => reset(event, role)} class="text-red-600 text-1xl">X</button>
+                        <button onclick={(event) => reset(event, role)} class="text-red-500 text-sm font-bold">X</button>
                     {:else}
                     <i class="fa fa-caret-down pt-1"></i>
                     {/if}
@@ -297,7 +359,7 @@
                 <ul id="dropdown_3">
                     {#each Array.from(roles) as [key, role]}
                         <li>
-                            <button class="w-[100%] flex row justify-between {role.selected == true ? 'bg-blue-200 hover:bg-blue-300' : 'bg-white hover:bg-purple-100'}" name={role.name} onclick={updateDocument}>{role.name}
+                            <button class="w-[100%] flex row justify-between text-left {role.selected == true ? 'bg-purple-200 hover:bg-purple-300' : 'bg-white hover:bg-purple-100'}" name={role.name} onclick={updateDocument}>{role.name}
                                 <div class={`w-3 h-3 ${getPropertyForFilter("Yrkesroll", role.name)}`}></div>
                             </button>
                         </li>
@@ -310,7 +372,7 @@
 </div>
 
 <style>
-    #template, #role, #Vårdenhet {
+    #template, #role, #Vårdenhet, #keywords {
         list-style: none;
         position: relative;
         display: block;
@@ -324,17 +386,17 @@
         white-space: nowrap;
         overflow: hidden;
     }
-    #dropdown_1, #dropdown_2, #dropdown_3 {
+    #dropdown_1, #dropdown_2, #dropdown_3, #dropdown_keywords {
         display: none;
         text-align: left;
     }
-    #dropdown_1 button, #dropdown_2 button, #dropdown_3 button {
+    #dropdown_1 button, #dropdown_2 button, #dropdown_3 button, #dropdown_keywords button {
         color: black;
         text-decoration: none;
         padding: 5px;
     }
 
-    #template:hover ul, #role:hover ul, #Vårdenhet:hover ul {
+    #template:hover ul, #role:hover ul, #Vårdenhet:hover ul, #keywords:hover ul {
         display: flex;
         position: absolute;
         flex-direction: column;
@@ -347,7 +409,7 @@
         overflow-y: auto;
         max-height: 20em;
     }
-    #template:hover, #role:hover, #Vårdenhet:hover {
+    #template:hover, #role:hover, #Vårdenhet:hover, #keywords:hover {
         background-color: lightskyblue;
     }
     #DateDiv {

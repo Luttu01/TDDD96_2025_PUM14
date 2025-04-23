@@ -1,13 +1,17 @@
 <script lang="ts">
+  import { browser } from "$app/environment";
   import { onMount } from "svelte";
   import interact from "interactjs";
   import { selectedNotes } from "$lib/stores";
   import type { Note } from "$lib/models";
+  import SearchInput from "./SearchInput.svelte";
+  import { searchQuery } from "$lib/stores/searchStore";
   import { powerMode } from "$lib/stores";
 
   
   let interactInstance: any;
   let initialPositions = new Map<string, { x: number; y: number }>();
+  
 
   function handleNoteClick(noteData: Note) {
     $selectedNotes = $selectedNotes || [];
@@ -22,10 +26,19 @@
   }
 
   onMount(() => {
-    if ($powerMode) {
-      setupInteract();
+  if (!browser) return;
+
+  if ($powerMode) {
+    setupInteract();
+  }
+
+  window.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+      e.preventDefault();
+      showSearchInput = true;
     }
   });
+});
 
   function setupInteract() {
     interact(".draggable").unset();
@@ -81,6 +94,43 @@
       });
   }
 
+  function highlightMatches(html: string, query: string): string {
+    if (!browser || !query) return html;
+
+    const escapedQuery = query.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
+    const regex = new RegExp(`(${escapedQuery})`, 'gi');
+
+    const container = document.createElement('div');
+    container.innerHTML = html;
+
+    function walk(node: Node) {
+      if (node.nodeType === Node.TEXT_NODE) {
+        const text = node.textContent;
+        if (text) {
+          const newText = text.replace(regex, '<mark>$1</mark>');
+          if (newText !== text) {
+            const span = document.createElement('span');
+            span.innerHTML = newText;
+            (node as ChildNode).replaceWith(...Array.from(span.childNodes));
+          }
+        }
+      } else if (node.nodeType === Node.ELEMENT_NODE) {
+        for (const child of Array.from(node.childNodes)) {
+          walk(child);
+        }
+      }
+    }
+
+    walk(container);
+
+    return container.innerHTML;
+  }
+
+  /**
+   * Show search field after ctrl+f / cmd+f
+  */
+  let showSearchInput = false;
+
   $: if ($powerMode) {
     setupInteract();
     $selectedNotes.forEach((note) => {
@@ -102,10 +152,15 @@
 <!-- 🧭 Main Layout -->
 <div
   id="main-container"
-  class="h-[100vh] w-full relative overflow-auto bg-gray-100 {$powerMode
+  class="flex-grow w-full relative overflow-hidden bg-gray-100 {$powerMode
     ? ''
     : 'no-gridlines'}"
 >
+  {#if showSearchInput}
+  <div id="SearchInput" class="fixed top-10 left-1/2 transform -translate-x-1/2 z-50 bg-white rounded-md shadow-lg max-w-md w-[90%] p-2">
+    <SearchInput on:close={() => showSearchInput = false} />
+  </div>
+  {/if}
   {#if $powerMode}
     {#each $selectedNotes as note, i (note.CaseData)}
       <div
@@ -118,39 +173,47 @@
         aria-label="Draggable note"
       >
         <div
-          class="text-left text-sm text-gray-500 flex justify-between p-4 border-b bg-gray-50 cursor-move"
+          class="text-left text-sm text-gray-500 flex justify-between p-2 border-b border-gray-200 cursor-move"
         >
-          {note?.DateTime}
+            {new Date(note?.DateTime).toLocaleDateString('sv-SE', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            })}
           <button
-            class="h-6 w-6 bg-red-500 rounded-md fa fa-caret-down text-white"
+            class="h-4 w-4 bg-red-500 rounded-full text-[10px] font-bold text-red-500 hover:text-red-700"
             on:click={() => handleNoteClick(note)}
             aria-label="deselect note"
-          ></button>
+          >X</button>
         </div>
         <div class="flex-1 overflow-y-auto p-4 text-sm">
-          {@html note.CaseData}
+          {@html highlightMatches(note.CaseData, $searchQuery)}
         </div>
       </div>
     {/each}
   {:else}
-    <div class="h-full bg-gray-100 flex">
+    <div class="h-full bg-gray-100 flex overflow-hidden">
       <div class="flex-1 overflow-x-auto p-2">
         <div class="flex space-x-2 h-full min-w-full">
           {#each $selectedNotes as note (note.CaseData)}
-            <div class="w-[100vw] bg-white p-4 rounded-lg shadow-md">
-              <div class="text-left text-sm text-gray-500 flex justify-between">
-                {note?.DateTime}
+            <div class="w-[100vw] min-w-100 bg-white rounded-lg shadow-md flex-grow overflow-hidden">
+              <div class="text-left text-sm text-gray-500 flex justify-between border-b border-gray-200 p-2">
+                {new Date(note?.DateTime).toLocaleDateString('sv-SE', {
+                  year: 'numeric',
+                  month: '2-digit',
+                  day: '2-digit',
+                  })}
                 <button
-                  class="h-6 w-6 bg-red-500 rounded-md fa fa-caret-down text-white"
+                  class="h-4 w-4 bg-red-500 rounded-full text-[10px] font-bold text-red-500 hover:text-red-700"
                   on:click={() => note?.CaseData && handleNoteClick(note)}
                   class:selected={$selectedNotes?.find(
                     (n) => n.CaseData === note?.CaseData
                   )}
                   aria-label="deselect note"
-                ></button>
+                >X</button>
               </div>
-              <div class="h-full overflow-y-auto">
-                {@html note.CaseData}
+              <div class="h-full overflow-y-auto text-sm p-2">
+                {@html highlightMatches(note.CaseData, $searchQuery)}
               </div>
             </div>
           {/each}
