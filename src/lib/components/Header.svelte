@@ -3,7 +3,6 @@
     import type { filterSelect } from "$lib/models";
     import { derived, get } from "svelte/store"
     import { getPropertyForFilter } from "$lib/models"
-    import SearchDropdown from "./SearchDropdown.svelte";
     import { allKeywords } from "$lib/stores";
     import { extractBoldTitlesFromHTML, getSortedUniqueKeywordNames } from '$lib/utils/keywordHelper';
 
@@ -22,24 +21,34 @@
     selectedFilters.set("Vårdenhet", new Set<filterSelect>);
     selectedFilters.set("Journalmall", new Set<filterSelect>);
     selectedFilters.set("Yrkesroll", new Set<filterSelect>);
+    selectedFilters.set("Sökord", new Set<filterSelect>);
 
     let template: string = "Journalmall";
     let unit: string = "Vårdenhet";
     let role: string = "Yrkesroll";
+    let search: string = "Sökord";
 
     /**
      * Skapa map till keywords.
      * Sortera set i alfabetiskordring med funktionen getSortedUniqueKeywordNames.
+     * Lägger endast till keywords som faktiskt finns i notes. Alla sökord träffar minst en anteckning nu. 
      */
     let keywordsMap: Map<string, filterSelect> = new Map();
     let filteredKeywords: Set<string> = new Set();
     
-    $: {
-        const keywordNames = getSortedUniqueKeywordNames(get(allKeywords));
-        keywordNames.forEach(name => {
-            keywordsMap.set(name, { name, selected: false });
-        });
-    }
+        $: if (keywordsMap.size === 0) {
+            const keywordNames = getSortedUniqueKeywordNames(get(allKeywords));
+            const keywordTitles = get(allNotes)
+                .flatMap(note => extractBoldTitlesFromHTML(note.CaseData));
+
+            const titleSet = new Set(keywordTitles);
+
+            keywordNames
+                .filter(name => titleSet.has(name))
+                .forEach(name => {
+                    keywordsMap.set(name, { name, selected: false });
+                });
+        }
 
     const filterNotes = derived(allNotes, $allNotes => {
         /**
@@ -198,16 +207,20 @@
 
         else if (keywordsMap.has(selectedFilter)) {
             const newKeywords = new Map(keywordsMap);
-            selectedFilterOption = keywordsMap.get(selectedFilter) as filterSelect;
-            newKeywords.set(selectedFilter, { name: selectedFilter, selected: !selectedFilterOption.selected });
-            keywordsMap = newKeywords;
+            const prev = newKeywords.get(selectedFilter);
+            if (prev) {
+                const updated = { ...prev, selected: !prev.selected };
+                newKeywords.set(selectedFilter, updated);
 
-            if (!selectedFilterOption.selected) {
-                filteredKeywords.add(selectedFilter);
-            } else {
-                filteredKeywords.delete(selectedFilter);
+                if (updated.selected) {
+                    filteredKeywords.add(selectedFilter);
+                } else {
+                    filteredKeywords.delete(selectedFilter);
+                }
+
+                keywordsMap = newKeywords; // 🔁 This triggers reactivity
+                filteredKeywords = new Set(filteredKeywords); // 🔁 Re-trigger here too
             }
-            filteredKeywords = new Set(filteredKeywords);
         } else { // If function called from somewhere not associated with filter
             return;
         }
@@ -282,6 +295,7 @@
                                 <button class="w-[100%] flex row justify-between {kw.selected == true ? 'bg-blue-200 hover:bg-blue-300' : 'bg-white hover:bg-purple-100'}" name={kw.name} onclick={updateDocument}>
                                     {kw.name}
                                 </button>
+                                
                             </li>
                         {/each}
                     </ul>
