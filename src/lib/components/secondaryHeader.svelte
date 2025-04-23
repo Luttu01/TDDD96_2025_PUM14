@@ -1,5 +1,5 @@
 <script lang="ts">
-import { powerMode, toggleTimeline, resetFilter, resetOpenDocs } from "$lib/stores";
+import { powerMode, showTimeline, resetFilter, resetOpenDocs } from "$lib/stores";
 
 function reset() {
     resetFilter.set(true);
@@ -30,7 +30,7 @@ function closeDocs() {
         <input
           id="toggleTimeline"
           type="checkbox"
-          bind:checked={$toggleTimeline}
+          bind:checked={$showTimeline}
           class="toggle"
         />
       </div>

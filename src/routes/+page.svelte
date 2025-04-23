@@ -3,6 +3,7 @@
   import Timeline from "$lib/components/Timeline.svelte";
   import List from "$lib/components/List.svelte";
   import { onDestroy } from "svelte";
+  import { showTimeline } from "$lib/stores";
 
   const MIN_TIMELINE_HEIGHT = 140;
   const DEFAULT_TIMELINE_HEIGHT = 180;
@@ -62,6 +63,10 @@
     }
   });
 </script>
+
+{#if $showTimeline}
+{toggleTimeline()};
+{/if}
 
 <div class="flex flex-grow overflow-hidden">
   <aside
