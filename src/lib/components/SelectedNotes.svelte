@@ -150,7 +150,7 @@
 </script>
 
 <!-- 🔘 Toggle Power Mode -->
-<div class="p-2 flex items-center gap-2">
+<div class="py-1 px-2 flex items-center gap-2 shadow-md border-b border-gray-200">
   <label for="powerModeToggle" class="text-sm font-medium"
     >PowerPoint Mode</label
   >
@@ -165,7 +165,7 @@
 <!-- 🧭 Main Layout -->
 <div
   id="main-container"
-  class="h-[100vh] w-full relative overflow-auto bg-gray-100 {$powerMode
+  class="flex-grow w-full relative overflow-hidden bg-gray-100 {$powerMode
     ? ''
     : 'no-gridlines'}"
 >
@@ -205,11 +205,11 @@
       </div>
     {/each}
   {:else}
-    <div class="h-full bg-gray-100 flex">
+    <div class="h-full bg-gray-100 flex overflow-hidden">
       <div class="flex-1 overflow-x-auto p-2">
         <div class="flex space-x-2 h-full min-w-full">
           {#each $selectedNotes as note (note.CaseData)}
-            <div class="w-[100vw] bg-white rounded-lg shadow-md">
+            <div class="w-[100vw] min-w-100 bg-white rounded-lg shadow-md flex-grow overflow-hidden">
               <div class="text-left text-sm text-gray-500 flex justify-between border-b border-gray-200 p-2">
                 {new Date(note?.DateTime).toLocaleDateString('sv-SE', {
                   year: 'numeric',

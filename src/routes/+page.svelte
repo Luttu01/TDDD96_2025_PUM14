@@ -4,8 +4,8 @@
   import List from "$lib/components/List.svelte";
   import { onDestroy } from "svelte";
 
-  const MIN_TIMELINE_HEIGHT = 150;
-  const DEFAULT_TIMELINE_HEIGHT = 300;
+  const MIN_TIMELINE_HEIGHT = 130;
+  const DEFAULT_TIMELINE_HEIGHT = 200;
 
   let timelineHeight = $state(DEFAULT_TIMELINE_HEIGHT);
   let lastExpandedHeight = $state(DEFAULT_TIMELINE_HEIGHT); // to restore on expand
@@ -73,26 +73,27 @@
   </aside>
 
   <main class="flex flex-col flex-grow overflow-hidden">
-    <div class="flex-grow transition-all duration-500 overflow-hidden">
+    <div class="flex-grow flex flex-col transition-all duration-500 overflow-hidden relative">
       <SelectedNotes />
     </div>
     <button
       onclick={toggleTimeline}
-      class="w-full border-t border-b border-gray-200 bg-white text-center"
+      class="w-full bg-white text-center"
       aria-label="Toggle timeline view"
     >
-      <i class="fa {isCollapsed ? 'fa-caret-up' : 'fa-caret-down'}"></i>
+      <i class="fa text-xs {isCollapsed ? 'fa-caret-up' : 'fa-caret-down'}"></i>
     </button>
+    {#if !isCollapsed}
+      <button
+        class="w-full h-2 cursor-row-resize bg-gray-200 hover:bg-gray-300"
+        onmousedown={handleMouseDown}
+        aria-label="Resize timeline"
+      ></button>
+    {/if}
     <div
       style="height: {timelineHeight}px;"
-      class="overflow-hidden flex-none relative border-t border-gray-200"
+      class="overflow-hidden flex-none relative max-h-[400px]"
     >
-    {#if !isCollapsed}
-      <div
-        class="w-full h-1 cursor-row-resize bg-gray-200 hover:bg-gray-300"
-        onmousedown={handleMouseDown}
-      />
-    {/if}
       <Timeline />
     </div>
   </main>

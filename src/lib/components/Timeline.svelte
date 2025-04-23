@@ -36,9 +36,9 @@
   }
 
   function getNoteSizeState(yearGroup: Year, monthGroup: Month) {
-    if (yearGroup.isCollapsed) return 'compact';
-    if (monthGroup.isCollapsed) return 'medium';
-    return 'expanded';
+    if (yearGroup.isCollapsed) return "compact";
+    if (monthGroup.isCollapsed) return "medium";
+    return "expanded";
   }
 </script>
 
@@ -55,9 +55,7 @@
             {yearGroup.year}
           </div>
         </button>
-        <div
-          class="flex flex-grow flex-row space-x-[2px]"
-        >
+        <div class="flex flex-grow flex-row space-x-[2px]">
           {#each yearGroup.months as monthGroup}
             <div class="flex flex-col">
               <button
@@ -68,70 +66,95 @@
                 aria-label="Toggle month {monthGroup.month}"
               >
                 <div
-                  class="{yearGroup.isCollapsed ? 'text-transparent' : 'text-gray-900'} text-sm sticky left-1 px-1 w-10 font-semibold text-left"
+                  class="{yearGroup.isCollapsed
+                    ? 'text-transparent'
+                    : 'text-gray-900'} text-sm sticky left-1 px-1 w-10 font-semibold text-left"
                 >
-                    {new Date(0, monthGroup.month).toLocaleString("sv-SE", {
+                  {new Date(0, monthGroup.month).toLocaleString("sv-SE", {
                     month: "short",
                   })}
                 </div>
               </button>
               <div
-                class="relative flex flex-row overflow-y-hidden p-[2px] gap-[4px] flex-grow"
+                class="relative flex flex-row overflow-hidden p-[2px] gap-[4px]"
               >
-              {#each monthGroup.notes as note}
-              {#key note.Dokument_ID}
-                <button
-                  class={`transition-all mt-2 duration-300 border border-gray-200 rounded-md shadow-xs bg-white relative ${
-                    getNoteSizeState(yearGroup, monthGroup) === 'compact'
-                      ? 'flex flex-col py-2 px-1 w-13 h-full space-y-1'
-                      : getNoteSizeState(yearGroup, monthGroup) === 'medium'
-                      ? 'flex flex-col py-1 px-2 w-45 text-sm text-left'
-                      : 'flex justify-between p-2 w-100'
-                  }`}
-                  on:click={() => handleNoteClick(note)}
-                  aria-label="Select note {note.Dokument_ID}"
-                >
-                <div class="absolute -top-2 left-1/2 -translate-x-1/2 w-0 h-0 
-              border-l-10 border-r-10 border-b-10 border-transparent border-b-white">
-  </div>
-                  {#if getNoteSizeState(yearGroup, monthGroup) === 'compact'}
-                    <span class="text-[10px] text-gray-700">
-                      {new Date(note.DateTime).toLocaleDateString("sv-SE", {
-                        month: "2-digit",
-                        day: "2-digit",
-                      })}
-                    </span>
-                    <span class="text-[10px] font-bold border-t-2 border-gray-200 h-18">
-                      Filter
-                      <NotePreview {note} />
-                    </span>
-                    <span class="text-[10px] font-bold border-t-2 border-gray-200 flex-grow">
-                      Sökord
-                    </span>
-            
-                  {:else if getNoteSizeState(yearGroup, monthGroup) === 'medium'}
-                    <div class="text-gray-900 font-semibold flex justify-between">
-                      {note.Dokumentnamn}
-                      <NotePreview {note} />
-                    </div>
-                    <div class="text-gray-800 text-xs">
-                      {new Date(note.DateTime).toLocaleDateString("sv-SE")}
-                    </div>
-                    <div class="text-gray-800 text-xs">
-                      {note.Dokument_skapad_av_yrkestitel_Namn}
-                    </div>
-            
-                  {:else}
-                    <div class="text-gray-900 text-left text-xs">
-                      <NotePreview {note} />
-                      <div class="overflow-y-auto max-h-60">
-                      {@html note.CaseData}
-                    </div>
-                    </div>
-                  {/if}
-                </button>
-              {/key}
-            {/each}
+                {#each monthGroup.notes as note}
+                  {#key note.Dokument_ID}
+                    <button
+                      class={`transition-all mt-2 duration-300 border border-gray-200 rounded-md shadow-xs bg-white relative ${
+                        getNoteSizeState(yearGroup, monthGroup) === "compact"
+                          ? "flex flex-col py-2 px-1 w-13 space-y-1"
+                          : getNoteSizeState(yearGroup, monthGroup) === "medium"
+                            ? "flex flex-col p-2 w-45 text-sm text-left"
+                            : "flex justify-between p-2 w-100"
+                      }`}
+                      on:click={() => handleNoteClick(note)}
+                      aria-label="Select note {note.Dokument_ID}"
+                    >
+                      <div
+                        class="absolute -top-2 left-1/2 -translate-x-1/2 w-0 h-0
+              border-l-10 border-r-10 border-b-10 border-transparent border-b-white"
+                      ></div>
+                      {#if getNoteSizeState(yearGroup, monthGroup) === "compact"}
+                        <span class="text-[10px] text-gray-500">
+                          {new Date(note.DateTime).toLocaleDateString("sv-SE", {
+                            month: "2-digit",
+                            day: "2-digit",
+                          })}
+                        </span>
+                        <span class="h-16">
+                          <NotePreview note={note} direction="flex-col" />
+                        </span>
+                        <span
+                          class="text-[10px] font-medium border-t-1 border-gray-200"
+                        >
+                          Sökord
+                          <span class="text-[10px] font-light text-gray-500">
+                            (inga)
+                          </span>
+                        </span>
+                        
+                      {:else if getNoteSizeState(yearGroup, monthGroup) === "medium"}
+                      <div class="text-gray-500 text-sm flex justify-between border-b-1 border-gray-200 pb-1">
+                        {new Date(note.DateTime).toLocaleDateString("sv-SE")}
+                        <NotePreview note={note} />
+                      </div>
+                      <div class="h-20">
+                        <div
+                          class="text-gray-900 font-semibold flex justify-between"
+                        >
+                          {note.Dokumentnamn}
+                        </div>
+                        <div class="text-gray-800 text-xs">
+                          {note.Dokument_skapad_av_yrkestitel_Namn}
+                        </div>
+                        <div class="text-gray-800 text-xs pb-2">
+                          {note.Vårdenhet_Namn}
+                        </div>
+                      </div>
+                        <span
+                          class="text-sm font-medium border-t-1 border-gray-200 flex-grow flex flex-col"
+                        >
+                          Sökord
+                          <span class="text-sm font-light text-gray-500">
+                            (inga)
+                          </span>
+                        </span>
+                      {:else}
+                        <div class="text-gray-900 text-left text-xs w-full flex flex-col">
+                          <div class="text-gray-500 text-sm flex justify-between border-b-1 border-gray-200 pb-1">
+                            {new Date(note.DateTime).toLocaleDateString("sv-SE")}
+                            <NotePreview note={note} />
+                          </div>
+                          <!-- Temporary fix with max-h -->
+                          <div class="overflow-y-auto w-full max-h-[250px]">
+                            {@html note.CaseData}
+                          </div>
+                        </div>
+                      {/if}
+                    </button>
+                  {/key}
+                {/each}
               </div>
             </div>
           {/each}

@@ -3,6 +3,7 @@
   import type { Note } from "$lib/models";
   import {shapeMap, colorMap} from "$lib/utils"
   export let note : Note;
+  export let direction : "flex-col" | "flex-row" = "flex-row";
 
   function getNoteProperty(note: Note, key: string) {
     switch (key) {
@@ -46,16 +47,16 @@
 </script>
 
 
-<div class="flex flex-col items-center space-y-1">
+<div class="flex items-center" class:flex-col={direction === 'flex-col'} class:flex-row={direction === 'flex-row'} class:space-x-1={direction === 'flex-row'} class:space-y-1={direction === 'flex-col'}>
 {#each matchingIndicators as indicator}
     {#if indicator.shape === "Circle"}
-    <div class={`w-3 h-3 rounded-full ${indicator.color}`}></div>
+    <div class={`w-4 h-4 rounded-full ${indicator.color}`}></div>
     {:else if indicator.shape === "Triangle"}
     <div
-        class={`w-0 h-0 border-l-6 border-r-6 border-b-12 border-transparent border-b-current ${indicator.color}`}
+        class={`w-0 h-0 border-l-8 border-r-8 border-b-16 border-transparent border-b-current ${indicator.color}`}
     ></div>
     {:else if indicator.shape === "Square"}
-    <div class={`w-3 h-3 ${indicator.color}`}></div>
+    <div class={`w-4 h-4 ${indicator.color}`}></div>
     {/if}
 {/each}
 </div>

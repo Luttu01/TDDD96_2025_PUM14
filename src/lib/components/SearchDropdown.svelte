@@ -6,8 +6,6 @@
   
     let selectedTitle = "Sökord";
 
-    $: console.log('All Keywords list: ', $allKeywords);
-
     const sortedNames = getSortedUniqueKeywordNames(get(allKeywords));
   
     $: allTitles = get(allNotes).flatMap(note =>
@@ -35,7 +33,7 @@
       <ul id="dropdown_search_titles">
         {#each sortedNames as title}
           <li>
-            <button class="w-[100%]" name={title} on:click={updateTitle}>
+            <button class="w-[100%] text-left" name={title} on:click={updateTitle}>
               {title}
             </button>
           </li>

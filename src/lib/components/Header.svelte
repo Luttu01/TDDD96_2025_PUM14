@@ -224,7 +224,7 @@
 <div id="Header" class="flex flex-row justify-between outline-solid outline-gray-300 p-2 space-x-4">
     <h1 id="ProjectTitle" class="hidden xl:flex text-2xl"><a href="/" onclick={(event) => reset(event, "")}>Demo<span class="text-purple-700"> 2</span></a></h1>
     <div id="Filtermenu" class="grid grid-flow-col grid-rows-2 lg:flex lg:flex-row lg:flex-grow text-md items-center justify-end gap-2">
-            <div id="SearchDropdown" class="max-w-[44em] rounded-md bg-white flex flex-grow">
+            <div id="SearchDropdown" class="max-w-[44em] rounded-md bg-white flex">
                 <SearchDropdown />
                 <!--<input class="pl-3 w-[100%] bg-white outline-1 outline-gray-300 rounded-md" type="text" placeholder="Sök:" bind:value={searchQuery}>-->
             </div>
@@ -249,7 +249,7 @@
                 <ul id="dropdown_1">
                     {#each Array.from(templates) as [key, journal]}
                         <li>
-                            <button class="w-[100%] flex row justify-between {journal.selected == true ? 'bg-blue-200 hover:bg-blue-300' : 'bg-white hover:bg-purple-100'}" name={journal.name} onclick={updateDocument}>{journal.name}
+                            <button class="w-[100%] flex row justify-between text-left {journal.selected == true ? 'bg-purple-200 hover:bg-purple-300' : 'bg-white hover:bg-purple-100'}" name={journal.name} onclick={updateDocument}>{journal.name}
                                 <div class={`w-0 h-0 border-l-6 border-r-6 border-b-12 border-transparent border-b-current ${getPropertyForFilter("Journalmall", journal.name)}`}></div>
                             </button>
                         </li>
@@ -272,7 +272,7 @@
                 <ul id="dropdown_2">
                     {#each Array.from(units) as [key, unit]}
                         <li>
-                            <button class="w-[100%] flex row justify-between {unit.selected == true ? 'bg-blue-200 hover:bg-blue-300' : 'bg-white hover:bg-purple-100'}" name={unit.name} onclick={updateDocument}>{unit.name}
+                            <button class="w-[100%] flex row justify-between text-left {unit.selected == true ? 'bg-purple-200 hover:bg-purple-300' : 'bg-white hover:bg-purple-100'}" name={unit.name} onclick={updateDocument}>{unit.name}
                                 <div class={`w-3 h-3 rounded-full ${getPropertyForFilter("Vårdenhet", unit.name)}`}></div>
                             </button>
                         </li>
@@ -295,7 +295,7 @@
                 <ul id="dropdown_3">
                     {#each Array.from(roles) as [key, role]}
                         <li>
-                            <button class="w-[100%] flex row justify-between {role.selected == true ? 'bg-blue-200 hover:bg-blue-300' : 'bg-white hover:bg-purple-100'}" name={role.name} onclick={updateDocument}>{role.name}
+                            <button class="w-[100%] flex row justify-between text-left {role.selected == true ? 'bg-purple-200 hover:bg-purple-300' : 'bg-white hover:bg-purple-100'}" name={role.name} onclick={updateDocument}>{role.name}
                                 <div class={`w-3 h-3 ${getPropertyForFilter("Yrkesroll", role.name)}`}></div>
                             </button>
                         </li>
