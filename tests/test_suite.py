@@ -151,7 +151,7 @@ def test_l1_list_overview(setup_page: Page):
     """Test L1 (K1.1-1): Check if the document list is displayed with items."""
     # Use data-testid for list-view
     list_view = setup_page.locator("[data-testid='list-view']")
-    expect(list_view).to_be_visible()
+        expect(list_view).to_be_visible()
     
     # Check for list items using data-testid
     list_items = list_view.locator("[data-testid^='list-item-']").all() # Select all list items
@@ -219,8 +219,8 @@ def test_l5_show_in_list_chronological(setup_page: Page):
             try:
                 # Parse the date using the actual format from formatDate function
                 dates.append(datetime.strptime(date_text, "%Y-%m-%d").date())
-            except ValueError:
-                print(f"Warning: Could not parse date format: {date_text}")
+                    except ValueError:
+                        print(f"Warning: Could not parse date format: {date_text}")
             except Exception as e:
                 print(f"Error parsing date {date_text}: {e}")
     
@@ -243,7 +243,7 @@ def test_ld1_select_journal(setup_page: Page, test_items):
     
     if initial_selection > 0:
         buttons[0].click()
-        setup_page.wait_for_timeout(500)
+            setup_page.wait_for_timeout(500)
     
     # Get title of item being selected for verification
     item_title = buttons[0].locator("h3").text_content()
