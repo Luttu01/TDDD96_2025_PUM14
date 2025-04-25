@@ -4,12 +4,12 @@
 
   import type { Note, Year, Month } from "$lib/models";
   import { buildDateHierarchy } from "$lib/utils";
-  import { filteredNotes, selectedNotes } from "$lib/stores";
+  import { allNotes, selectedNotes } from "$lib/stores";
 
   const noteHierarchy = writable<Year[]>([]);
 
   $: {
-    noteHierarchy.set(buildDateHierarchy($filteredNotes));
+    noteHierarchy.set(buildDateHierarchy($allNotes));
   }
 
   function toggleGroup(group: Year | Month) {
@@ -112,10 +112,8 @@
                         <span
                           class="text-[10px] font-medium border-t-1 border-gray-200"
                         >
-                          Sökord
-                          <span class="text-[10px] font-light text-gray-500">
-                            (inga)
-                          </span>
+                          <span>Sökord</span>
+                            <span class="text-xs font-light text-gray-500">{note.keywords.length}</span>
                         </span>
                         
                       {:else if getNoteSizeState(yearGroup, monthGroup) === "medium"}
@@ -139,10 +137,19 @@
                         <span
                           class="text-sm font-medium border-t-1 border-gray-200 flex-grow flex flex-col"
                         >
-                          Sökord
-                          <span class="text-sm font-light text-gray-500">
-                            (inga)
-                          </span>
+                          <span>Sökord</span>
+                          {#if note.keywords.length > 0}
+                          {#each note.keywords as keyword}
+                            <span
+                              class="text-xs font-light text-gray-500"
+                              >{keyword}</span
+                            >
+                          {/each}
+                          {:else}
+                            <span class="text-xs font-light text-gray-500"
+                              >Inga sökord</span
+                            >
+                          {/if}
                         </span>
                       {:else}
                         <div class="text-gray-900 text-left text-xs w-full flex flex-col">
