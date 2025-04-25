@@ -40,6 +40,10 @@
     if (monthGroup.isCollapsed) return "medium";
     return "expanded";
   }
+
+  function isInSelectedNotes(note: Note) {
+    return $selectedNotes.some((n) => n.CaseData === note.CaseData);
+  }
 </script>
 
 <div class="relative flex h-full bg-gray-100 overflow-x-auto overflow-y-hidden">
@@ -47,13 +51,13 @@
     {#each $noteHierarchy as yearGroup (yearGroup.year)}
       <div class="relative h-full flex flex-col">
         <button
-          class="flex bg-purple-200 py-1 text-left text-sm px-2 w-full shadow-xs"
+          class="flex bg-purple-200 py-1 text-left text-sm px-2 w-full shadow-xs justify-between {yearGroup.isCollapsed ? 'cursor-zoom-in' : 'cursor-zoom-out'}"
           on:click={() => toggleGroup(yearGroup)}
           aria-label="Toggle year {yearGroup.year}"
         >
           <div class="text-md sticky left-1 w-10 font-bold text-gray-900">
             {yearGroup.year}
-          </div>
+          </div>   
         </button>
         <div class="flex flex-grow flex-row space-x-[2px]">
           {#each yearGroup.months as monthGroup}
@@ -61,7 +65,7 @@
               <button
                 class="{yearGroup.isCollapsed
                   ? 'h-0 py-0'
-                  : 'h-6 py-1'} flex bg-purple-300 px-1 justify-between w-full shadow-xs transition-all duration-300"
+                  : 'h-6 py-1'} flex bg-purple-300 px-1 justify-between w-full shadow-xs transition-all duration-300 {monthGroup.isCollapsed ? 'cursor-zoom-in' : 'cursor-zoom-out'}"
                 on:click={() => toggleGroup(monthGroup)}
                 aria-label="Toggle month {monthGroup.month}"
               >
@@ -73,7 +77,7 @@
                   {new Date(0, monthGroup.month).toLocaleString("sv-SE", {
                     month: "short",
                   })}
-                </div>
+                </div>                
               </button>
               <div
                 class="relative flex flex-row overflow-hidden p-[2px] gap-[4px]"
@@ -81,7 +85,7 @@
                 {#each monthGroup.notes as note}
                   {#key note.Dokument_ID}
                     <button
-                      class={`transition-all mt-2 duration-300 border border-gray-200 rounded-md shadow-xs bg-white relative ${
+                      class={`transition-all mt-2 duration-300 border rounded-md shadow-xs ${isInSelectedNotes(note) ? 'bg-purple-50 border-purple-300 hover:bg-purple-100' : 'bg-white border-gray-200 hover:bg-gray-50'} relative cursor-pointer ${
                         getNoteSizeState(yearGroup, monthGroup) === "compact"
                           ? "flex flex-col py-2 px-1 w-13 space-y-1"
                           : getNoteSizeState(yearGroup, monthGroup) === "medium"
@@ -92,8 +96,8 @@
                       aria-label="Select note {note.Dokument_ID}"
                     >
                       <div
-                        class="absolute -top-2 left-1/2 -translate-x-1/2 w-0 h-0
-              border-l-10 border-r-10 border-b-10 border-transparent border-b-white"
+                        class="transition-all duration-300 absolute -top-2.5 left-1/2 -translate-x-1/2 w-0 h-0
+              border-l-10 border-r-10 border-b-10 border-transparent {isInSelectedNotes(note) ? 'border-b-purple-300' : 'border-b-white'}"
                       ></div>
                       {#if getNoteSizeState(yearGroup, monthGroup) === "compact"}
                         <span class="text-[10px] text-gray-500">

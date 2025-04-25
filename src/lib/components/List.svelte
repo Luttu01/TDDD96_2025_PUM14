@@ -185,13 +185,13 @@
 
   /* Selected document styling with left border accent */
   .document-button.selected {
-    background-color: #e3f2fd;
-    border-left: 4px solid #3b82f6;
+    background-color: oklch(97.7% 0.014 308.299);
+    border-left: 4px solid #b83bf6;
     padding-left: calc(1rem - 4px);
   }
 
   .document-button.selected:hover {
-    background-color: #bbdefb;
+    background-color: oklch(94.6% 0.033 307.174);
   }
 
   /* Document title styling with text overflow handling */
