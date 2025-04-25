@@ -1,5 +1,11 @@
 import { browser } from '$app/environment';
 
+/**
+ * Tar ut all text som är markerad med <b> från samtiliga anteckningar.
+ * Sorterar listan i alfabetisk ordning. 
+ * @param html 
+ * @returns 
+ */
 export function extractBoldTitlesFromHTML(html: string): string[] {
     if (!browser) return [];
     const container = document.createElement("div");
@@ -14,6 +20,11 @@ export function extractBoldTitlesFromHTML(html: string): string[] {
     return uniqueTitles.sort((a, b) => a.localeCompare(b, 'sv')); 
 }
 
+/**
+ * Tar ut alla names från keywords och sorterar dem i alfabetisk ordning.
+ * @param keywords 
+ * @returns 
+ */
 export function getSortedUniqueKeywordNames(keywords: { Name: string }[]): string[] {
     const names = keywords
       .map(k => k.Name?.trim())

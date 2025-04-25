@@ -3,7 +3,6 @@
     import type { filterSelect } from "$lib/models";
     import { derived, get } from "svelte/store"
     import { getPropertyForFilter } from "$lib/models"
-    import SearchDropdown from "./SearchDropdown.svelte";
     import { allKeywords } from "$lib/stores";
     import { extractBoldTitlesFromHTML, getSortedUniqueKeywordNames } from '$lib/utils/keywordHelper';
 
@@ -30,16 +29,24 @@
     /**
      * Skapa map till keywords.
      * Sortera set i alfabetiskordring med funktionen getSortedUniqueKeywordNames.
+     * Lägger endast till keywords som faktiskt finns i notes. Alla sökord träffar minst en anteckning. 
      */
     let keywordsMap: Map<string, filterSelect> = new Map();
     let filteredKeywords: Set<string> = new Set();
     
-    $: {
-        const keywordNames = getSortedUniqueKeywordNames(get(allKeywords));
-        keywordNames.forEach(name => {
-            keywordsMap.set(name, { name, selected: false });
-        });
-    }
+        $: if (keywordsMap.size === 0) {
+            const keywordNames = getSortedUniqueKeywordNames(get(allKeywords));
+            const keywordTitles = get(allNotes)
+                .flatMap(note => extractBoldTitlesFromHTML(note.CaseData));
+
+            const titleSet = new Set(keywordTitles);
+
+            keywordNames
+                .filter(name => titleSet.has(name))
+                .forEach(name => {
+                    keywordsMap.set(name, { name, selected: false });
+                });
+        }
 
     const filterNotes = derived(allNotes, $allNotes => {
         /**
@@ -195,23 +202,22 @@
             }
             filteredRoles = new Set(filteredRoles);
         } 
-
+        // Uppdaterar filter för sökord.
         else if (keywordsMap.has(selectedFilter)) {
             const newKeywords = new Map(keywordsMap);
             selectedFilterOption = keywordsMap.get(selectedFilter) as filterSelect;
             newKeywords.set(selectedFilter, { name: selectedFilter, selected: !selectedFilterOption.selected });
             keywordsMap = newKeywords;
-
-            if (!selectedFilterOption.selected) {
-                filteredKeywords.add(selectedFilter);
-            } else {
-                filteredKeywords.delete(selectedFilter);
-            }
-            filteredKeywords = new Set(filteredKeywords);
+ 
+             if (!selectedFilterOption.selected) {
+                 filteredKeywords.add(selectedFilter);
+             } else {
+                 filteredKeywords.delete(selectedFilter);
+             }
+             filteredKeywords = new Set(filteredKeywords);
         } else { // If function called from somewhere not associated with filter
             return;
         }
-        
         // Filter all notes by filter criteria 
         updateFilter()
     }
@@ -293,6 +299,7 @@
                                 <button class="w-[100%] flex row justify-between text-left text-sm {kw.selected == true ? 'bg-purple-200 hover:bg-purple-300' : 'bg-white hover:bg-purple-100'}" name={kw.name} onclick={updateDocument}>
                                     {kw.name}
                                 </button>
+                                
                             </li>
                         {/each}
                     </ul>
