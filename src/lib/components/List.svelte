@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { Note } from '$lib/models';
   import { onDestroy } from 'svelte';
-  import { selectedNotes, filteredNotes, filter } from '$lib/stores';
+  import { selectedNotes, filteredNotes, showTimeline } from '$lib/stores';
   import NotePreview from './NotePreview.svelte';
 
   // Get notes from global store and sort them by date 
@@ -25,6 +25,14 @@
   let isDragging = $state(false);
   let initialX = $state(0);
   let initialWidth = $state(0);
+
+  showTimeline.subscribe((value) => {
+    if (value) {
+      listWidth = 0;
+    } else {
+      listWidth = DEFAULT_LIST_WIDTH;
+    }
+  });
 
   function formatDate(dateTimeString: string): string {
     return new Date(dateTimeString).toLocaleDateString('sv-SE');
@@ -99,7 +107,7 @@
 </script>
 
 <!-- List container -->
-<div data-testid="list-view-container" class="list-container" bind:this={listContainerElement} style="width: {listWidth}px;">
+<div data-testid="list-view-container" class="list-container" class:transition-all={isDragging === false} class:duration-300={isDragging === false} bind:this={listContainerElement} style="width: {listWidth}px;">
   <ul data-testid="list-view" class="list-view" role="listbox" aria-multiselectable="true" aria-label="Clinical notes list">
     <!-- Iterate through sorted notes using CompositionId as unique key -->
     {#each localItems as item}
@@ -143,7 +151,6 @@
     position: relative;
     overflow: hidden; 
     height: 100%; 
-    min-width: 150px; 
     max-width: 500px;
     border: 1px solid #ccc; 
     background-color: white;

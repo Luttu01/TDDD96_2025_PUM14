@@ -28,9 +28,7 @@
   }
 
     showTimeline.subscribe((value) => {
-      if (value === isCollapsed) {
         toggleTimeline();
-      }
     });
 
   // Start resize
@@ -70,14 +68,13 @@
 
 <div class="flex flex-grow overflow-hidden">
   <aside
-    class={!isCollapsed ? "flex-none h-full transition-all duration-500 overflow-y-auto w-0" : "flex-none h-full transition-all duration-500 overflow-y-auto border-r-1 border-gray-200"}
-  >
+    class="flex-none h-full transition-all duration-500 overflow-y-auto border-r-1 border-gray-200">
     <List />
   </aside>
 
   <main class="flex flex-col flex-grow overflow-hidden">
     <SecondaryHeader />
-    <div class="flex-grow flex flex-col transition-all duration-500 overflow-hidden relative">
+    <div class="flex-grow flex flex-col transition-all duration-300 overflow-hidden relative">
       <SelectedNotes />
     </div>
     {#if !isCollapsed}
@@ -90,6 +87,8 @@
     <div
       style="height: {timelineHeight}px;"
       class="overflow-hidden flex-none relative max-h-[400px]"
+      class:transition-all={isDragging === false}
+      class:duration-300={isDragging === false}
     >
       <Timeline />
     </div>
