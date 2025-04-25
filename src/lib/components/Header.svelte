@@ -264,6 +264,7 @@
 
     resetFilter.subscribe((value) => {
         reset("");
+        resetFilter.set(false);
     });
 </script>
 

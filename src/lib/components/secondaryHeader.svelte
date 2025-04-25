@@ -1,16 +1,17 @@
 <script lang="ts">
 import { powerMode, showTimeline, resetFilter, resetOpenDocs} from "$lib/stores";
+import { selectedNotes } from "$lib/stores";
 
 function reset() {
     resetFilter.set(true);
 }
 
 function closeDocs() {
-    resetOpenDocs.set(true);
+    selectedNotes.set([]);
 }
 
 </script>
-<div id="SecondaryHeader" class="flex flex-row bg-white border-b-1 border-gray-200 justify-end">
+<div id="SecondaryHeader" class="flex flex-row bg-white border-b-1 border-gray-200 justify-end px-1">
     <div id="ToggleCanvas" class="p-1 flex">
         <label for="toggleCanvas" class="text-sm items-center flex gap-1">
           Canvas Läge

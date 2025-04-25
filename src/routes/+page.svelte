@@ -6,11 +6,10 @@
   import { onDestroy } from "svelte";
   import { showTimeline } from "$lib/stores";
 
-  const MIN_TIMELINE_HEIGHT = 140;
+  const MIN_TIMELINE_HEIGHT = 40;
   const DEFAULT_TIMELINE_HEIGHT = 180;
 
   let timelineHeight = 0;
-  let lastExpandedHeight = DEFAULT_TIMELINE_HEIGHT;
   let isDragging = false;
   let isCollapsed = true;
 
@@ -20,11 +19,10 @@
   // Toggle collapse/expand
   function toggleTimeline() {
     if (!isCollapsed) {
-      lastExpandedHeight = timelineHeight;
       timelineHeight = 0;
       isCollapsed = true;
     } else {
-      timelineHeight = Math.max(lastExpandedHeight, MIN_TIMELINE_HEIGHT);
+      timelineHeight = DEFAULT_TIMELINE_HEIGHT;
       isCollapsed = false;
     }
   }
@@ -51,14 +49,7 @@
     const currentY = event.clientY;
     const dy = initialY - currentY;
     const newHeight = initialHeight + dy;
-    if (newHeight < MIN_TIMELINE_HEIGHT - 100) {
-      toggleTimeline();
-      showTimeline.set(false);
-      lastExpandedHeight = DEFAULT_TIMELINE_HEIGHT;
-      return;
-    }
     timelineHeight = Math.max(MIN_TIMELINE_HEIGHT, newHeight);
-    lastExpandedHeight = timelineHeight;
   }
 
   function handleMouseUp() {
