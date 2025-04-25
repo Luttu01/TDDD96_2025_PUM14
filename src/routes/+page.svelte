@@ -1,6 +1,7 @@
 <script lang="ts">
   import SelectedNotes from "$lib/components/SelectedNotes.svelte";
   import Timeline from "$lib/components/Timeline.svelte";
+  import SecondaryHeader from "$lib/components/SecondaryHeader.svelte";
   import List from "$lib/components/List.svelte";
   import { onDestroy } from "svelte";
   import { showTimeline } from "$lib/stores";
@@ -8,13 +9,13 @@
   const MIN_TIMELINE_HEIGHT = 140;
   const DEFAULT_TIMELINE_HEIGHT = 180;
 
-  let timelineHeight = $state(DEFAULT_TIMELINE_HEIGHT);
-  let lastExpandedHeight = $state(DEFAULT_TIMELINE_HEIGHT); // to restore on expand
-  let isDragging = $state(false);
-  let isCollapsed = $state(false);
+  let timelineHeight = 0;
+  let lastExpandedHeight = DEFAULT_TIMELINE_HEIGHT;
+  let isDragging = false;
+  let isCollapsed = true;
 
-  let initialY = $state(0);
-  let initialHeight = $state(0);
+  let initialY = 0;
+  let initialHeight = 0;
 
   // Toggle collapse/expand
   function toggleTimeline() {
@@ -27,6 +28,12 @@
       isCollapsed = false;
     }
   }
+
+    showTimeline.subscribe((value) => {
+      if (value === isCollapsed) {
+        toggleTimeline();
+      }
+    });
 
   // Start resize
   function handleMouseDown(event: MouseEvent) {
@@ -44,6 +51,12 @@
     const currentY = event.clientY;
     const dy = initialY - currentY;
     const newHeight = initialHeight + dy;
+    if (newHeight < MIN_TIMELINE_HEIGHT - 100) {
+      toggleTimeline();
+      showTimeline.set(false);
+      lastExpandedHeight = DEFAULT_TIMELINE_HEIGHT;
+      return;
+    }
     timelineHeight = Math.max(MIN_TIMELINE_HEIGHT, newHeight);
     lastExpandedHeight = timelineHeight;
   }
@@ -64,26 +77,21 @@
   });
 </script>
 
-{#if $showTimeline}
-{toggleTimeline()};
-{/if}
-
 <div class="flex flex-grow overflow-hidden">
   <aside
-    class={!isCollapsed
-      ? "w-0 flex-none transition-all duration-500 overflow-hidden border-r-1 border-gray-200"
-      : "flex-none h-full transition-all duration-500 overflow-y-auto border-r-1 border-gray-200"}
+    class={!isCollapsed ? "flex-none h-full transition-all duration-500 overflow-y-auto w-0" : "flex-none h-full transition-all duration-500 overflow-y-auto border-r-1 border-gray-200"}
   >
     <List />
   </aside>
 
   <main class="flex flex-col flex-grow overflow-hidden">
+    <SecondaryHeader />
     <div class="flex-grow flex flex-col transition-all duration-500 overflow-hidden relative">
       <SelectedNotes />
     </div>
     {#if !isCollapsed}
       <button
-        class="w-full h-2 cursor-row-resize bg-gray-200 hover:bg-gray-300"
+        class="w-full h-2 min-h-2 cursor-row-resize bg-gray-200 hover:bg-gray-300"
         onmousedown={handleMouseDown}
         aria-label="Resize timeline"
       ></button>

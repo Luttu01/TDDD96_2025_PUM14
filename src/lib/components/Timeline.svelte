@@ -71,7 +71,7 @@
                     : 'text-gray-900'} text-xs sticky left-1 px-1 w-10 font-semibold text-left"
                 >
                   {new Date(0, monthGroup.month).toLocaleString("sv-SE", {
-                    month: "long",
+                    month: "short",
                   })}
                 </div>
               </button>
@@ -115,7 +115,7 @@
                         </span>
                         
                       {:else if getNoteSizeState(yearGroup, monthGroup) === "medium"}
-                      <div class="text-gray-500 text-sm flex justify-between border-b-1 border-gray-200 pb-1">
+                      <div class="text-gray-500 text-xs flex justify-between border-b-1 border-gray-200 pb-1">
                         {new Date(note.DateTime).toLocaleDateString("sv-SE")}
                         <NotePreview note={note} />
                       </div>
@@ -142,7 +142,7 @@
                         </span>
                       {:else}
                         <div class="text-gray-900 text-left text-xs w-full flex flex-col">
-                          <div class="text-gray-500 text-sm flex justify-between border-b-1 border-gray-200 pb-1">
+                          <div class="text-gray-500 text-xs flex justify-between border-b-1 border-gray-200 pb-1">
                             {new Date(note.DateTime).toLocaleDateString("sv-SE")}
                             <NotePreview note={note} />
                           </div>

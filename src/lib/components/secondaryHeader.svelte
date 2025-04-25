@@ -1,5 +1,5 @@
 <script lang="ts">
-import { powerMode, showTimeline, resetFilter, resetOpenDocs } from "$lib/stores";
+import { powerMode, showTimeline, resetFilter, resetOpenDocs} from "$lib/stores";
 
 function reset() {
     resetFilter.set(true);
@@ -10,36 +10,52 @@ function closeDocs() {
 }
 
 </script>
-<div id="SecondaryHeader" class="flex flex-row bg-white border-b-1 border-gray-200">
-    <div id="PowerPointToggle" class="p-2 flex items-center gap-2">
-        <label for="powerModeToggle" class="text-sm font-medium"
-          >PowerPoint Läge</label
-        >
-        <input
-          id="powerModeToggle"
-          type="checkbox"
-          bind:checked={$powerMode}
-          class="toggle"
-        />
+<div id="SecondaryHeader" class="flex flex-row bg-white border-b-1 border-gray-200 justify-end">
+    <div id="ToggleCanvas" class="p-1 flex">
+        <label for="toggleCanvas" class="text-sm items-center flex gap-1">
+          Canvas Läge
+        <div class="relative inline-block w-8 h-4 items-center">
+          <input
+            id="toggleCanvas"
+            type="checkbox"
+            bind:checked={$powerMode}
+            class="sr-only peer"
+          />
+          <div
+            class="w-full h-full bg-gray-300 rounded-full peer-checked:bg-purple-500 transition-colors"
+          ></div>
+          <div
+            class="absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full shadow-md transition-all peer-checked:translate-x-4"
+          ></div>
+        </div>
+      </label>
       </div>
     
-      <div id="ToggleTimeline" class="p-2 flex items-center gap-2">
-        <label for="toggleTimeline" class="text-sm font-medium"
-          >Visa tidslinje</label
-        >
-        <input
-          id="toggleTimeline"
-          type="checkbox"
-          bind:checked={$showTimeline}
-          class="toggle"
-        />
+      <div id="ToggleTimeline" class="p-1 flex">
+        <label for="toggleTimeline" class="text-sm items-center flex gap-1">
+          Tidslinje Läge
+        <div class="relative inline-block w-8 h-4 items-center">
+          <input
+            id="toggleTimeline"
+            type="checkbox"
+            bind:checked={$showTimeline}
+            class="sr-only peer"
+          />
+          <div
+            class="w-full h-full bg-gray-300 rounded-full peer-checked:bg-purple-500 transition-colors"
+          ></div>
+          <div
+            class="absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full shadow-md transition-all peer-checked:translate-x-4"
+          ></div>
+        </div>
+      </label>
       </div>
     
-      <div id="ResetFilters" class="p-2 flex items-center gap-2">
-        <button id="Reset" class="hover:text-purple-500 self-center" on:click={reset}>Återställ Filter</button>
+      <div id="ResetFilters" class="p-1 flex items-center">
+        <button id="Reset" class="hover:text-purple-500 self-center text-sm" on:click={reset}>Återställ Filter</button>
       </div>
     
-      <div id="CloseDocs" class="p-2 flex items-center gap-2">
-        <button id="Close" class="hover:text-purple-500 self-center" on:click={closeDocs}>Återställ Journalvy</button>
+      <div id="CloseDocs" class="p-1 flex items-center">
+        <button id="Close" class="hover:text-purple-500 self-center text-sm" on:click={closeDocs}>Återställ Journalvy</button>
     </div>
 </div>

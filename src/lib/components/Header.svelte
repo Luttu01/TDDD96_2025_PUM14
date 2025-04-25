@@ -216,7 +216,7 @@
         updateFilter()
     }
 
-    function reset(event : MouseEvent, arg : string) {
+    function reset(arg : string) {
         const newTemplates = new Map(templates);
         const newUnits = new Map(units);
         const newRoles = new Map(roles);
@@ -260,21 +260,27 @@
         roles = newRoles;
         updateFilter();
     }
+
+
+    resetFilter.subscribe((value) => {
+        reset("");
+    });
 </script>
 
-{#if $resetFilter}
-{reset(new MouseEvent(""), "")}
-{/if}
-
-<div id="Header" class="flex flex-row justify-between outline-solid outline-gray-300 p-2 space-x-4">
-    <h1 id="ProjectTitle" class="hidden xl:flex text-2xl"><a href="/" onclick={(event) => reset(event, "")}>Demo<span class="text-purple-700"> 2</span></a></h1>
+<div id="Header" class="flex flex-row justify-between p-1 space-x-4">
+    <h1 id="ProjectTitle" class="hidden xl:flex text-2xl"><a href="/" onclick={(event) => reset("")}>Demo<span class="text-purple-700"> 2</span></a></h1>
     <div id="Filtermenu" class="grid grid-flow-col grid-rows-2 lg:flex lg:flex-row lg:flex-grow text-md items-center justify-end gap-2">
+            <div id="DateDiv" class="outline-1 outline-gray-300 rounded-md bg-white flex flex-row space-x-2 px-2 text-sm">
+                <input type="date" name="OldestDate" id="OldestDate" min={absMin} max={maxDate} oninput={updateFilter} bind:value={minDate}/>
+                <p>-</p>
+                <input type="date" name="NewestDate" id="NewestDate" min={minDate} max={absMax} oninput={updateFilter} bind:value={maxDate}>
+            </div>
             <!-- Keywords dropdown -->
             <div id="keywords" class="outline-1 outline-gray-300 rounded-md bg-white justify-center">
-                <div id="dropdown_button" class="px-3 flex flex-row justify-between">
+                <div id="dropdown_button" class="px-2 flex flex-row justify-between text-sm">
                     <button>Sökord</button>
                     {#if filteredKeywords.size != 0}
-                        <button onclick={(event) => reset(event, 'Sökord')} class="text-red-600 text-1xl">X</button>
+                        <button onclick={(event) => reset('Sökord')} class="text-red-600 text-1xl">X</button>
                     {:else}
                         <i class="fa fa-caret-down pt-1"></i>
                     {/if}
@@ -283,7 +289,7 @@
                     <ul id="dropdown_keywords">
                         {#each Array.from(keywordsMap) as [key, kw]}
                             <li>
-                                <button class="w-[100%] flex row justify-between {kw.selected == true ? 'bg-blue-200 hover:bg-blue-300' : 'bg-white hover:bg-purple-100'}" name={kw.name} onclick={updateDocument}>
+                                <button class="w-[100%] flex row justify-between text-left text-sm {kw.selected == true ? 'bg-purple-200 hover:bg-purple-300' : 'bg-white hover:bg-purple-100'}" name={kw.name} onclick={updateDocument}>
                                     {kw.name}
                                 </button>
                             </li>
@@ -291,19 +297,13 @@
                     </ul>
                 </div>
             </div>
-
-            <div id="DateDiv" class="outline-1 outline-gray-300 rounded-md bg-white flex flex-row space-x-4 px-3">
-                <input type="date" name="OldestDate" id="OldestDate" min={absMin} max={maxDate} oninput={updateFilter} bind:value={minDate}/>
-                <p>-</p>
-                <input type="date" name="NewestDate" id="NewestDate" min={minDate} max={absMax} oninput={updateFilter} bind:value={maxDate}>
-            </div>
             <div id="template" class="outline-1 outline-gray-300 rounded-md bg-white">
-                <div id="dropdown_button" class="px-3 flex flex-row justify-between">
+                <div id="dropdown_button" class="px-2 flex flex-row justify-between text-sm">
                     <button>
                         {template}
                     </button>
                     {#if filteredTemplates.size != 0}
-                        <button onclick={(event) => reset(event, template)} class="text-red-500 text-sm font-bold">X</button>
+                        <button onclick={(event) => reset(template)} class="text-red-500 text-sm font-bold">X</button>
                     {:else}
                     <i class="fa fa-caret-down pt-1"></i>
                     {/if}
@@ -313,7 +313,7 @@
                 <ul id="dropdown_1">
                     {#each Array.from(templates) as [key, journal]}
                         <li>
-                            <button class="w-[100%] flex row justify-between text-left {journal.selected == true ? 'bg-purple-200 hover:bg-purple-300' : 'bg-white hover:bg-purple-100'}" name={journal.name} onclick={updateDocument}>{journal.name}
+                            <button class="w-[100%] flex row justify-between text-left text-sm {journal.selected == true ? 'bg-purple-200 hover:bg-purple-300' : 'bg-white hover:bg-purple-100'}" name={journal.name} onclick={updateDocument}>{journal.name}
                                 <div class={`w-0 h-0 border-l-6 border-r-6 border-b-12 border-transparent border-b-current ${getPropertyForFilter("Journalmall", journal.name)}`}></div>
                             </button>
                         </li>
@@ -322,12 +322,12 @@
                 </div>
             </div>
             <div id="Vårdenhet" class="outline-1 outline-gray-300 rounded-md bg-white justify-center">
-                <div id="dropdown_button" class="px-3 flex flex-row justify-between">
+                <div id="dropdown_button" class="px-2 flex flex-row justify-between text-sm">
                     <button>
                         {unit}
                     </button>
                     {#if filteredUnits.size != 0}
-                        <button onclick={(event) => reset(event, unit)} class="text-red-500 text-sm font-bold">X</button>
+                        <button onclick={(event) => reset(unit)} class="text-red-500 text-sm font-bold">X</button>
                     {:else}
                     <i class="fa fa-caret-down pt-1"></i>
                     {/if}
@@ -336,7 +336,7 @@
                 <ul id="dropdown_2">
                     {#each Array.from(units) as [key, unit]}
                         <li>
-                            <button class="w-[100%] flex row justify-between text-left {unit.selected == true ? 'bg-purple-200 hover:bg-purple-300' : 'bg-white hover:bg-purple-100'}" name={unit.name} onclick={updateDocument}>{unit.name}
+                            <button class="w-[100%] flex row justify-between text-left text-sm {unit.selected == true ? 'bg-purple-200 hover:bg-purple-300' : 'bg-white hover:bg-purple-100'}" name={unit.name} onclick={updateDocument}>{unit.name}
                                 <div class={`w-3 h-3 rounded-full ${getPropertyForFilter("Vårdenhet", unit.name)}`}></div>
                             </button>
                         </li>
@@ -345,12 +345,12 @@
             </div>
             </div>
             <div id="role" class="outline-1 outline-gray-300 rounded-md bg-white justify-center">
-                <div id="dropdown_button" class="px-3 flex flex-row justify-between">
+                <div id="dropdown_button" class="px-2 flex flex-row justify-between text-sm">
                     <button>
                         {role}
                     </button>
                     {#if filteredRoles.size != 0}
-                        <button onclick={(event) => reset(event, role)} class="text-red-500 text-sm font-bold">X</button>
+                        <button onclick={(event) => reset(role)} class="text-red-500 text-sm font-bold">X</button>
                     {:else}
                     <i class="fa fa-caret-down pt-1"></i>
                     {/if}
@@ -359,7 +359,7 @@
                 <ul id="dropdown_3">
                     {#each Array.from(roles) as [key, role]}
                         <li>
-                            <button class="w-[100%] flex row justify-between text-left {role.selected == true ? 'bg-purple-200 hover:bg-purple-300' : 'bg-white hover:bg-purple-100'}" name={role.name} onclick={updateDocument}>{role.name}
+                            <button class="w-[100%] flex row justify-between text-left text-sm {role.selected == true ? 'bg-purple-200 hover:bg-purple-300' : 'bg-white hover:bg-purple-100'}" name={role.name} onclick={updateDocument}>{role.name}
                                 <div class={`w-3 h-3 ${getPropertyForFilter("Yrkesroll", role.name)}`}></div>
                             </button>
                         </li>
@@ -378,7 +378,7 @@
         display: block;
         text-align: left;
         height: fit-content;
-        width: 11em;
+        width: 8em;
     }
     #dropdown_button {
         color: #000;
@@ -410,7 +410,7 @@
         max-height: 20em;
     }
     #template:hover, #role:hover, #Vårdenhet:hover, #keywords:hover {
-        background-color: lightskyblue;
+        background-color: rgb(233, 233, 233);
     }
     #DateDiv {
         height: fit-content;
