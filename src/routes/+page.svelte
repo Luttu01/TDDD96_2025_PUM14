@@ -7,33 +7,24 @@
   import { showTimeline } from "$lib/stores";
 
   const MIN_TIMELINE_HEIGHT = 40;
-  const DEFAULT_TIMELINE_HEIGHT = 180;
+  const DEFAULT_TIMELINE_HEIGHT = 190;
 
   let timelineHeight = 0;
   let isDragging = false;
-  let isCollapsed = true;
 
   let initialY = 0;
   let initialHeight = 0;
 
-  // Toggle collapse/expand
-  function toggleTimeline() {
-    if (!isCollapsed) {
+    showTimeline.subscribe((value) => {
+      if (!value) {
       timelineHeight = 0;
-      isCollapsed = true;
     } else {
       timelineHeight = DEFAULT_TIMELINE_HEIGHT;
-      isCollapsed = false;
     }
-  }
-
-    showTimeline.subscribe((value) => {
-        toggleTimeline();
     });
 
   // Start resize
   function handleMouseDown(event: MouseEvent) {
-    if (isCollapsed) return; // Skip dragging when collapsed
     isDragging = true;
     initialY = event.clientY;
     initialHeight = timelineHeight;
@@ -43,7 +34,7 @@
 
   // Resizing logic
   function handleMouseMove(event: MouseEvent) {
-    if (!isDragging || isCollapsed) return;
+    if (!isDragging) return;
     const currentY = event.clientY;
     const dy = initialY - currentY;
     const newHeight = initialHeight + dy;
@@ -77,7 +68,7 @@
     <div class="flex-grow flex flex-col transition-all duration-300 overflow-hidden relative">
       <SelectedNotes />
     </div>
-    {#if !isCollapsed}
+    {#if $showTimeline}
       <button
         class="w-full h-2 min-h-2 cursor-row-resize bg-gray-200 hover:bg-gray-300"
         onmousedown={handleMouseDown}

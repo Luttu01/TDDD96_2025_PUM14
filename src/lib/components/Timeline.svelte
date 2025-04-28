@@ -106,7 +106,7 @@
                             day: "2-digit",
                           })}
                         </span>
-                        <span class="h-16">
+                        <span class="h-17">
                           <NotePreview note={note} direction="flex-col" />
                         </span>
                         <span

@@ -156,6 +156,11 @@
     ? ''
     : 'no-gridlines'}"
 >
+  {#if $selectedNotes.length <= 0}
+    <div class="flex items-center justify-center h-full">
+      <p class="text-gray-400 text-lg">Tryck på Journalanteckningar i listan eller tidslinjen för att öppna här</p>
+    </div>
+  {/if}
   {#if showSearchInput}
   <div id="SearchInput" class="fixed top-10 left-1/2 transform -translate-x-1/2 z-50 bg-white rounded-md shadow-lg max-w-md w-[90%] p-2">
     <SearchInput on:close={() => showSearchInput = false} />

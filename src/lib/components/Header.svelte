@@ -303,7 +303,7 @@ $: {
 <div id="Header" class="flex flex-row justify-between p-1 space-x-4">
   <h1 id="ProjectTitle" class="hidden xl:flex text-2xl">
     <a href="/" onclick={(event) => reset("")}
-      >Demo<span class="text-purple-700"> 2</span></a
+      >Journal <span class="text-purple-700">Visualisering</span></a
     >
   </h1>
   <div
@@ -402,9 +402,9 @@ $: {
                 name={journal.name}
                 onclick={updateDocument}
                 >{journal.name}
-                <div
-                  class={`w-0 h-0 border-l-6 border-r-6 border-b-12 border-transparent border-b-current ${getPropertyForFilter("Journalmall", journal.name)}`}
-                ></div>
+                <svg class="w-5 h-5 p-[2px] {getPropertyForFilter("Journalmall", journal.name)} text-white rounded-full" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                  <path fill-rule="evenodd" d="M9 2.221V7H4.221a2 2 0 0 1 .365-.5L8.5 2.586A2 2 0 0 1 9 2.22ZM11 2v5a2 2 0 0 1-2 2H4v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2h-7ZM8 16a1 1 0 0 1 1-1h6a1 1 0 1 1 0 2H9a1 1 0 0 1-1-1Zm1-5a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2H9Z" clip-rule="evenodd"/>
+                </svg>  
               </button>
             </li>
           {/each}
@@ -443,9 +443,9 @@ $: {
                 name={unit.name}
                 onclick={updateDocument}
                 >{unit.name}
-                <div
-                  class={`w-3 h-3 rounded-full ${getPropertyForFilter("Vårdenhet", unit.name)}`}
-                ></div>
+                <svg class="w-5 h-5 p-[2px] {getPropertyForFilter("Vårdenhet", unit.name)} text-white rounded-full" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                  <path fill-rule="evenodd" d="M11.293 3.293a1 1 0 0 1 1.414 0l6 6 2 2a1 1 0 0 1-1.414 1.414L19 12.414V19a2 2 0 0 1-2 2h-3a1 1 0 0 1-1-1v-3h-2v3a1 1 0 0 1-1 1H7a2 2 0 0 1-2-2v-6.586l-.293.293a1 1 0 0 1-1.414-1.414l2-2 6-6Z" clip-rule="evenodd"/>
+                </svg>
               </button>
             </li>
           {/each}
@@ -484,9 +484,9 @@ $: {
                 name={role.name}
                 onclick={updateDocument}
                 >{role.name}
-                <div
-                  class={`w-3 h-3 ${getPropertyForFilter("Yrkesroll", role.name)}`}
-                ></div>
+                <svg class="w-5 h-5 p-[1px] {getPropertyForFilter("Yrkesroll", role.name)} text-white rounded-full" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                  <path fill-rule="evenodd" d="M12 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm-2 9a4 4 0 0 0-4 4v1a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-1a4 4 0 0 0-4-4h-4Z" clip-rule="evenodd"/>
+                </svg>
               </button>
             </li>
           {/each}
@@ -539,7 +539,7 @@ $: {
     flex-direction: column;
     font-size: 15px;
     background: white;
-    width: 90%;
+    width: 100%;
     min-width: fit-content;
     box-shadow: 0px 10px 10px 0px rgba(0, 0, 0, 0.2);
     z-index: 50;
