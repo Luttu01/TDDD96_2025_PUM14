@@ -64,7 +64,6 @@
   </aside>
 
   <main class="flex flex-col flex-grow overflow-hidden">
-    <SecondaryHeader />
     <div class="flex-grow flex flex-col transition-all duration-300 overflow-hidden relative">
       <SelectedNotes />
     </div>

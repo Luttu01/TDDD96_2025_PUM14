@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { allNotes, filteredNotes, filter, resetFilter } from "$lib/stores";
+  import { allNotes, filteredNotes, filter, resetFilter, powerMode, showTimeline } from "$lib/stores";
   import type { filterSelect } from "$lib/models";
   import { derived, get } from "svelte/store";
   import { getPropertyForFilter } from "$lib/models";
@@ -8,6 +8,15 @@
     extractBoldTitlesFromHTML,
     getSortedUniqueKeywordNames,
   } from "$lib/utils/keywordHelper";
+  import { selectedNotes } from "$lib/stores";
+
+function resetF() {
+    resetFilter.set(true);
+}
+
+function closeDocs() {
+    selectedNotes.set([]);
+}
 
   /**
    * TODO Sprint 2-3
@@ -111,9 +120,9 @@
   });
 
   const readNotes = get(filterNotes);
-  let templates: Map<string, filterSelect> = readNotes.get("Journalmall")!;
-  let units: Map<string, filterSelect> = readNotes.get("Vårdenhet")!;
-  let roles: Map<string, filterSelect> = readNotes.get("Yrkesroll")!;
+  let templates: Map<string, filterSelect> = readNotes.get("Journalmall") ?? new Map<string, filterSelect>();
+  let units: Map<string, filterSelect> = readNotes.get("Vårdenhet") ?? new Map<string, filterSelect>();
+  let roles: Map<string, filterSelect> = readNotes.get("Yrkesroll") ?? new Map<string, filterSelect>();
   let minDate: string = readNotes
     .get("Äldsta dokument")!
     .get("Äldst")!
@@ -301,15 +310,59 @@ $: {
 </script>
 
 <div id="Header" class="flex flex-row justify-between p-1 space-x-4">
-  <h1 id="ProjectTitle" class="hidden xl:flex text-2xl">
-    <a href="/" onclick={(event) => reset("")}
-      >Journal <span class="text-purple-700">Visualisering</span></a
-    >
-  </h1>
   <div
     id="Filtermenu"
     class="grid grid-flow-col grid-rows-2 lg:flex lg:flex-row lg:flex-grow text-md items-center justify-end gap-2"
   >
+  <div id="ToggleCanvas" class="p-1 flex">
+    <label for="toggleCanvas" class="text-sm items-center flex gap-1">
+      Canvas Läge
+    <div class="relative inline-block w-8 h-4 items-center">
+      <input
+        id="toggleCanvas"
+        type="checkbox"
+        bind:checked={$powerMode}
+        class="sr-only peer"
+      />
+      <div
+        class="w-full h-full bg-gray-300 rounded-full peer-checked:bg-purple-500 transition-colors"
+      ></div>
+      <div
+        class="absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full shadow-md transition-all peer-checked:translate-x-4"
+      ></div>
+    </div>
+  </label>
+  </div>
+
+  <div id="ToggleTimeline" class="p-1 flex">
+    <label for="toggleTimeline" class="text-sm items-center flex gap-1">
+      Tidslinje Läge
+    <div class="relative inline-block w-8 h-4 items-center">
+      <input
+        id="toggleTimeline"
+        type="checkbox"
+        bind:checked={$showTimeline}
+        class="sr-only peer"
+      />
+      <div
+        class="w-full h-full bg-gray-300 rounded-full peer-checked:bg-purple-500 transition-colors"
+      ></div>
+      <div
+        class="absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full shadow-md transition-all peer-checked:translate-x-4"
+      ></div>
+    </div>
+  </label>
+  </div>
+
+  <div id="CloseDocs" class="p-1 flex items-center">
+    <button id="Close" class="hover:text-purple-500 self-center text-sm" onclick={closeDocs}>Återställ Journalvy</button>
+</div>
+
+  <div id="ResetFilters" class="p-1 flex items-center">
+    <button id="Reset" class="hover:text-purple-500 self-center text-sm" onclick={resetF}>Återställ Filter</button>
+  </div>
+
+  <div class="flex flex-grow"> </div>
     <div
       id="DateDiv"
       class="outline-1 outline-gray-300 rounded-md bg-white flex flex-row space-x-2 px-2 text-sm"
@@ -402,7 +455,7 @@ $: {
                 name={journal.name}
                 onclick={updateDocument}
                 >{journal.name}
-                <svg class="w-5 h-5 p-[2px] {getPropertyForFilter("Journalmall", journal.name)} text-white rounded-full" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                <svg class="w-5 h-5 p-[2px] flex-none {getPropertyForFilter("Journalmall", journal.name)} text-white rounded-full" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
                   <path fill-rule="evenodd" d="M9 2.221V7H4.221a2 2 0 0 1 .365-.5L8.5 2.586A2 2 0 0 1 9 2.22ZM11 2v5a2 2 0 0 1-2 2H4v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2h-7ZM8 16a1 1 0 0 1 1-1h6a1 1 0 1 1 0 2H9a1 1 0 0 1-1-1Zm1-5a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2H9Z" clip-rule="evenodd"/>
                 </svg>  
               </button>
@@ -443,7 +496,7 @@ $: {
                 name={unit.name}
                 onclick={updateDocument}
                 >{unit.name}
-                <svg class="w-5 h-5 p-[2px] {getPropertyForFilter("Vårdenhet", unit.name)} text-white rounded-full" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                <svg class="w-5 h-5 p-[2px] flex-none {getPropertyForFilter("Vårdenhet", unit.name)} text-white rounded-full" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
                   <path fill-rule="evenodd" d="M11.293 3.293a1 1 0 0 1 1.414 0l6 6 2 2a1 1 0 0 1-1.414 1.414L19 12.414V19a2 2 0 0 1-2 2h-3a1 1 0 0 1-1-1v-3h-2v3a1 1 0 0 1-1 1H7a2 2 0 0 1-2-2v-6.586l-.293.293a1 1 0 0 1-1.414-1.414l2-2 6-6Z" clip-rule="evenodd"/>
                 </svg>
               </button>
@@ -484,7 +537,7 @@ $: {
                 name={role.name}
                 onclick={updateDocument}
                 >{role.name}
-                <svg class="w-5 h-5 p-[1px] {getPropertyForFilter("Yrkesroll", role.name)} text-white rounded-full" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                <svg class="w-5 h-5 p-[1px] flex-none {getPropertyForFilter("Yrkesroll", role.name)} text-white rounded-full" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
                   <path fill-rule="evenodd" d="M12 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm-2 9a4 4 0 0 0-4 4v1a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-1a4 4 0 0 0-4-4h-4Z" clip-rule="evenodd"/>
                 </svg>
               </button>

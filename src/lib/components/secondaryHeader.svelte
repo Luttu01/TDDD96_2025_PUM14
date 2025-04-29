@@ -11,7 +11,7 @@ function closeDocs() {
 }
 
 </script>
-<div id="SecondaryHeader" class="flex flex-row bg-white border-b-1 border-gray-200 justify-end px-1">
+<div id="SecondaryHeader" class="flex flex-row flex-grow bg-white border-gray-200 justify-beginning px-1">
     <div id="ToggleCanvas" class="p-1 flex">
         <label for="toggleCanvas" class="text-sm items-center flex gap-1">
           Canvas Läge
@@ -51,12 +51,12 @@ function closeDocs() {
         </div>
       </label>
       </div>
+
+      <div id="CloseDocs" class="p-1 flex items-center">
+        <button id="Close" class="hover:text-purple-500 self-center text-sm" on:click={closeDocs}>Återställ Journalvy</button>
+    </div>
     
       <div id="ResetFilters" class="p-1 flex items-center">
         <button id="Reset" class="hover:text-purple-500 self-center text-sm" on:click={reset}>Återställ Filter</button>
       </div>
-    
-      <div id="CloseDocs" class="p-1 flex items-center">
-        <button id="Close" class="hover:text-purple-500 self-center text-sm" on:click={closeDocs}>Återställ Journalvy</button>
-    </div>
 </div>

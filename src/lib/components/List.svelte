@@ -35,7 +35,11 @@
   });
 
   function formatDate(dateTimeString: string): string {
-    return new Date(dateTimeString).toLocaleDateString('sv-SE');
+    return new Date(dateTimeString).toLocaleDateString('sv-SE', {
+      year: '2-digit',
+      month: '2-digit',
+      day: '2-digit'
+    });
   }
 
   function handleDocumentClick(clickedNote: Note, event: MouseEvent) {
@@ -121,14 +125,12 @@
           onclick={(e) => handleDocumentClick(item, e)}
         >
           <div class="document-item">
-            <div id="document-header">
+            <div class="flex justify-between">
+              <div class="document-meta space-x-2">
+              <span class="max-w-15 min-w-15">{formatDate(item.DateTime)}</span>
               <h3>{item.Dokumentnamn}</h3>
-              <NotePreview note={ item }/>
             </div>
-            <div class="document-meta">
-              <span>{formatDate(item.DateTime)} -</span>
-              <span>{item.Dokument_skapad_av_yrkestitel_Namn} -</span>
-              <span>{item.Vårdenhet_Namn}</span>
+              <NotePreview note={ item }/>
             </div>
           </div>
         </button>
@@ -205,17 +207,11 @@
   .document-item h3 {
     margin: 0 0 0.1rem 0;
     color: #333;
-    font-size: 0.85rem;
-    font-weight: 700;
+    font-size: 0.80rem;
+    font-weight: 600;
     white-space: nowrap; 
     overflow: hidden;
     text-overflow: ellipsis;
-  }
-
-  #document-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
   }
 
   /* Metadata sections with overflow handling */
@@ -229,9 +225,9 @@
   .document-meta {
     display: flex;
     flex-wrap: row;
-    font-size: 0.75rem;
-    font-weight: 400;
-    color: #555;
+    font-size: 0.80rem;
+    font-weight: 500;
+    color: #6d6d6d;
   }
 
   /* Resize handle on the right side of the list */
