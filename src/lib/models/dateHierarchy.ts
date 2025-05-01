@@ -1,8 +1,14 @@
 import type { Note } from './note';
 
+export type Day = {
+    day: number;
+    notes: Note[];
+    isCollapsed: boolean;
+  };
+
 export type Month = {
     month: number;
-    notes: Note[];
+    days: Day[];
     isCollapsed: boolean;
   };
 

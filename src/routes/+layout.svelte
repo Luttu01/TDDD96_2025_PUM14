@@ -5,7 +5,7 @@
 
 
 <main class="flex flex-col h-screen">
-  <header class="border-b-1 border-gray-200">
+  <header>
     <Header />
   </header>
     <slot />
