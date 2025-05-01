@@ -11,5 +11,5 @@ export type Note = {
   Tidsstämpel_för_sparat_dokument: string;
   Vårdenhet_Identifierare: string;
   Vårdenhet_Namn: string;
-  Keywords: string[];
+  keywords: string[];
 };

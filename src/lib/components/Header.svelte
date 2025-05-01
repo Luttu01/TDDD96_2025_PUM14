@@ -9,6 +9,7 @@
     getSortedUniqueKeywordNames,
   } from "$lib/utils/keywordHelper";
   import { selectedNotes } from "$lib/stores";
+  import { stringToColor } from "$lib/utils";
 
 function resetF() {
     resetFilter.set(true);
@@ -400,7 +401,7 @@ $: {
         {#if filteredKeywords.size != 0}
           <button
             onclick={(event) => reset("Sökord")}
-            class="text-red-600 text-1xl">X</button
+            class="text-red-500 text-sm font-bold">X</button
           >
         {:else}
           <i class="fa fa-caret-down pt-1"></i>
@@ -411,10 +412,9 @@ $: {
           {#each Array.from(keywordsMap) as [key, kw]}
             <li>
               <button
-                class="w-[100%] flex row justify-between text-left text-sm {kw.selected ==
-                true
-                  ? 'bg-purple-200 hover:bg-purple-300'
-                  : 'bg-white hover:bg-purple-100'}"
+                class="w-[100%] flex row justify-between text-left text-sm hover:bg-gray-100"
+                style="background-color: {kw.selected ? stringToColor(kw.name) : 'white'};
+                "
                 name={kw.name}
                 onclick={updateDocument}
               >
@@ -527,7 +527,7 @@ $: {
       </div>
       <div class="w-full flex justify-center">
         <ul id="dropdown_3">
-          {#each Array.from(roles) as [key, role]}
+          {#each Array.from(roles) as [_, role]}
             <li>
               <button
                 class="w-[100%] flex row justify-between text-left text-sm {role.selected ==

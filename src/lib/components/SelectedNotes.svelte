@@ -7,6 +7,7 @@
   import SearchInput from "./SearchInput.svelte";
   import { searchQuery } from "$lib/stores/searchStore";
   import { powerMode } from "$lib/stores";
+  import { stringToColor } from "$lib/utils";
 
   
   let interactInstance: any;
@@ -192,7 +193,14 @@
           >X</button>
         </div>
         <div class="flex-1 overflow-y-auto p-4 text-sm">
-          {@html highlightMatches(note.CaseData, $searchQuery)}
+          {@html highlightMatches(note.CaseData.replace(
+            new RegExp(
+              `(<b>(${note.keywords.join("|")})</b>)`,
+              "gi"
+            ),
+            (match, p1, p2) =>
+              `<span style="background-color: ${stringToColor(p2)}; font-weight: bold;">${p2}</span>`
+            ), $searchQuery)}
         </div>
       </div>
     {/each}

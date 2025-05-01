@@ -130,7 +130,6 @@
               <span class="max-w-15 min-w-15">{formatDate(item.DateTime)}</span>
               <h3>{item.Dokumentnamn}</h3>
             </div>
-              <NotePreview note={ item }/>
             </div>
           </div>
         </button>
