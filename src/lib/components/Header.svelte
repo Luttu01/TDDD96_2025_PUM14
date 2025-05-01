@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { allNotes, filteredNotes, filter, resetFilter, powerMode, showTimeline } from "$lib/stores";
+  import { allNotes, filteredNotes, filter, resetFilter, powerMode, showTimeline, destructMode } from "$lib/stores";
   import type { filterSelect } from "$lib/models";
   import { derived, get } from "svelte/store";
   import { getPropertyForFilter } from "$lib/models";
@@ -29,11 +29,6 @@ function closeDocs() {
    * 6. Annan filtrering -> Sätt till "Filter" (DONE)
    * 7. Sätt min och max datum från början (sådant att det inkapslar alla dokument för patienten)
    */
-
-  let selectedFilters: Map<string, Set<filterSelect>> = new Map();
-  selectedFilters.set("Vårdenhet", new Set<filterSelect>());
-  selectedFilters.set("Journalmall", new Set<filterSelect>());
-  selectedFilters.set("Yrkesroll", new Set<filterSelect>());
 
   let template: string = "Journalmall";
   let unit: string = "Vårdenhet";
@@ -316,7 +311,7 @@ $: {
     class="grid grid-flow-col grid-rows-2 lg:flex lg:flex-row lg:flex-grow text-md items-center justify-end gap-2"
   >
   <div id="ToggleCanvas" class="p-1 flex">
-    <label for="toggleCanvas" class="text-sm items-center flex gap-1">
+    <label for="toggleCanvas" class="text-xs items-center flex gap-1">
       Canvas Läge
     <div class="relative inline-block w-8 h-4 items-center">
       <input
@@ -336,13 +331,33 @@ $: {
   </div>
 
   <div id="ToggleTimeline" class="p-1 flex">
-    <label for="toggleTimeline" class="text-sm items-center flex gap-1">
+    <label for="toggleTimeline" class="text-xs items-center flex gap-1">
       Tidslinje Läge
     <div class="relative inline-block w-8 h-4 items-center">
       <input
         id="toggleTimeline"
         type="checkbox"
         bind:checked={$showTimeline}
+        class="sr-only peer"
+      />
+      <div
+        class="w-full h-full bg-gray-300 rounded-full peer-checked:bg-purple-500 transition-colors"
+      ></div>
+      <div
+        class="absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full shadow-md transition-all peer-checked:translate-x-4"
+      ></div>
+    </div>
+  </label>
+  </div>
+
+  <div id="ToggleDestruct" class="p-1 flex">
+    <label for="toggleDestruct" class="text-xs items-center flex gap-1">
+      Gömma Läge
+    <div class="relative inline-block w-8 h-4 items-center">
+      <input
+        id="toggleDestruct"
+        type="checkbox"
+        bind:checked={$destructMode}
         class="sr-only peer"
       />
       <div

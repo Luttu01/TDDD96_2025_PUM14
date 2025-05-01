@@ -226,7 +226,14 @@
                 >X</button>
               </div>
               <div class="h-full overflow-y-auto text-sm p-2">
-                {@html highlightMatches(note.CaseData, $searchQuery)}
+                {@html highlightMatches(note.CaseData.replace(
+                  new RegExp(
+                    `(<b>(${note.keywords.join("|")})</b>)`,
+                    "gi"
+                  ),
+                  (match, p1, p2) =>
+                    `<span style="background-color: ${stringToColor(p2)}; font-weight: bold;">${p2}</span>`
+                  ), $searchQuery)}
               </div>
             </div>
           {/each}

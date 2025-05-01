@@ -1,11 +1,11 @@
 <script lang="ts">
-  import { writable } from "svelte/store";
-  import { onMount, afterUpdate } from "svelte";
+  import { get, writable } from "svelte/store";
+  import { onMount } from "svelte";
   import NotePreview from "./NotePreview.svelte";
 
   import type { Note, Year, Month } from "$lib/models";
   import { buildDateHierarchy } from "$lib/utils";
-  import { allNotes, selectedNotes } from "$lib/stores";
+  import { allNotes, selectedNotes, destructMode, filter } from "$lib/stores";
   import { stringToColor } from "$lib/utils";
 
   const noteHierarchy = writable<Year[]>([]);
@@ -37,7 +37,37 @@
     selectedNotes.set(newSelectedNotes);
   }
 
-  function getNoteSizeState(yearGroup: Year, monthGroup: Month) {
+  function matchesAnyFilter(note: Note) {
+    for (const [key, activeValues] of $filter.entries()) {
+      if (activeValues.size === 0) continue;
+
+      let noteValue;
+
+      // Map filter key to note property
+      switch (key) {
+        case "Yrkesroll":
+          noteValue = note.Dokument_skapad_av_yrkestitel_Namn;
+          break;
+        case "Vårdenhet":
+          noteValue = note.Vårdenhet_Namn;
+          break;
+        case "Journalmall":
+          noteValue = note.Dokumentnamn;
+          break;
+        default:
+          noteValue = note[key as keyof Note]; // fallback if any other key
+      }
+
+      if (typeof noteValue === "string" && activeValues.has(noteValue)) {
+        return true; // found a match
+      }
+    }
+
+    return false; // no matches
+  }
+
+  function getNoteSizeState(yearGroup: Year, monthGroup: Month, note: Note) {
+    if ($destructMode && !matchesAnyFilter(note)) return "hidden";
     if (yearGroup.isCollapsed) return "compact";
     if (monthGroup.isCollapsed) return "medium";
     return "expanded";
@@ -70,39 +100,85 @@
 
   let scrollContainer: HTMLElement | null = null;
   let noteElements: Record<string, HTMLElement> = {};
-  let outOfViewNoteIds = new Set<string>();
+
+  const outOfViewKeywords = writable(
+    new Map<string, { direction: string; count: number }>()
+  );
+
+  function sleep(ms: number) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
 
   function updateOutOfViewNotes() {
     if (!scrollContainer) return;
-
+    sleep(300);
     const containerRect = scrollContainer.getBoundingClientRect();
-    const newOut = new Set<string>();
+    outOfViewKeywords.set(new Map());
 
-    for (const [id, el] of Object.entries(noteElements)) {
+    for (const [noteId, el] of Object.entries(noteElements)) {
       const rect = el.getBoundingClientRect();
       if (rect.right > containerRect.right || rect.left < containerRect.left) {
-        newOut.add(id);
+        const note = $allNotes.find((n) => n.Dokument_ID === noteId);
+        if (note) {
+          for (const keyword of note.keywords) {
+            const existingEntry = $outOfViewKeywords.get(keyword);
+            const direction =
+              rect.right > containerRect.right ? "right" : "left";
+            const count = existingEntry?.count || 0;
+            const updatedMap = new Map($outOfViewKeywords);
+            updatedMap.set(keyword, { direction, count: count + 1 });
+            outOfViewKeywords.set(updatedMap);
+          }
+        }
       }
-    }
-
-    outOfViewNoteIds = newOut;
-  }
-
-  function scrollToNote(noteId: string) {
-    const el = noteElements[noteId];
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth", inline: "center" });
     }
   }
 
   onMount(() => {
     updateOutOfViewNotes();
     if (scrollContainer) {
-      scrollContainer.addEventListener('scroll', updateOutOfViewNotes);
+      scrollContainer.addEventListener("scroll", updateOutOfViewNotes);
+      scrollContainer.addEventListener("resize", updateOutOfViewNotes);
     }
-    window.addEventListener('resize', updateOutOfViewNotes);
   });
 </script>
+
+{#if $outOfViewKeywords.size > 0}
+  <div
+    class="absolute right-0 top-18 flex flex-col space-y-1 bg-white p-2 rounded-l-md shadow-md"
+    style="z-index: 100;"
+  >
+    {#each Array.from($outOfViewKeywords.entries()).filter(([_, { direction }]) => direction === "right") as [key, { count }]}
+      <div
+        class="w-5 h-5 rounded-md text-xs flex items-center justify-center relative"
+        style="background-color: {stringToColor(key)}"
+      >
+        {count}
+        <div
+          class="absolute right-[-12px] top-1/2 -translate-y-1/2 w-0 h-0 border-l-[6px] border-r-transparent border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-r-[6px]"
+          style="border-left-color: {stringToColor(key)}"
+        ></div>
+      </div>
+    {/each}
+  </div>
+  <div
+    class="absolute left-0 top-18 flex flex-col space-y-1 bg-white p-2 rounded-r-md shadow-md"
+    style="z-index: 100;"
+  >
+    {#each Array.from($outOfViewKeywords.entries()).filter(([_, { direction }]) => direction === "left") as [key, { count }]}
+      <div
+        class="w-5 h-5 rounded-md text-xs flex items-center justify-center relative"
+        style="background-color: {stringToColor(key)}"
+      >
+        {count}
+        <div
+          class="absolute left-[-12px] top-1/2 -translate-y-1/2 w-0 h-0 border-r-[6px] border-l-transparent border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-l-[6px]"
+          style="border-right-color: {stringToColor(key)}"
+        ></div>
+      </div>
+    {/each}
+  </div>
+{/if}
 
 <div
   class="flex h-full bg-gray-100 overflow-x-auto overflow-y-hidden"
@@ -115,7 +191,7 @@
           class="flex bg-purple-200 py-1 text-left text-sm px-2 w-full shadow-xs justify-between {yearGroup.isCollapsed
             ? 'cursor-zoom-in'
             : 'cursor-zoom-out'}"
-          on:click={() => toggleGroup(yearGroup)}
+          onclick={() => toggleGroup(yearGroup)}
           aria-label="Toggle year {yearGroup.year}"
         >
           <div class="text-sm sticky left-1 w-8 font-bold text-gray-900">
@@ -131,13 +207,13 @@
                   : 'h-6 py-1'} flex bg-purple-300 px-1 justify-between w-full shadow-xs transition-all duration-300 {monthGroup.isCollapsed
                   ? 'cursor-zoom-in'
                   : 'cursor-zoom-out'}"
-                on:click={() => toggleGroup(monthGroup)}
+                onclick={() => toggleGroup(monthGroup)}
                 aria-label="Toggle month {monthGroup.month}"
               >
                 <div
                   class="{yearGroup.isCollapsed
                     ? 'text-transparent'
-                    : 'text-gray-900'} text-xs sticky left-1 px-1 w-8 font-semibold text-left"
+                    : 'text-gray-900'} text-xs sticky left-1 px-1 w-6 font-semibold text-left"
                 >
                   {new Date(0, monthGroup.month).toLocaleString("sv-SE", {
                     month: "short",
@@ -149,24 +225,20 @@
               >
                 {#each monthGroup.notes as note}
                   {#key note.Dokument_ID}
-
-                  {#if outOfViewNoteIds.has(note.Dokument_ID)}
-                    <div
-                      class="w-5 h-5 rounded-full"
-                      style="position: absolute; top: 60%; left: 0; background-color: {stringToColor(note.keywords[0])}"
-                    ></div>
-                  {/if}
-
-
                     <button
                       class={`transition-all mt-2 duration-300 border rounded-md shadow-xs ${isInSelectedNotes(note) ? "bg-purple-50 border-purple-300 hover:bg-purple-100" : "bg-white border-gray-200 hover:bg-gray-50"} relative cursor-pointer ${
-                        getNoteSizeState(yearGroup, monthGroup) === "compact"
+                        getNoteSizeState(yearGroup, monthGroup, note) ===
+                        "compact"
                           ? "flex flex-col py-2 px-1 w-12 space-y-1"
-                          : getNoteSizeState(yearGroup, monthGroup) === "medium"
+                          : getNoteSizeState(yearGroup, monthGroup, note) ===
+                              "medium"
                             ? "flex flex-col p-2 w-45 text-sm text-left"
-                            : "flex justify-between p-2 w-100"
+                            : getNoteSizeState(yearGroup, monthGroup, note) ===
+                                "hidden"
+                              ? "w-4 flex flex-col"
+                              : "flex justify-between p-2 w-100"
                       }`}
-                      on:click={() => handleNoteClick(note)}
+                      onclick={() => handleNoteClick(note)}
                       aria-label="Select note {note.Dokument_ID}"
                       bind:this={noteElements[note.Dokument_ID]}
                     >
@@ -178,7 +250,9 @@
                           ? 'border-b-purple-300'
                           : 'border-b-white'}"
                       ></div>
-                      {#if getNoteSizeState(yearGroup, monthGroup) === "compact"}
+                      {#if getNoteSizeState(yearGroup, monthGroup, note) === "hidden"}
+                        <div class="h-20 bg-gray-200"></div>
+                      {:else if getNoteSizeState(yearGroup, monthGroup, note) === "compact"}
                         <span class="text-[10px] text-gray-500">
                           {new Date(note.DateTime).toLocaleDateString("sv-SE", {
                             month: "2-digit",
@@ -194,7 +268,7 @@
                             ></div>
                           {/each}
                         </span>
-                      {:else if getNoteSizeState(yearGroup, monthGroup) === "medium"}
+                      {:else if getNoteSizeState(yearGroup, monthGroup, note) === "medium"}
                         <div
                           class="text-gray-500 text-xs flex justify-between border-b-1 border-gray-200 pb-1"
                         >
