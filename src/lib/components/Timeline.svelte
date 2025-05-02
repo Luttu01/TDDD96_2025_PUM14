@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { get, writable } from "svelte/store";
-  import { onMount } from "svelte";
+  import { writable } from "svelte/store";
+  import { onDestroy, onMount } from "svelte";
   import NotePreview from "./NotePreview.svelte";
 
   import type { Note, Year, Month } from "$lib/models";
@@ -16,6 +16,25 @@
 
   function toggleGroup(group: Year | Month) {
     group.isCollapsed = !group.isCollapsed;
+    noteHierarchy.set($noteHierarchy);
+  }
+
+  function toggleAllYearGroups() {
+    const allCollapsed = $noteHierarchy.every((group) => group.isCollapsed);
+    for (const group of $noteHierarchy) {
+      group.isCollapsed = !allCollapsed;
+    }
+    noteHierarchy.set($noteHierarchy);
+  }
+  function toggleAllMonthGroups() {
+    const allCollapsed = $noteHierarchy.every((group) =>
+      group.months.every((month) => month.isCollapsed)
+    );
+    for (const group of $noteHierarchy) {
+      for (const month of group.months) {
+        month.isCollapsed = !allCollapsed;
+      }
+    }
     noteHierarchy.set($noteHierarchy);
   }
 
@@ -61,6 +80,10 @@
       if (typeof noteValue === "string" && activeValues.has(noteValue)) {
         return true; // found a match
       }
+    }
+
+    if (note.keywords.length > 0) {
+      return true;
     }
 
     return false; // no matches
@@ -111,7 +134,7 @@
 
   function updateOutOfViewNotes() {
     if (!scrollContainer) return;
-    sleep(300);
+    sleep(400);
     const containerRect = scrollContainer.getBoundingClientRect();
     outOfViewKeywords.set(new Map());
 
@@ -139,6 +162,13 @@
     if (scrollContainer) {
       scrollContainer.addEventListener("scroll", updateOutOfViewNotes);
       scrollContainer.addEventListener("resize", updateOutOfViewNotes);
+    }
+  });
+
+  onDestroy(() => {
+    if (scrollContainer) {
+      scrollContainer.removeEventListener("scroll", updateOutOfViewNotes);
+      scrollContainer.removeEventListener("resize", updateOutOfViewNotes);
     }
   });
 </script>
@@ -191,7 +221,7 @@
           class="flex bg-purple-200 py-1 text-left text-sm px-2 w-full shadow-xs justify-between {yearGroup.isCollapsed
             ? 'cursor-zoom-in'
             : 'cursor-zoom-out'}"
-          onclick={() => toggleGroup(yearGroup)}
+            onclick={() => ($destructMode ? toggleAllYearGroups() : toggleGroup(yearGroup))}
           aria-label="Toggle year {yearGroup.year}"
         >
           <div class="text-sm sticky left-1 w-8 font-bold text-gray-900">
@@ -207,7 +237,7 @@
                   : 'h-6 py-1'} flex bg-purple-300 px-1 justify-between w-full shadow-xs transition-all duration-300 {monthGroup.isCollapsed
                   ? 'cursor-zoom-in'
                   : 'cursor-zoom-out'}"
-                onclick={() => toggleGroup(monthGroup)}
+                onclick={() => ($destructMode ? toggleAllMonthGroups() : toggleGroup(monthGroup))}
                 aria-label="Toggle month {monthGroup.month}"
               >
                 <div
@@ -235,7 +265,7 @@
                             ? "flex flex-col p-2 w-45 text-sm text-left"
                             : getNoteSizeState(yearGroup, monthGroup, note) ===
                                 "hidden"
-                              ? "w-4 flex flex-col"
+                              ? "w-6 flex flex-col"
                               : "flex justify-between p-2 w-100"
                       }`}
                       onclick={() => handleNoteClick(note)}
@@ -243,15 +273,15 @@
                       bind:this={noteElements[note.Dokument_ID]}
                     >
                       <div
-                        class="transition-all duration-300 absolute -top-2.5 left-1/2 -translate-x-1/2 w-0 h-0
-              border-l-10 border-r-10 border-b-10 border-transparent {isInSelectedNotes(
+                        class="transition-all duration-300 absolute -top-2.5 left-1/2 -translate-x-1/2 w-0 h-0 border-b-10
+               {getNoteSizeState(yearGroup, monthGroup, note) === "hidden" ? 'border-l-4 border-r-4' : 'border-l-10 border-r-10'} border-transparent {isInSelectedNotes(
                           note
                         )
                           ? 'border-b-purple-300'
                           : 'border-b-white'}"
                       ></div>
                       {#if getNoteSizeState(yearGroup, monthGroup, note) === "hidden"}
-                        <div class="h-20 bg-gray-200"></div>
+                        <div class="h-12 bg-white rounded-md"></div>
                       {:else if getNoteSizeState(yearGroup, monthGroup, note) === "compact"}
                         <span class="text-[10px] text-gray-500">
                           {new Date(note.DateTime).toLocaleDateString("sv-SE", {
@@ -318,11 +348,23 @@
                             {new Date(note.DateTime).toLocaleDateString(
                               "sv-SE"
                             )}
+                            <div class="flex flex-row">
+                            {#each note.keywords as keyword}
+                              <span
+                                class="text-xs font-light px-1"
+                                style="background-color: {stringToColor(
+                                  keyword
+                                )}"
+                              >
+                              </span>
+                            {/each}
+                          </div>
                             <NotePreview {note} />
                           </div>
                           <!-- Temporary fix with max-h -->
                           <div class="overflow-y-auto w-full max-h-[280px]">
                             <div class="whitespace-pre-wrap text-xs">
+                              {console.log(note.CaseData)}
                               {@html note.CaseData.replace(
                                 new RegExp(
                                   `(<b>(${note.keywords.join("|")})</b>)`,

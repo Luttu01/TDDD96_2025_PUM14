@@ -306,13 +306,17 @@ $: {
 </script>
 
 <div id="Header" class="flex flex-row justify-between p-1 space-x-4">
+
   <div
-    id="Filtermenu"
-    class="grid grid-flow-col grid-rows-2 lg:flex lg:flex-row lg:flex-grow text-md items-center justify-end gap-2"
+    id="settingsJournal"
+    class="flex flex-row flex-grow text-sm items-center justify-beginning space-x-1 border-r border-gray-300"
   >
+
+  <span class="text-xs font-bold">Journalvy:</span>
+
   <div id="ToggleCanvas" class="p-1 flex">
     <label for="toggleCanvas" class="text-xs items-center flex gap-1">
-      Canvas Läge
+      Canvas
     <div class="relative inline-block w-8 h-4 items-center">
       <input
         id="toggleCanvas"
@@ -330,9 +334,20 @@ $: {
   </label>
   </div>
 
+  <div id="CloseDocs" class="p-1 flex items-center">
+    <button id="Close" class="hover:text-purple-500 self-center text-xs" onclick={closeDocs}>Återställ Journalvy</button>
+</div>
+  </div>
+<div
+    id="settingsTimeline"
+    class="flex flex-row flex-grow text-sm items-center justify-beginning space-x-1 border-r border-gray-300"
+  >
+
+<span class="text-xs font-bold">Tidslinje:</span>
+
   <div id="ToggleTimeline" class="p-1 flex">
     <label for="toggleTimeline" class="text-xs items-center flex gap-1">
-      Tidslinje Läge
+      Tidslinje
     <div class="relative inline-block w-8 h-4 items-center">
       <input
         id="toggleTimeline"
@@ -352,7 +367,7 @@ $: {
 
   <div id="ToggleDestruct" class="p-1 flex">
     <label for="toggleDestruct" class="text-xs items-center flex gap-1">
-      Gömma Läge
+      Gömma
     <div class="relative inline-block w-8 h-4 items-center">
       <input
         id="toggleDestruct"
@@ -369,16 +384,11 @@ $: {
     </div>
   </label>
   </div>
-
-  <div id="CloseDocs" class="p-1 flex items-center">
-    <button id="Close" class="hover:text-purple-500 self-center text-sm" onclick={closeDocs}>Återställ Journalvy</button>
-</div>
-
-  <div id="ResetFilters" class="p-1 flex items-center">
-    <button id="Reset" class="hover:text-purple-500 self-center text-sm" onclick={resetF}>Återställ Filter</button>
   </div>
-
-  <div class="flex flex-grow"> </div>
+  <div
+    id="Filtermenu"
+    class="grid grid-flow-col grid-rows-2 xl:flex xl:flex-row xl:flex-grow text-sm items-center justify-end gap-1"
+  >
     <div
       id="DateDiv"
       class="outline-1 outline-gray-300 rounded-md bg-white flex flex-row space-x-2 px-2 text-sm"
@@ -427,9 +437,8 @@ $: {
           {#each Array.from(keywordsMap) as [key, kw]}
             <li>
               <button
-                class="w-[100%] flex row justify-between text-left text-sm hover:bg-gray-100"
-                style="background-color: {kw.selected ? stringToColor(kw.name) : 'white'};
-                "
+                class="w-[100%] flex row justify-between text-left text-sm {kw.selected ? 'bg-[color:var(--tw-color)]' : 'bg-white hover:bg-gray-100'}"
+                style="--tw-color: {stringToColor(kw.name)};"
                 name={kw.name}
                 onclick={updateDocument}
               >
@@ -560,6 +569,9 @@ $: {
           {/each}
         </ul>
       </div>
+    </div>
+    <div id="ResetFilters" class="p-1 flex items-center">
+      <button id="Reset" class="hover:text-purple-500 self-center text-xs" onclick={resetF}>Återställ Filter</button>
     </div>
   </div>
 </div>

@@ -1,3 +1,3 @@
 export {buildDateHierarchy} from './timelineHelpers';
 export {colorMap, shapeMap} from './propertyMaps'
-export {stringToColor} from './colorMapping';
+export {stringToColor, darkenHSL} from './colorMapping';

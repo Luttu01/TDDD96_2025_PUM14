@@ -46,7 +46,6 @@
   }
 </script>
 
-
 <div class="flex items-center" class:flex-col={direction === 'flex-col'} class:flex-row={direction === 'flex-row'} class:space-x-1={direction === 'flex-row'} class:space-y-1={direction === 'flex-col'}>
   {#each ["Circle", "Triangle", "Square"] as shape}
     {#if matchingIndicators.find(indicator => indicator.shape === shape)}
