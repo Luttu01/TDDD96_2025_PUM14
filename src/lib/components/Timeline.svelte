@@ -89,6 +89,42 @@
     return false; // no matches
   }
 
+  function matchesAllFilters(note: Note) {
+  // Check all filter categories (AND logic across them)
+  for (const [key, activeValues] of $filter.entries()) {
+    if (activeValues.size === 0) continue;
+
+    let noteValue: string | undefined;
+
+    switch (key) {
+      case "Yrkesroll":
+        noteValue = note.Dokument_skapad_av_yrkestitel_Namn;
+        break;
+      case "Vårdenhet":
+        noteValue = note.Vårdenhet_Namn;
+        break;
+      case "Journalmall":
+        noteValue = note.Dokumentnamn;
+        break;
+      default:
+        noteValue = note[key as keyof Note] as string;
+    }
+
+    if (!noteValue || !activeValues.has(noteValue)) {
+      return false;
+    }
+  }
+
+  // If keyword search is active, note.keywords must not be empty
+  if (note.keywords.length === 0) {
+    return false;
+  }
+
+  return true;
+}
+
+
+
   function getNoteSizeState(yearGroup: Year, monthGroup: Month, note: Note) {
     if ($destructMode && !matchesAnyFilter(note)) return "hidden";
     if (yearGroup.isCollapsed) return "compact";
@@ -218,13 +254,13 @@
     {#each $noteHierarchy as yearGroup (yearGroup.year)}
       <div class="h-full flex flex-col">
         <button
-          class="flex bg-purple-200 py-1 text-left text-sm px-2 w-full shadow-xs justify-between {yearGroup.isCollapsed
+          class="flex bg-purple-100 py-1 text-left text-sm px-1 w-full shadow-md justify-between {yearGroup.isCollapsed
             ? 'cursor-zoom-in'
             : 'cursor-zoom-out'}"
-            onclick={() => ($destructMode ? toggleAllYearGroups() : toggleGroup(yearGroup))}
+            onclick={() => (toggleAllYearGroups())}
           aria-label="Toggle year {yearGroup.year}"
         >
-          <div class="text-sm sticky left-1 w-8 font-bold text-gray-900">
+          <div class="text-xs sticky left-1 w-7 font-bold text-gray-900">
             {yearGroup.year}
           </div>
         </button>
@@ -234,16 +270,16 @@
               <button
                 class="{yearGroup.isCollapsed
                   ? 'h-0 py-0'
-                  : 'h-6 py-1'} flex bg-purple-300 px-1 justify-between w-full shadow-xs transition-all duration-300 {monthGroup.isCollapsed
+                  : 'h-6 py-1'} flex bg-purple-200 justify-between px-1 w-full shadow-xs transition-all duration-300 shadow-md {monthGroup.isCollapsed
                   ? 'cursor-zoom-in'
                   : 'cursor-zoom-out'}"
-                onclick={() => ($destructMode ? toggleAllMonthGroups() : toggleGroup(monthGroup))}
+                onclick={() => (toggleAllMonthGroups())}
                 aria-label="Toggle month {monthGroup.month}"
               >
                 <div
                   class="{yearGroup.isCollapsed
                     ? 'text-transparent'
-                    : 'text-gray-900'} text-xs sticky left-1 px-1 w-6 font-semibold text-left"
+                    : 'text-gray-900'} text-xs sticky left-1 w-7 font-semibold text-left"
                 >
                   {new Date(0, monthGroup.month).toLocaleString("sv-SE", {
                     month: "short",
@@ -262,7 +298,7 @@
                           ? "flex flex-col py-2 px-1 w-12 space-y-1"
                           : getNoteSizeState(yearGroup, monthGroup, note) ===
                               "medium"
-                            ? "flex flex-col p-2 w-45 text-sm text-left"
+                            ? "flex flex-col p-2 w-42 text-sm text-left"
                             : getNoteSizeState(yearGroup, monthGroup, note) ===
                                 "hidden"
                               ? "w-6 flex flex-col"
@@ -362,7 +398,7 @@
                             <NotePreview {note} />
                           </div>
                           <!-- Temporary fix with max-h -->
-                          <div class="overflow-y-auto w-full max-h-[280px]">
+                          <div class="overflow-y-auto w-full max-h-[140px]">
                             <div class="whitespace-pre-wrap text-xs">
                               {console.log(note.CaseData)}
                               {@html note.CaseData.replace(
