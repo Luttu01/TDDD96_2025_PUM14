@@ -1,1 +1,2 @@
-export {buildDateHierarchy, buildVisibleNotes, countVisibleNotesWithinGroup} from './timelineHelpers';
+export {buildDateHierarchy} from './timelineHelpers';
+export {colorMap, shapeMap} from './propertyMaps'

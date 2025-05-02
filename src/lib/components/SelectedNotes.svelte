@@ -5,7 +5,13 @@
     import { searchQuery } from '$lib/stores/searchStore';
     import SearchInput from "./SearchInput.svelte";
     import { onMount } from "svelte";
+    import interact from "interactjs";
+    import { powerMode } from "$lib/stores";
     
+    let interactInstance: any;
+    let initialPositions = new Map<string, { x: number; y: number }>();
+    let showSearchInput = false;
+
     function handleNoteClick(noteData: Note) {
     $selectedNotes = $selectedNotes || []; 
 
@@ -15,10 +21,8 @@
     let newSelectedNotes = [...$selectedNotes]; // Copy array
 
     if (foundIndex >= 0) {
-    
       newSelectedNotes.splice(foundIndex, 1);
     }
-
     selectedNotes.set(newSelectedNotes);
   }
 
@@ -62,9 +66,12 @@
   /**
    * Show search field after ctrl+f / cmd+f
   */
-  let showSearchInput = false;
 
   onMount(() => {
+    if ($powerMode) {
+      setupInteract();
+    }
+    
     window.addEventListener('keydown', (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
         e.preventDefault();
@@ -72,7 +79,78 @@
       }
     });
   });
-  </script>
+
+  function setupInteract() {
+    interact(".draggable").unset();
+    interactInstance = interact(".draggable")
+      .draggable({
+        inertia: true,
+        modifiers: [
+          interact.modifiers.snap({
+            targets: [interact.snappers.grid({ x: 50, y: 50 })],
+            range: Infinity,
+            relativePoints: [{ x: 0, y: 0 }],
+          }),
+          interact.modifiers.restrictRect({
+            restriction: "parent",
+            endOnly: true,
+          }),
+        ],
+        listeners: {
+          move(event) {
+            const target = event.target;
+            const x =
+              (parseFloat(target.getAttribute("data-x")) || 0) + event.dx;
+            const y =
+              (parseFloat(target.getAttribute("data-y")) || 0) + event.dy;
+
+            target.style.transform = `translate(${x}px, ${y}px)`;
+            target.setAttribute("data-x", x);
+            target.setAttribute("data-y", y);
+          },
+        },
+      })
+      .resizable({
+        edges: { left: true, right: true, bottom: true, top: true },
+        modifiers: [
+          interact.modifiers.snapSize({
+            targets: [interact.snappers.grid({ width: 50, height: 50 })],
+          }),
+          interact.modifiers.restrictSize({
+            min: { width: 200, height: 150 },
+            max: { width: 1000, height: 1000 },
+          }),
+        ],
+        inertia: true,
+        listeners: {
+          move(event) {
+            const target = event.target;
+            const { width, height } = event.rect;
+
+            target.style.width = `${width}px`;
+            target.style.height = `${height}px`;
+          },
+        },
+      });
+  }
+
+  $: if ($powerMode) {
+    setupInteract();
+    $selectedNotes.forEach((note) => {
+      if (!initialPositions.has(note.CaseData)) {
+        initialPositions.set(note.CaseData, {
+          x: Math.random() * 50,
+          y: Math.random() * 50,
+        });
+      }
+    });
+  }
+
+  $: if (!$powerMode && interactInstance) {
+    interactInstance.unset();
+    interactInstance = null;
+  }
+</script>
 
 
 <div class="h-full bg-gray-100 flex">

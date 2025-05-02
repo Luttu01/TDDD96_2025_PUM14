@@ -269,39 +269,39 @@ def setup_search_page(page: Page, search_journal_data):
 
 def test_l1_list_overview(setup_page: Page):
     """Test L1 (K1.1-1): Check if the document list is displayed with items."""
-    # Use data-testid for list-view
-    list_view = setup_page.locator("[data-testid='list-view']")
+    # Use aria-label for list view
+    list_view = setup_page.locator("ul[aria-label='Clinical notes list']")
     expect(list_view).to_be_visible()
     
-    # Check for list items using data-testid
-    list_items = list_view.locator("[data-testid^='list-item-']").all() # Select all list items
+    # Check for list items using role and aria-selected
+    list_items = list_view.locator("li[role='option']").all() # Select all list items
     assert len(list_items) > 0, "No list items found in the list view"
     expect(list_items[0]).to_be_visible()
 
 def test_diagnostic_list_ids(setup_page: Page, test_items):
-    """Diagnostic test to identify the actual data-testid formatting in the DOM."""
-    list_view = setup_page.locator("[data-testid='list-view']")
+    """Diagnostic test to identify the actual aria attributes formatting in the DOM."""
+    list_view = setup_page.locator("ul[aria-label='Clinical notes list']")
     expect(list_view).to_be_visible()
     
     # Extract all item IDs to see what format is being used
     actual_ids = setup_page.evaluate("""() => {
-        const items = document.querySelectorAll('[data-testid^="list-item-"]');
-        return Array.from(items).map(item => item.getAttribute('data-testid'));
+        const items = document.querySelectorAll('li[role="option"]');
+        return Array.from(items).map(item => item.getAttribute('aria-label'));
     }""")
     
-    print("\n===== DIAGNOSTIC: ACTUAL LIST ITEM IDs =====")
+    print("\n===== DIAGNOSTIC: ACTUAL LIST ITEM LABELS =====")
     for id in actual_ids:
-        print(f"Actual data-testid: {id}")
+        print(f"Actual aria-label: {id}")
     
     # Extract button IDs too
     button_ids = setup_page.evaluate("""() => {
-        const buttons = document.querySelectorAll('[data-testid^="list-item-button-"]');
-        return Array.from(buttons).map(btn => btn.getAttribute('data-testid'));
+        const buttons = document.querySelectorAll('li[role="option"] button');
+        return Array.from(buttons).map(btn => btn.getAttribute('id'));
     }""")
     
     print("\n===== DIAGNOSTIC: ACTUAL BUTTON IDs =====")
     for id in button_ids:
-        print(f"Actual data-testid: {id}")
+        print(f"Actual button id: {id}")
     
     # Extract full DOM output for examination
     html = list_view.evaluate("el => el.outerHTML")
@@ -337,8 +337,10 @@ def test_l5_show_in_list_chronological(setup_page: Page):
         date_text = date_el.text_content()
         if date_text:
             try:
+                # Clean up the date text by removing trailing hyphen and spaces
+                clean_date_text = date_text.replace(" -", "").strip()
                 # Parse the date using the actual format from formatDate function
-                dates.append(datetime.strptime(date_text, "%Y-%m-%d").date())
+                dates.append(datetime.strptime(clean_date_text, "%Y-%m-%d").date())
             except ValueError:
                 print(f"Warning: Could not parse date format: {date_text}")
             except Exception as e:
@@ -354,12 +356,12 @@ def test_l5_show_in_list_chronological(setup_page: Page):
 
 def test_ld1_select_journal(setup_page: Page, test_items):
     """Test LD1: Select a journal and verify it's shown in detail view."""
-    # Get all list item buttons
-    buttons = setup_page.locator("[data-testid^='list-item-button-']").all()
+    # Get all list item buttons using role and id
+    buttons = setup_page.locator("li[role='option'] button").all()
     assert len(buttons) > 0, "No list items found"
     
     # Check initial selection state
-    initial_selection = len(setup_page.locator("[aria-selected='true']").all())
+    initial_selection = len(setup_page.locator("li[aria-selected='true']").all())
     
     if initial_selection > 0:
         buttons[0].click()
@@ -373,7 +375,7 @@ def test_ld1_select_journal(setup_page: Page, test_items):
     setup_page.wait_for_timeout(500)
     
     # Verify selection using aria-selected attribute
-    selected_items = setup_page.locator("[aria-selected='true']").all()
+    selected_items = setup_page.locator("li[aria-selected='true']").all()
     assert len(selected_items) > 0, "No items were selected after clicking"
     
     # Verify the selected item has the correct title
@@ -384,7 +386,7 @@ def test_ld1_select_journal(setup_page: Page, test_items):
 
 def test_d1_detailed_view(setup_page: Page, test_items):
     """Test D1 (K1.1-2): Selecting a note shows details."""
-    list_view = setup_page.locator("[data-testid='list-view']")
+    list_view = setup_page.locator("ul[aria-label='Clinical notes list']")
     expect(list_view).to_be_visible()
 
     # Select first document by index
@@ -413,7 +415,7 @@ def test_t1_timeline_detailed(setup_timeline_page: Page):
         "div.overflow-x-auto.no-scrollbar",
         "div.h-full.bg-gray-100.flex.overflow-x-auto",
         "main div.overflow-x-auto",
-        "[data-testid='timeline-container']"
+        "[aria-label='Note list container']"
     ]
     
     timeline_container = None
@@ -446,7 +448,7 @@ def test_t4_slider_scroll(setup_timeline_page: Page):
         "div.overflow-x-auto.no-scrollbar",
         "div.h-full.bg-gray-100.flex.overflow-x-auto",
         "main div.overflow-x-auto",
-        "[data-testid='timeline-container']"
+        "[aria-label='Note list container']"
     ]
     
     timeline_container = None
@@ -499,7 +501,7 @@ def test_t5_zoom_in_out(setup_timeline_page: Page):
         "div.overflow-x-auto.no-scrollbar",
         "div.h-full.bg-gray-100.flex.overflow-x-auto",
         "main div.overflow-x-auto",
-        "[data-testid='timeline-container']"
+        "[aria-label='Note list container']"
     ]
     
     timeline_container = None
@@ -641,10 +643,10 @@ def test_s2_timeline_view_access(setup_page: Page):
 
 def test_s8_fetch_journal_data(setup_page: Page):
      """Test S8 (K3.3-1): Journal data is loaded into the list view (via store)."""
-     list_view = setup_page.locator("[data-testid='list-view']")
+     list_view = setup_page.locator("ul[aria-label='Clinical notes list']")
      expect(list_view).to_be_visible()
-     # Check if document buttons are present using data-testid
-     document_buttons = list_view.locator("[data-testid^='list-item-button-']").all()
+     # Check if document buttons are present using role
+     document_buttons = list_view.locator("li[role='option'] button").all()
      assert len(document_buttons) > 0, "No document buttons found - journal data may not have loaded into store/UI"
      expect(document_buttons[0]).to_be_visible()
 
@@ -669,7 +671,7 @@ def test_s12_handle_data_fetch_error(page: Page, test_items):
     
     page.wait_for_timeout(2000)
     
-    list_exists = page.locator(".list-view, ul[role='listbox']").count() > 0
+    list_exists = page.locator("ul[aria-label='Clinical notes list'], ul[role='listbox']").count() > 0
     
     if not list_exists:
         error_visible = page.evaluate("""() => {
@@ -704,7 +706,7 @@ def test_d1b_detailed_view_long_text(setup_page: Page, test_items):
     setup_page.wait_for_timeout(500) # Wait for UI update
 
     # Select the first journal entry by index
-    list_view = setup_page.locator("[data-testid='list-view']")
+    list_view = setup_page.locator("ul[aria-label='Clinical notes list']")
     first_list_item = list_view.locator("li").first
     first_document_button = first_list_item.locator("button").first
     expect(first_document_button).to_be_visible(timeout=5000)
@@ -790,7 +792,7 @@ def test_F8_date_filtering(setup_page: Page, test_items):
     max_date = dates[-1]
     
     # Get initial count of items
-    initial_items = setup_page.locator("[data-testid^='list-item-']").all()
+    initial_items = setup_page.locator("li[role='option']").all()
     initial_count = len(initial_items)
     
     # Set date filters to include only the newest document
@@ -798,7 +800,7 @@ def test_F8_date_filtering(setup_page: Page, test_items):
     setup_page.wait_for_timeout(500)  # Wait for filtering to apply
     
     # Verify filtered list contains only matching items
-    list_items = setup_page.locator("[data-testid^='list-item-']").all()
+    list_items = setup_page.locator("li[role='option']").all()
     
     # Date filters should reduce the number of visible items
     filtered_count = len(list_items)
@@ -826,7 +828,7 @@ def test_F8_date_filtering(setup_page: Page, test_items):
     setup_page.wait_for_timeout(500)
     
     # Verify items are visible again
-    reset_items = setup_page.locator("[data-testid^='list-item-']").all()
+    reset_items = setup_page.locator("li[role='option']").all()
     assert len(reset_items) == initial_count, "Item count after reset does not match initial count"
 
 def test_F8a_date_filtering_start_only(setup_page: Page, test_items):
@@ -849,7 +851,7 @@ def test_F8a_date_filtering_start_only(setup_page: Page, test_items):
     assert len(set(dates)) >= 3, "Test requires at least 3 distinct dates in test data"
     
     # Get initial count of items
-    initial_items = setup_page.locator("[data-testid^='list-item-']").all()
+    initial_items = setup_page.locator("li[role='option']").all()
     initial_count = len(initial_items)
     
     # Set only start date filter (leave end date empty)
@@ -858,7 +860,7 @@ def test_F8a_date_filtering_start_only(setup_page: Page, test_items):
     setup_page.wait_for_timeout(500)  # Wait for filtering to apply
     
     # Verify filtered list contains only matching items
-    list_items = setup_page.locator("[data-testid^='list-item-']").all()
+    list_items = setup_page.locator("li[role='option']").all()
     
     # Date filters should reduce the number of visible items
     filtered_count = len(list_items)
@@ -886,7 +888,7 @@ def test_F8a_date_filtering_start_only(setup_page: Page, test_items):
     setup_page.wait_for_timeout(500)
     
     # Verify items are visible again
-    reset_items = setup_page.locator("[data-testid^='list-item-']").all()
+    reset_items = setup_page.locator("li[role='option']").all()
     assert len(reset_items) == initial_count, "Item count after reset does not match initial count"
 
 def test_F8b_date_filtering_end_only(setup_page: Page, test_items):
@@ -909,7 +911,7 @@ def test_F8b_date_filtering_end_only(setup_page: Page, test_items):
     assert len(set(dates)) >= 3, "Test requires at least 3 distinct dates in test data"
     
     # Get initial count of items
-    initial_items = setup_page.locator("[data-testid^='list-item-']").all()
+    initial_items = setup_page.locator("li[role='option']").all()
     initial_count = len(initial_items)
     
     # Set only end date filter (leave start date empty)
@@ -918,7 +920,7 @@ def test_F8b_date_filtering_end_only(setup_page: Page, test_items):
     setup_page.wait_for_timeout(500)  # Wait for filtering to apply
     
     # Verify filtered list contains only matching items
-    list_items = setup_page.locator("[data-testid^='list-item-']").all()
+    list_items = setup_page.locator("li[role='option']").all()
     
     # Date filters should reduce the number of visible items
     filtered_count = len(list_items)
@@ -946,7 +948,7 @@ def test_F8b_date_filtering_end_only(setup_page: Page, test_items):
     setup_page.wait_for_timeout(500)
     
     # Verify items are visible again
-    reset_items = setup_page.locator("[data-testid^='list-item-']").all()
+    reset_items = setup_page.locator("li[role='option']").all()
     assert len(reset_items) == initial_count, "Item count after reset does not match initial count"
 
 def test_F8c_date_filtering_both_dates(setup_page: Page, test_items):
@@ -970,7 +972,7 @@ def test_F8c_date_filtering_both_dates(setup_page: Page, test_items):
     assert len(set(dates)) >= 4, "Test requires at least 4 distinct dates in test data"
     
     # Get initial count of items
-    initial_items = setup_page.locator("[data-testid^='list-item-']").all()
+    initial_items = setup_page.locator("li[role='option']").all()
     initial_count = len(initial_items)
     
     # Set both start and end date filters
@@ -979,7 +981,7 @@ def test_F8c_date_filtering_both_dates(setup_page: Page, test_items):
     setup_page.wait_for_timeout(500)  # Wait for filtering to apply
     
     # Verify filtered list contains only matching items
-    list_items = setup_page.locator("[data-testid^='list-item-']").all()
+    list_items = setup_page.locator("li[role='option']").all()
     
     # Date filters should reduce the number of visible items
     filtered_count = len(list_items)
@@ -1008,7 +1010,7 @@ def test_F8c_date_filtering_both_dates(setup_page: Page, test_items):
     setup_page.wait_for_timeout(500)
     
     # Verify items are visible again
-    reset_items = setup_page.locator("[data-testid^='list-item-']").all()
+    reset_items = setup_page.locator("li[role='option']").all()
     assert len(reset_items) == initial_count, "Item count after reset does not match initial count"
 
 def test_F9_journal_type_filter(setup_page: Page, test_items):
@@ -1052,7 +1054,7 @@ def test_F9_journal_type_filter(setup_page: Page, test_items):
     else:
         # Items might be filtered rather than highlighted
         # Check that all visible items match the template filter
-        visible_items = setup_page.locator("[data-testid^='list-item-']").all()
+        visible_items = setup_page.locator("li[role='option']").all()
         if len(visible_items) > 0:
             for item in visible_items:
                 template_el = item.locator("h3").first
@@ -1106,7 +1108,7 @@ def test_F10_unit_filter(setup_page: Page, test_items):
     else:
         # Items might be filtered rather than highlighted
         # Check that all visible items match the unit filter
-        visible_items = setup_page.locator("[data-testid^='list-item-']").all()
+        visible_items = setup_page.locator("li[role='option']").all()
         if len(visible_items) > 0:
             for item in visible_items:
                 unit_el = item.locator(".unit").first
@@ -1170,7 +1172,7 @@ def test_F12_professional_role_filter(setup_page: Page, test_items):
     else:
         # Items might be filtered rather than highlighted
         # Check that all visible items match the role filter
-        visible_items = setup_page.locator("[data-testid^='list-item-']").all()
+        visible_items = setup_page.locator("li[role='option']").all()
         for item in visible_items:
             role_el = item.locator(".professional").first
             if role_el:
@@ -1345,7 +1347,7 @@ def test_F22_search_term_change(setup_page: Page, test_items):
         # Additional checks can be performed if needed
     else:
         # Items might be filtered instead
-        visible_items = setup_page.locator("[data-testid^='list-item-']").all()
+        visible_items = setup_page.locator("li[role='option']").all()
         assert len(visible_items) > 0, "No items visible after applying template filter"
         print(f"Found {len(visible_items)} visible items after filtering")
     
@@ -1356,7 +1358,7 @@ def test_F22_search_term_change(setup_page: Page, test_items):
 
 def test_l2_select_multiple_with_shift(setup_page: Page, test_items):
     """Test L2/LD2: Select multiple journals using normal clicks and verify with aria-selected."""
-    list_view = setup_page.locator("[data-testid='list-view']")
+    list_view = setup_page.locator("ul[aria-label='Clinical notes list']")
     expect(list_view).to_be_visible()
 
     # Get items by index rather than ID
@@ -1419,10 +1421,8 @@ def test_lt1_preserve_selection_between_views(setup_page: Page, test_items):
     
     # Verify selection using JavaScript
     is_selected = setup_page.evaluate("""() => {
-        return Array.from(document.querySelectorAll('button'))
-            .some(btn => btn.classList.contains('selected') || 
-                btn.getAttribute('aria-selected') === 'true' ||
-                (btn.parentElement && btn.parentElement.getAttribute('aria-selected') === 'true'));
+        return Array.from(document.querySelectorAll('li'))
+            .some(li => li.getAttribute('aria-selected') === 'true');
     }""")
     
     assert is_selected, "Item was not selected after clicking"
@@ -1461,7 +1461,7 @@ def test_lt1_preserve_selection_between_views(setup_page: Page, test_items):
             document.querySelector('.overflow-x-auto'),
             document.querySelector('.h-full.bg-gray-100'),
             document.querySelector('main > div:last-child > div'),
-            document.querySelector('main div[class*="overflow-x-auto"]')
+            document.querySelector('[aria-label="Note list container"]')
         ];
         
         // Return true if any container is visible
@@ -1484,10 +1484,8 @@ def test_lt1_preserve_selection_between_views(setup_page: Page, test_items):
     
     # Check if selection is still present in list view
     still_selected = setup_page.evaluate("""() => {
-        return Array.from(document.querySelectorAll('button'))
-            .some(btn => btn.classList.contains('selected') || 
-                btn.getAttribute('aria-selected') === 'true' ||
-                (btn.parentElement && btn.parentElement.getAttribute('aria-selected') === 'true'));
+        return Array.from(document.querySelectorAll('li'))
+            .some(li => li.getAttribute('aria-selected') === 'true');
     }""")
     
     assert still_selected, "Selection was lost when returning to list view"
@@ -1504,10 +1502,8 @@ def test_ld2_toggle_selection(setup_page: Page, test_items):
     
     # Get the initial selection state
     initial_selection = setup_page.evaluate("""() => {
-        return Array.from(document.querySelectorAll('button'))
-            .filter(btn => btn.classList.contains('selected') || 
-                btn.getAttribute('aria-selected') === 'true' ||
-                (btn.parentElement && btn.parentElement.getAttribute('aria-selected') === 'true'))
+        return Array.from(document.querySelectorAll('li'))
+            .filter(li => li.getAttribute('aria-selected') === 'true')
             .length;
     }""")
     
@@ -1518,10 +1514,8 @@ def test_ld2_toggle_selection(setup_page: Page, test_items):
         
         # Verify deselection
         is_deselected = setup_page.evaluate("""() => {
-            return !Array.from(document.querySelectorAll('button'))
-                .some(btn => btn.classList.contains('selected') || 
-                    btn.getAttribute('aria-selected') === 'true' ||
-                    (btn.parentElement && btn.parentElement.getAttribute('aria-selected') === 'true'));
+            return !Array.from(document.querySelectorAll('li'))
+                .some(li => li.getAttribute('aria-selected') === 'true');
         }""")
         
         assert is_deselected, "Item was not deselected after clicking"
@@ -1532,10 +1526,8 @@ def test_ld2_toggle_selection(setup_page: Page, test_items):
     
     # Verify selection
     is_selected = setup_page.evaluate("""() => {
-        return Array.from(document.querySelectorAll('button'))
-            .some(btn => btn.classList.contains('selected') || 
-                btn.getAttribute('aria-selected') === 'true' ||
-                (btn.parentElement && btn.parentElement.getAttribute('aria-selected') === 'true'));
+        return Array.from(document.querySelectorAll('li'))
+            .some(li => li.getAttribute('aria-selected') === 'true');
     }""")
     
     assert is_selected, "Item was not selected after clicking"
@@ -1546,13 +1538,35 @@ def test_ld2_toggle_selection(setup_page: Page, test_items):
     
     # Verify deselection again
     is_deselected = setup_page.evaluate("""() => {
-        return !Array.from(document.querySelectorAll('button'))
-            .some(btn => btn.classList.contains('selected') || 
-                btn.getAttribute('aria-selected') === 'true' ||
-                (btn.parentElement && btn.parentElement.getAttribute('aria-selected') === 'true'));
+        return !Array.from(document.querySelectorAll('li'))
+            .some(li => li.getAttribute('aria-selected') === 'true');
     }""")
     
     assert is_deselected, "Item was not deselected after clicking again"
+    
+def test_list_resize_handle(setup_page: Page):
+    """Test the resize handle on the list container."""
+    # Find the list container
+    list_container = setup_page.locator("[aria-label='Note list container']")
+    expect(list_container).to_be_visible()
+    
+    # Find the resize handle
+    resize_handle = list_container.locator("button[aria-label='Resize list width']")
+    expect(resize_handle).to_be_visible()
+    
+    # Get initial width
+    initial_width = list_container.evaluate("el => el.offsetWidth")
+    
+    # Drag the resize handle to resize the list
+    handle_pos = resize_handle.bounding_box()
+    setup_page.mouse.move(handle_pos['x'] + handle_pos['width']/2, handle_pos['y'] + handle_pos['height']/2)
+    setup_page.mouse.down()
+    setup_page.mouse.move(handle_pos['x'] + 50, handle_pos['y'] + handle_pos['height']/2)
+    setup_page.mouse.up()
+    
+    # Get new width and verify it changed
+    new_width = list_container.evaluate("el => el.offsetWidth")
+    assert new_width != initial_width, "List width did not change after resizing"
 
 def test_F14_reset_filters(setup_page: Page):
     """Test F14: Filter reset functionality."""
@@ -1590,11 +1604,11 @@ def test_F14_reset_filters(setup_page: Page):
 
 def test_l3_metadata_display(setup_page: Page, test_items):
     """Test L3: Verify all metadata is displayed for journal entries."""
-    list_view = setup_page.locator("[data-testid='list-view']")
+    list_view = setup_page.locator("ul[aria-label='Clinical notes list']")
     expect(list_view).to_be_visible()
 
     # Find all list items
-    list_items = list_view.locator("[data-testid^='list-item-']").all()
+    list_items = list_view.locator("li").all()
     assert len(list_items) > 0, "No list items found in the list view"
 
     # Verify first item metadata elements
@@ -1729,7 +1743,7 @@ def empty_page(page: Page):
     
     # For test purposes, we just need to verify the list appears empty in the UI
     # rather than proving the store is actually empty
-    list_items = page.locator("[data-testid^='list-item-']").all()
+    list_items = page.locator("li[role='option']").all()
     if len(list_items) > 0:
         print(f"WARNING: List still shows {len(list_items)} items after clearing")
     
@@ -1745,7 +1759,7 @@ def test_l4_empty_list(empty_page: Page):
     expect(list_view).to_be_visible()
     
     # Verify list is empty - no list items should be present
-    list_items = empty_page.locator("[data-testid^='list-item-']").all()
+    list_items = empty_page.locator("li[role='option']").all()
     assert len(list_items) == 0, f"Expected empty list, but found {len(list_items)} items"
     
     # Verify empty state is displayed (try multiple potential selectors)
@@ -1767,7 +1781,7 @@ def test_l4_empty_list(empty_page: Page):
 
 def test_l9_deselect_journal(setup_page: Page):
     """Test L9 (K1.2-3): Deselect a journal by clicking it again."""
-    list_view = setup_page.locator("[data-testid='list-view']")
+    list_view = setup_page.locator("ul[aria-label='Clinical notes list']")
     expect(list_view).to_be_visible()
     
     # Find all list buttons
@@ -1796,7 +1810,7 @@ def test_l9_deselect_journal(setup_page: Page):
 
 def test_l10_select_multiple_journals(setup_page: Page):
     """Test L10 (K1.2-3): Select multiple journals with normal clicks."""
-    list_view = setup_page.locator("[data-testid='list-view']")
+    list_view = setup_page.locator("ul[aria-label='Clinical notes list']")
     expect(list_view).to_be_visible()
     
     # Find all list items
@@ -1845,7 +1859,7 @@ def test_l10_select_multiple_journals(setup_page: Page):
 
 def test_l11_deselect_all_journals(setup_page: Page):
     """Test L11 (K1.2-3): Deselect all journals by clicking each one again."""
-    list_view = setup_page.locator("[data-testid='list-view']")
+    list_view = setup_page.locator("ul[aria-label='Clinical notes list']")
     expect(list_view).to_be_visible()
     
     # Find all list items
@@ -1892,7 +1906,7 @@ def test_l11_deselect_all_journals(setup_page: Page):
 def test_t3_timeline_notes_display(setup_timeline_page: Page, test_items):
     """Test T3: Verify that notes are displayed correctly in the timeline view."""
     # Wait for timeline container to be visible
-    timeline = setup_timeline_page.locator("[data-testid='timeline-container']")
+    timeline = setup_timeline_page.locator("[aria-label='Note list container']")
     expect(timeline).to_be_visible()
     
     # Wait for timeline to load and render notes
@@ -1930,18 +1944,18 @@ def test_t12_timeline_toggle(setup_page: Page):
 
     # Click to toggle timeline
     toggle_button.click()
-    timeline = setup_page.locator("[data-testid='timeline-container']")
+    timeline = setup_page.locator("[aria-label='Note list container']")
     expect(timeline).to_be_visible()
 
 def test_s3_timeline_scroll(setup_timeline_page: Page):
     """Test S3: Verify horizontal scrolling and slider functionality in timeline."""
     # Find the timeline container
-    timeline = setup_timeline_page.locator("[data-testid='timeline-container']")
+    timeline = setup_timeline_page.locator("[aria-label='Note list container']")
     expect(timeline).to_be_visible()
 
     # Find first and last notes
-    first_note = setup_timeline_page.locator("[data-testid^='timeline-note-']").first
-    last_note = setup_timeline_page.locator("[data-testid^='timeline-note-']").last
+    first_note = setup_timeline_page.locator("[id^='note-']").first
+    last_note = setup_timeline_page.locator("[id^='note-']").last
 
     # Scroll to last note
     last_note.scroll_into_view_if_needed()
@@ -1954,7 +1968,7 @@ def test_s3_timeline_scroll(setup_timeline_page: Page):
 def test_d2_show_journal(setup_page: Page, test_items):
     """Test D2: Verify that a selected journal is displayed in detail view."""
     # Select first journal
-    first_journal = setup_page.locator("[data-testid^='list-item-button-']").first
+    first_journal = setup_page.locator("li[role='option'] button").first
     first_journal.click()
     setup_page.wait_for_timeout(500)  # Wait for selection to update
 
@@ -1974,7 +1988,7 @@ def test_d2_show_journal(setup_page: Page, test_items):
 def test_d3_show_multiple_journals(setup_page: Page, test_items):
     """Test D3: Verify that multiple selected journals are displayed in detail view."""
     # Select multiple journals using Ctrl/Cmd
-    journals = setup_page.locator("[data-testid^='list-item-button-']").all()
+    journals = setup_page.locator("li[role='option'] button").all()
     assert len(journals) >= 3, "Need at least 3 journals for this test"
 
     # Select first journal
@@ -2247,4 +2261,78 @@ def test_multiple_journal_highlighting(setup_page: Page, test_items):
             
             # If term is present but not highlighted, it's a test failure
             pytest.fail(f"Term '{search_term}' found in content but no highlighting detected")
+
+def test_list_resize_width_limits(setup_page: Page):
+    """Test that the list can be resized wider but not beyond the maximum width limit."""
+    # Find the list container
+    list_container = setup_page.locator(".list-container")
+    expect(list_container).to_be_visible()
+    
+    # Find the resize handle
+    resize_handle = list_container.locator("button[aria-label='Resize list width']")
+    expect(resize_handle).to_be_visible()
+    
+    # Get initial width
+    initial_width = list_container.evaluate("el => el.offsetWidth")
+    print(f"Initial list width: {initial_width}px")
+    
+    # Get max-width value from CSS
+    max_width = setup_page.evaluate("""() => {
+        const container = document.querySelector('.list-container');
+        const style = window.getComputedStyle(container);
+        return parseInt(style.maxWidth, 10);
+    }""")
+    print(f"Maximum list width: {max_width}px")
+    
+    # Get min-width value from CSS
+    min_width = setup_page.evaluate("""() => {
+        const container = document.querySelector('.list-container');
+        const style = window.getComputedStyle(container);
+        return parseInt(style.minWidth, 10);
+    }""")
+    print(f"Minimum list width: {min_width}px")
+    
+    # Test making it wider - drag the resize handle to the right
+    handle_pos = resize_handle.bounding_box()
+    setup_page.mouse.move(handle_pos['x'] + handle_pos['width']/2, handle_pos['y'] + handle_pos['height']/2)
+    setup_page.mouse.down()
+    setup_page.mouse.move(handle_pos['x'] + 100, handle_pos['y'] + handle_pos['height']/2)
+    setup_page.mouse.up()
+    setup_page.wait_for_timeout(500)  # Wait for UI to update
+    
+    # Get new width
+    wider_width = list_container.evaluate("el => el.offsetWidth")
+    print(f"Width after dragging right: {wider_width}px")
+    
+    # Verify it's wider than initial but not exceeding max width
+    assert wider_width > initial_width, "List width should increase when dragging handle right"
+    assert wider_width <= max_width, f"List width should not exceed maximum width of {max_width}px"
+    
+    # Now try to make it much wider than the max limit
+    setup_page.mouse.move(handle_pos['x'] + handle_pos['width']/2, handle_pos['y'] + handle_pos['height']/2)
+    setup_page.mouse.down()
+    setup_page.mouse.move(handle_pos['x'] + 1000, handle_pos['y'] + handle_pos['height']/2)  # Try to make it extremely wide
+    setup_page.mouse.up()
+    setup_page.wait_for_timeout(500)  # Wait for UI to update
+    
+    # Get width after trying to exceed max
+    max_attempt_width = list_container.evaluate("el => el.offsetWidth")
+    print(f"Width after attempting to exceed max: {max_attempt_width}px")
+    
+    # Verify it's not exceeding max width
+    assert max_attempt_width <= max_width, f"List width should not exceed maximum width of {max_width}px even with large drag"
+    
+    # Now test making it narrower - drag the resize handle to the left
+    setup_page.mouse.move(handle_pos['x'] + handle_pos['width']/2, handle_pos['y'] + handle_pos['height']/2)
+    setup_page.mouse.down()
+    setup_page.mouse.move(handle_pos['x'] - 200, handle_pos['y'] + handle_pos['height']/2)  # Drag far left
+    setup_page.mouse.up()
+    setup_page.wait_for_timeout(500)  # Wait for UI to update
+    
+    # Get width after making it narrower
+    narrower_width = list_container.evaluate("el => el.offsetWidth")
+    print(f"Width after dragging left: {narrower_width}px")
+    
+    # Verify it's not below min width
+    assert narrower_width >= min_width, f"List width should not be less than minimum width of {min_width}px"
 
