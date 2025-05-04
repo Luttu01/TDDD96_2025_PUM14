@@ -14,6 +14,10 @@
     noteHierarchy.set(buildDateHierarchy($allNotes));
   }
 
+  function showDescription(event : MouseEvent) {
+    const keyword = event.target as HTMLSpanElement;
+  }
+
   function toggleGroup(group: Year | Month) {
     group.isCollapsed = !group.isCollapsed;
     noteHierarchy.set($noteHierarchy);
@@ -331,6 +335,7 @@
                             <div
                               class="h-2"
                               style="background-color: {stringToColor(keyword)}"
+                              title={keyword}
                             ></div>
                           {/each}
                         </span>
@@ -358,6 +363,7 @@
                                 style="background-color: {stringToColor(
                                   keyword
                                 )}"
+                                title={keyword}
                               >
                                 {@html getKeywordContext(
                                   note.CaseData,
