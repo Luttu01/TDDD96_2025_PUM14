@@ -1,389 +1,242 @@
 <script lang="ts">
-  import { allNotes, filteredNotes, filter, resetFilter, powerMode, showTimeline, destructMode } from "$lib/stores";
-  import type { filterSelect } from "$lib/models";
-  import { derived, get } from "svelte/store";
-  import { getPropertyForFilter } from "$lib/models";
-  import { allKeywords, selectedKeywords } from "$lib/stores";
+  import {
+    allNotes,
+    filteredNotes,
+    filter,
+    powerMode,
+    showTimeline,
+    destructMode,
+    selectedNotes,
+    allKeywords,
+  } from "$lib/stores";
+  import { stringToColor } from "$lib/utils";
+
   import {
     extractBoldTitlesFromHTML,
     getSortedUniqueKeywordNames,
-  } from "$lib/utils/keywordHelper";
-  import { selectedNotes } from "$lib/stores";
-  import { stringToColor } from "$lib/utils";
+  } from "$lib/utils/keywordUtils";
+  import type { filterSelect } from "$lib/models";
 
-function resetF() {
-    resetFilter.set(true);
-}
+  let filteredTemplates = new Set<string>();
+  let filteredUnits = new Set<string>();
+  let filteredRoles = new Set<string>();
+  let filteredKeywords = new Set<string>();
 
-function closeDocs() {
-    selectedNotes.set([]);
-}
+  $: templates = new Map(
+    $allNotes.map((n) => [
+      n.Dokumentnamn,
+      { name: n.Dokumentnamn, selected: filteredTemplates.has(n.Dokumentnamn) },
+    ])
+  );
+  $: units = new Map(
+    $allNotes.map((n) => [
+      n.Vårdenhet_Namn,
+      { name: n.Vårdenhet_Namn, selected: filteredUnits.has(n.Vårdenhet_Namn) },
+    ])
+  );
+  $: roles = new Map(
+    $allNotes.map((n) => [
+      n.Dokument_skapad_av_yrkestitel_Namn,
+      {
+        name: n.Dokument_skapad_av_yrkestitel_Namn,
+        selected: filteredRoles.has(n.Dokument_skapad_av_yrkestitel_Namn),
+      },
+    ])
+  );
 
-  /**
-   * TODO Sprint 2-3
-   * 1. Vid fler än X alternativ i en drop-down: lägg till overflow-scroll ist för oändligt lång lista (DONE)
-   * 2. Flera filteralternativ ska kunna vara aktiva samtidigt från samma kategori, färgmarkerade (DONE)
-   * 3. Varje kategori ska vara återställbar utan att påverka de andra kategorierna (DONE)
-   * 4. Filtrering ska ske vid val av filter (just nu genom färgläggning av dok) (DONE)
-   * 5. Datum -> FilteredDocuments (Ska faktiskt ta bort) (DONE)
-   * 6. Annan filtrering -> Sätt till "Filter" (DONE)
-   * 7. Sätt min och max datum från början (sådant att det inkapslar alla dokument för patienten)
-   */
+  let minDate = "";
+  let maxDate = "";
+  let absMin = "";
+  let absMax = "";
 
-  let template: string = "Journalmall";
-  let unit: string = "Vårdenhet";
-  let role: string = "Yrkesroll";
+  let template = "Journalmall";
+  let unit = "Vårdenhet";
+  let role = "Yrkesroll";
 
-  /**
-   * Skapa map till keywords.
-   * Sortera set i alfabetiskordring med funktionen getSortedUniqueKeywordNames.
-   * Lägger endast till keywords som faktiskt finns i notes. Alla sökord träffar minst en anteckning.
-   */
-  let keywordsMap: Map<string, filterSelect> = new Map();
-  let filteredKeywords: Set<string> = new Set();
-
-  $: if (keywordsMap.size === 0) {
-    const keywordNames = getSortedUniqueKeywordNames(get(allKeywords));
-    const keywordTitles = get(allNotes).flatMap((note) =>
-      extractBoldTitlesFromHTML(note.CaseData)
+  // Generate keyword map
+  $: {
+    const keywordNames = getSortedUniqueKeywordNames($allKeywords);
+    const keywordTitles = $allNotes.flatMap((n) =>
+      extractBoldTitlesFromHTML(n.CaseData)
     );
-
     const titleSet = new Set(keywordTitles);
-
-    keywordNames
-      .filter((name) => titleSet.has(name))
-      .forEach((name) => {
-        keywordsMap.set(name, { name, selected: false });
-      });
+    keywordsMap = new Map(
+      keywordNames
+        .filter((name) => titleSet.has(name))
+        .map((name) => [name, { name, selected: filteredKeywords.has(name) }])
+    );
   }
 
-  const filterNotes = derived(allNotes, ($allNotes) => {
-    /**
-     * Derives a map of sets of filter options from all notes for select patient
-     */
-    let notes: Map<string, Map<string, filterSelect>> = new Map();
-    notes.set("Vårdenhet", new Map<string, filterSelect>());
-    notes.set("Journalmall", new Map<string, filterSelect>());
-    notes.set("Yrkesroll", new Map<string, filterSelect>());
-    notes.set("Äldsta dokument", new Map<string, filterSelect>());
-    notes.set("Nyaste dokument", new Map<string, filterSelect>());
-    $allNotes.forEach((note) => {
-      notes
-        .get("Vårdenhet")!
-        .set(note.Vårdenhet_Namn, {
-          name: note.Vårdenhet_Namn,
-          selected: false,
-        });
-      notes
-        .get("Journalmall")!
-        .set(note.Dokumentnamn, { name: note.Dokumentnamn, selected: false });
-      notes
-        .get("Yrkesroll")!
-        .set(note.Dokument_skapad_av_yrkestitel_Namn, {
-          name: note.Dokument_skapad_av_yrkestitel_Namn,
-          selected: false,
-        });
+  let keywordsMap: Map<string, filterSelect> = new Map();
 
-      // Set min and max date for notes
-      if (
-        notes.get("Nyaste dokument")!.size == 0 &&
-        notes.get("Äldsta dokument")!.size == 0
-      ) {
-        notes.get("Nyaste dokument")!.set("Nyast", {
-          name: note.DateTime,
-          selected: false,
-        });
-        notes.get("Äldsta dokument")!.set("Äldst", {
-          name: note.DateTime,
-          selected: false,
-        });
-      } else {
-        if (notes.get("Nyaste dokument")!.get("Nyast")!.name < note.DateTime) {
-          notes.get("Nyaste dokument")!.set("Nyast", {
-            name: note.DateTime,
-            selected: false,
-          });
-        }
-        if (notes.get("Äldsta dokument")!.get("Äldst")!.name > note.DateTime) {
-          notes.get("Äldsta dokument")!.set("Äldst", {
-            name: note.DateTime,
-            selected: false,
-          });
-        }
-      }
+  // Automatically filter notes based on active filters
+  $: {
+    const result = $allNotes.filter((note) => {
+      const date = note.DateTime.substring(0, 10);
+      const titleMatches = Array.from(filteredKeywords).every((keyword) =>
+        note.CaseData.includes(keyword)
+      );
+      return (
+        (filteredTemplates.size === 0 ||
+          filteredTemplates.has(note.Dokumentnamn)) &&
+        (filteredUnits.size === 0 || filteredUnits.has(note.Vårdenhet_Namn)) &&
+        (filteredRoles.size === 0 ||
+          filteredRoles.has(note.Dokument_skapad_av_yrkestitel_Namn)) &&
+        (minDate === "" || date >= minDate) &&
+        (maxDate === "" || date <= maxDate) &&
+        (filteredKeywords.size === 0 || titleMatches)
+      );
     });
-    return notes;
-  });
+    filteredNotes.set(result);
+    filter.set(
+      new Map([
+        [template, filteredTemplates],
+        [unit, filteredUnits],
+        [role, filteredRoles],
+      ])
+    );
+  }
 
-  const readNotes = get(filterNotes);
-  let templates: Map<string, filterSelect> = readNotes.get("Journalmall") ?? new Map<string, filterSelect>();
-  let units: Map<string, filterSelect> = readNotes.get("Vårdenhet") ?? new Map<string, filterSelect>();
-  let roles: Map<string, filterSelect> = readNotes.get("Yrkesroll") ?? new Map<string, filterSelect>();
-  let minDate: string = readNotes
-    .get("Äldsta dokument")!
-    .get("Äldst")!
-    .name.substring(0, 10);
-  let maxDate: string = readNotes
-    .get("Nyaste dokument")!
-    .get("Nyast")!
-    .name.substring(0, 10);
-  const absMax = maxDate; // Reset value
-  const absMin = minDate; // Reset value
-  let filteredTemplates: Set<string> = new Set();
-  let filteredUnits: Set<string> = new Set();
-  let filteredRoles: Set<string> = new Set();
-
-  allNotes.subscribe((notes) => {
-    filteredNotes.set(notes);
-  })();
-
-$: {
-    const updatedNotes = get(allNotes).map((note) => {
-        const noteKeywords = extractBoldTitlesFromHTML(note.CaseData)
-        const matchingKeywords = Array.from(filteredKeywords).filter((keyword) =>
-          noteKeywords.includes(keyword)
-        );
-        return { ...note, keywords: matchingKeywords };
+  $: {
+    const updatedNotes = $allNotes.map((note) => {
+      const noteKeywords = extractBoldTitlesFromHTML(note.CaseData);
+      const matchingKeywords = Array.from(filteredKeywords).filter((keyword) =>
+        noteKeywords.includes(keyword)
+      );
+      return { ...note, keywords: matchingKeywords };
     });
     allNotes.set(updatedNotes);
-}
-
-  function updateFilter() {
-    allNotes.subscribe((notes) => {
-      const filtered = notes.filter((note) => {
-        const titleMatches = Array.from(filteredKeywords).every((keyword) =>
-          note.CaseData.includes(keyword)
-        );
-        return (
-          (minDate <= note.DateTime.substring(0, 10) || minDate === "") &&
-          (maxDate >= note.DateTime.substring(0, 10) || maxDate === "") &&
-          (filteredKeywords.size === 0 || titleMatches)
-        );
-        /*(templates.get(note.Dokumentnamn)!.selected || filteredTemplates.size == 0) &&
-                    (units.get(note.Vårdenhet_Namn)!.selected || filteredUnits.size == 0) &&
-                    (roles.get(note.Dokument_skapad_av_yrkestitel_Namn)!.selected || filteredRoles.size == 0) &&*/
-      });
-      filteredNotes.set(filtered);
-    })();
-    let activeFilters: Map<string, Set<string>> = new Map();
-    activeFilters.set(template, filteredTemplates);
-    activeFilters.set(unit, filteredUnits);
-    activeFilters.set(role, filteredRoles);
-    filter.set(activeFilters);
   }
 
-  function updateDocument(event: MouseEvent) {
-    /***
-     * Dynamically update selected filter options for templates, units and roles.
-     */
-    const button = event.target as HTMLButtonElement;
-    let selectedFilter = button.name;
-    let selectedFilterOption: filterSelect;
-
-    // Check if selected filter is a template filter
-    if (templates.has(selectedFilter)) {
-      const newTemplates = new Map(templates); // create temporary placeholder for templates
-      selectedFilterOption = templates.get(selectedFilter) as filterSelect; // Get value from key
-      newTemplates.set(selectedFilter, {
-        name: selectedFilter,
-        selected: !selectedFilterOption.selected,
-      }); // set new value in temporary map
-      templates = newTemplates; // replace existing map with new one
-      if (!selectedFilterOption.selected) {
-        filteredTemplates.add(selectedFilter); // Add to "keep track" list
-      } else {
-        filteredTemplates.delete(selectedFilter); // Remove from "keep track" list
-      }
-      filteredTemplates = new Set(filteredTemplates);
-    }
-    // Repeat (look at template for brief)
-    else if (units.has(selectedFilter)) {
-      const newUnits = new Map(units);
-      selectedFilterOption = units.get(selectedFilter) as filterSelect;
-      newUnits.set(selectedFilter, {
-        name: selectedFilter,
-        selected: !selectedFilterOption.selected,
-      });
-      units = newUnits;
-      if (!selectedFilterOption.selected) {
-        filteredUnits.add(selectedFilter);
-      } else {
-        filteredUnits.delete(selectedFilter);
-      }
-      filteredUnits = new Set(filteredUnits);
-    }
-    // Repeat (look at template for brief)
-    else if (roles.has(selectedFilter)) {
-      const newRoles = new Map(roles);
-      selectedFilterOption = roles.get(selectedFilter) as filterSelect;
-      newRoles.set(selectedFilter, {
-        name: selectedFilter,
-        selected: !selectedFilterOption.selected,
-      });
-      roles = newRoles;
-      if (!selectedFilterOption.selected) {
-        filteredRoles.add(selectedFilter);
-      } else {
-        filteredRoles.delete(selectedFilter);
-      }
-      filteredRoles = new Set(filteredRoles);
-    }
-    // Uppdaterar filter för sökord.
-    else if (keywordsMap.has(selectedFilter)) {
-      const newKeywords = new Map(keywordsMap);
-      selectedFilterOption = keywordsMap.get(selectedFilter) as filterSelect;
-      newKeywords.set(selectedFilter, {
-        name: selectedFilter,
-        selected: !selectedFilterOption.selected,
-      });
-      keywordsMap = newKeywords;
-
-      if (!selectedFilterOption.selected) {
-        filteredKeywords.add(selectedFilter);
-      } else {
-        filteredKeywords.delete(selectedFilter);
-      }
-      filteredKeywords = new Set(filteredKeywords);
-      selectedKeywords.set(filteredKeywords);
-    } else {
-      // If function called from somewhere not associated with filter
-      return;
-    }
-    // Filter all notes by filter criteria
-    updateFilter();
+  function toggle(set: Set<string>, value: string) {
+    const newSet = new Set(set);
+    newSet.has(value) ? newSet.delete(value) : newSet.add(value);
+    return newSet;
   }
 
-  function reset(arg: string) {
-    const newTemplates = new Map(templates);
-    const newUnits = new Map(units);
-    const newRoles = new Map(roles);
-    if (arg == template || arg == "") {
-      newTemplates.forEach((element) => {
-        element.selected = false;
-      });
-      filteredTemplates.clear();
-      filteredTemplates = new Set(filteredTemplates);
+  function handleClick(event: Event) {
+    const name = (event.target as HTMLButtonElement).name;
+
+    if (templates.has(name)) {
+      filteredTemplates = toggle(filteredTemplates, name);
+    } else if (units.has(name)) {
+      filteredUnits = toggle(filteredUnits, name);
+    } else if (roles.has(name)) {
+      filteredRoles = toggle(filteredRoles, name);
     }
-    if (arg == unit || arg == "") {
-      newUnits.forEach((element) => {
-        element.selected = false;
-      });
-      filteredUnits.clear();
-      filteredUnits = new Set(filteredUnits);
+  }
+
+  function handleKeywordClick(event: Event) {
+    const name = (event.target as HTMLButtonElement).name;
+    if (keywordsMap.has(name)) {
+      filteredKeywords = toggle(filteredKeywords, name);
     }
-    if (arg == role || arg == "") {
-      newRoles.forEach((element) => {
-        element.selected = false;
-      });
-      filteredRoles.clear();
-      filteredRoles = new Set(filteredRoles);
+  }
+
+  function reset(filterName: string = "") {
+    if (filterName === template || filterName === "") {
+      filteredTemplates = new Set();
     }
-    if (arg == "") {
+    if (filterName === unit || filterName === "") {
+      filteredUnits = new Set();
+    }
+    if (filterName === role || filterName === "") {
+      filteredRoles = new Set();
+    }
+    if (filterName === "Sökord" || filterName === "") {
+      filteredKeywords = new Set();
+    }
+    if (filterName === "") {
       minDate = absMin;
       maxDate = absMax;
     }
-    if (arg == "Sökord" || arg == "") {
-      const newKeywords = new Map(keywordsMap);
-      newKeywords.forEach((element) => {
-        element.selected = false;
-      });
-      keywordsMap = newKeywords;
-      filteredKeywords.clear();
-      filteredKeywords = new Set(filteredKeywords);
-      selectedKeywords.set(filteredKeywords);
-    }
-
-    templates = newTemplates;
-    units = newUnits;
-    roles = newRoles;
-    updateFilter();
   }
 
-  resetFilter.subscribe((value) => {
-    reset("");
-    resetFilter.set(false);
-  });
+  function closeDocs() {
+    selectedNotes.set([]);
+  }
 </script>
 
 <div id="Header" class="flex flex-row justify-between p-1 space-x-4">
-
   <div
     id="settingsJournal"
     class="flex flex-row flex-grow text-sm items-center justify-beginning space-x-1 border-r border-gray-300"
   >
+    <span class="text-xs font-bold">Journalvy:</span>
 
-  <span class="text-xs font-bold">Journalvy:</span>
-
-  <div id="ToggleCanvas" class="p-1 flex">
-    <label for="toggleCanvas" class="text-xs items-center flex gap-1">
-      Canvas
-    <div class="relative inline-block w-8 h-4 items-center">
-      <input
-        id="toggleCanvas"
-        type="checkbox"
-        bind:checked={$powerMode}
-        class="sr-only peer"
-      />
-      <div
-        class="w-full h-full bg-gray-300 rounded-full peer-checked:bg-purple-500 transition-colors"
-      ></div>
-      <div
-        class="absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full shadow-md transition-all peer-checked:translate-x-4"
-      ></div>
+    <div id="ToggleCanvas" class="p-1 flex">
+      <label for="toggleCanvas" class="text-xs items-center flex gap-1">
+        Canvas
+        <div class="relative inline-block w-8 h-4 items-center">
+          <input
+            id="toggleCanvas"
+            type="checkbox"
+            bind:checked={$powerMode}
+            class="sr-only peer"
+          />
+          <div
+            class="w-full h-full bg-gray-300 rounded-full peer-checked:bg-purple-500 transition-colors"
+          ></div>
+          <div
+            class="absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full shadow-md transition-all peer-checked:translate-x-4"
+          ></div>
+        </div>
+      </label>
     </div>
-  </label>
-  </div>
 
-  <div id="CloseDocs" class="p-1 flex items-center">
-    <button id="Close" class="hover:text-purple-500 self-center text-xs" onclick={closeDocs}>Återställ Journalvy</button>
-</div>
+    <div id="CloseDocs" class="p-1 flex items-center">
+      <button
+        id="Close"
+        class="hover:text-purple-500 self-center text-xs"
+        onclick={closeDocs}>Återställ Journalvy</button
+      >
+    </div>
   </div>
-<div
+  <div
     id="settingsTimeline"
     class="flex flex-row flex-grow text-sm items-center justify-beginning space-x-1 border-r border-gray-300"
   >
+    <span class="text-xs font-bold">Tidslinje:</span>
 
-<span class="text-xs font-bold">Tidslinje:</span>
-
-  <div id="ToggleTimeline" class="p-1 flex">
-    <label for="toggleTimeline" class="text-xs items-center flex gap-1">
-      Tidslinje
-    <div class="relative inline-block w-8 h-4 items-center">
-      <input
-        id="toggleTimeline"
-        type="checkbox"
-        bind:checked={$showTimeline}
-        class="sr-only peer"
-      />
-      <div
-        class="w-full h-full bg-gray-300 rounded-full peer-checked:bg-purple-500 transition-colors"
-      ></div>
-      <div
-        class="absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full shadow-md transition-all peer-checked:translate-x-4"
-      ></div>
+    <div id="ToggleTimeline" class="p-1 flex">
+      <label for="toggleTimeline" class="text-xs items-center flex gap-1">
+        Tidslinje
+        <div class="relative inline-block w-8 h-4 items-center">
+          <input
+            id="toggleTimeline"
+            type="checkbox"
+            bind:checked={$showTimeline}
+            class="sr-only peer"
+          />
+          <div
+            class="w-full h-full bg-gray-300 rounded-full peer-checked:bg-purple-500 transition-colors"
+          ></div>
+          <div
+            class="absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full shadow-md transition-all peer-checked:translate-x-4"
+          ></div>
+        </div>
+      </label>
     </div>
-  </label>
-  </div>
 
-  <div id="ToggleDestruct" class="p-1 flex">
-    <label for="toggleDestruct" class="text-xs items-center flex gap-1">
-      Gömma
-    <div class="relative inline-block w-8 h-4 items-center">
-      <input
-        id="toggleDestruct"
-        type="checkbox"
-        bind:checked={$destructMode}
-        class="sr-only peer"
-      />
-      <div
-        class="w-full h-full bg-gray-300 rounded-full peer-checked:bg-purple-500 transition-colors"
-      ></div>
-      <div
-        class="absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full shadow-md transition-all peer-checked:translate-x-4"
-      ></div>
+    <div id="ToggleDestruct" class="p-1 flex">
+      <label for="toggleDestruct" class="text-xs items-center flex gap-1">
+        Gömma
+        <div class="relative inline-block w-8 h-4 items-center">
+          <input
+            id="toggleDestruct"
+            type="checkbox"
+            bind:checked={$destructMode}
+            class="sr-only peer"
+          />
+          <div
+            class="w-full h-full bg-gray-300 rounded-full peer-checked:bg-purple-500 transition-colors"
+          ></div>
+          <div
+            class="absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full shadow-md transition-all peer-checked:translate-x-4"
+          ></div>
+        </div>
+      </label>
     </div>
-  </label>
-  </div>
   </div>
   <div
     id="Filtermenu"
@@ -399,7 +252,7 @@ $: {
         id="OldestDate"
         min={absMin}
         max={maxDate}
-        oninput={updateFilter}
+        oninput={handleClick}
         bind:value={minDate}
       />
       <p>-</p>
@@ -409,7 +262,7 @@ $: {
         id="NewestDate"
         min={minDate}
         max={absMax}
-        oninput={updateFilter}
+        oninput={handleClick}
         bind:value={maxDate}
       />
     </div>
@@ -437,10 +290,12 @@ $: {
           {#each Array.from(keywordsMap) as [key, kw]}
             <li>
               <button
-                class="w-[100%] flex row justify-between text-left text-sm {kw.selected ? 'bg-[color:var(--tw-color)]' : 'bg-white hover:bg-gray-100'}"
+                class="w-[100%] flex row justify-between text-left text-sm {kw.selected
+                  ? 'bg-[color:var(--tw-color)]'
+                  : 'bg-white hover:bg-gray-100'}"
                 style="--tw-color: {stringToColor(kw.name)};"
                 name={kw.name}
-                onclick={updateDocument}
+                onclick={handleKeywordClick}
               >
                 {kw.name}
               </button>
@@ -477,11 +332,24 @@ $: {
                   ? 'bg-purple-200 hover:bg-purple-300'
                   : 'bg-white hover:bg-purple-100'}"
                 name={journal.name}
-                onclick={updateDocument}
+                onclick={handleClick}
                 >{journal.name}
-                <svg class="w-5 h-5 p-[2px] flex-none {getPropertyForFilter("Journalmall", journal.name)} text-white rounded-full" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
-                  <path fill-rule="evenodd" d="M9 2.221V7H4.221a2 2 0 0 1 .365-.5L8.5 2.586A2 2 0 0 1 9 2.22ZM11 2v5a2 2 0 0 1-2 2H4v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2h-7ZM8 16a1 1 0 0 1 1-1h6a1 1 0 1 1 0 2H9a1 1 0 0 1-1-1Zm1-5a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2H9Z" clip-rule="evenodd"/>
-                </svg>  
+                <svg
+                  class="w-5 h-5 p-[2px] flex-none bg-[color:var(--tw-color)] text-white rounded-full"
+                  aria-hidden="true"
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                  style="--tw-color: {stringToColor(journal.name)};"
+                >
+                  <path
+                    fill-rule="evenodd"
+                    d="M9 2.221V7H4.221a2 2 0 0 1 .365-.5L8.5 2.586A2 2 0 0 1 9 2.22ZM11 2v5a2 2 0 0 1-2 2H4v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2h-7ZM8 16a1 1 0 0 1 1-1h6a1 1 0 1 1 0 2H9a1 1 0 0 1-1-1Zm1-5a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2H9Z"
+                    clip-rule="evenodd"
+                  />
+                </svg>
               </button>
             </li>
           {/each}
@@ -501,7 +369,7 @@ $: {
         </button>
         {#if filteredUnits.size != 0}
           <button
-            onclick={(event) => reset(unit)}
+            onclick={() => reset(unit)}
             class="text-red-500 text-sm font-bold">X</button
           >
         {:else}
@@ -518,10 +386,23 @@ $: {
                   ? 'bg-purple-200 hover:bg-purple-300'
                   : 'bg-white hover:bg-purple-100'}"
                 name={unit.name}
-                onclick={updateDocument}
+                onclick={handleClick}
                 >{unit.name}
-                <svg class="w-5 h-5 p-[2px] flex-none {getPropertyForFilter("Vårdenhet", unit.name)} text-white rounded-full" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
-                  <path fill-rule="evenodd" d="M11.293 3.293a1 1 0 0 1 1.414 0l6 6 2 2a1 1 0 0 1-1.414 1.414L19 12.414V19a2 2 0 0 1-2 2h-3a1 1 0 0 1-1-1v-3h-2v3a1 1 0 0 1-1 1H7a2 2 0 0 1-2-2v-6.586l-.293.293a1 1 0 0 1-1.414-1.414l2-2 6-6Z" clip-rule="evenodd"/>
+                <svg
+                  class="w-5 h-5 p-[2px] flex-none bg-[color:var(--tw-color)] text-white rounded-full"
+                  aria-hidden="true"
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                  style="--tw-color: {stringToColor(unit.name)};"
+                >
+                  <path
+                    fill-rule="evenodd"
+                    d="M11.293 3.293a1 1 0 0 1 1.414 0l6 6 2 2a1 1 0 0 1-1.414 1.414L19 12.414V19a2 2 0 0 1-2 2h-3a1 1 0 0 1-1-1v-3h-2v3a1 1 0 0 1-1 1H7a2 2 0 0 1-2-2v-6.586l-.293.293a1 1 0 0 1-1.414-1.414l2-2 6-6Z"
+                    clip-rule="evenodd"
+                  />
                 </svg>
               </button>
             </li>
@@ -542,7 +423,7 @@ $: {
         </button>
         {#if filteredRoles.size != 0}
           <button
-            onclick={(event) => reset(role)}
+            onclick={() => reset(role)}
             class="text-red-500 text-sm font-bold">X</button
           >
         {:else}
@@ -559,10 +440,23 @@ $: {
                   ? 'bg-purple-200 hover:bg-purple-300'
                   : 'bg-white hover:bg-purple-100'}"
                 name={role.name}
-                onclick={updateDocument}
+                onclick={handleClick}
                 >{role.name}
-                <svg class="w-5 h-5 p-[1px] flex-none {getPropertyForFilter("Yrkesroll", role.name)} text-white rounded-full" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
-                  <path fill-rule="evenodd" d="M12 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm-2 9a4 4 0 0 0-4 4v1a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-1a4 4 0 0 0-4-4h-4Z" clip-rule="evenodd"/>
+                <svg
+                  class="w-5 h-5 p-[1px] flex-none bg-[color:var(--tw-color)] text-white rounded-full"
+                  aria-hidden="true"
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                  style="--tw-color: {stringToColor(role.name)};"
+                >
+                  <path
+                    fill-rule="evenodd"
+                    d="M12 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm-2 9a4 4 0 0 0-4 4v1a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-1a4 4 0 0 0-4-4h-4Z"
+                    clip-rule="evenodd"
+                  />
                 </svg>
               </button>
             </li>
@@ -571,7 +465,11 @@ $: {
       </div>
     </div>
     <div id="ResetFilters" class="p-1 flex items-center">
-      <button id="Reset" class="hover:text-purple-500 self-center text-xs" onclick={resetF}>Återställ Filter</button>
+      <button
+        id="Reset"
+        class="hover:text-purple-500 self-center text-xs"
+        onclick={() => reset("")}>Återställ Filter</button
+      >
     </div>
   </div>
 </div>

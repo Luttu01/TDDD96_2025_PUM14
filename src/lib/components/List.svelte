@@ -2,16 +2,19 @@
   import type { Note } from '$lib/models';
   import { onDestroy } from 'svelte';
   import { selectedNotes, filteredNotes, showTimeline } from '$lib/stores';
-  import NotePreview from './NotePreview.svelte';
 
   // Get notes from global store and sort them by date 
-  let localItems : Note[] = $derived([...$filteredNotes]
+  let localItems: Note[] = $derived([...$filteredNotes]
       .map((item, index) => ({
         ...item,
-        uniqueId: item.CompositionId || `${index}-${Date.now()}` 
+        uniqueId: item.CompositionId || `${index}-${Date.now()}`
       }))
       .sort((a, b) => new Date(b.DateTime).getTime() - new Date(a.DateTime).getTime())
   );
+
+  $effect(() => {
+    console.log('localItems', $filteredNotes);
+  });
 
   // Reference to DOM element for the list container that is used to resize the list
   let listContainerElement: HTMLDivElement;

@@ -9,7 +9,7 @@ export function stringToColor(str: string): string {
     // Map hash to an HSL color
     const h = hash % 360;
     const s = 90;
-    const l = 85;
+    const l = 80;
 
     return `hsl(${h}, ${s}%, ${l}%)`;
   }

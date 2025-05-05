@@ -1,5 +1,5 @@
 import type { Note } from "$lib/models";
-import type { Year, Month } from "$lib/models/dateHierarchy";
+import type { Year } from "$lib/models/dateHierarchy";
 
 export function buildDateHierarchy(notes: Note[]): Year[] {
     const hierarchy: Year[] = [];
