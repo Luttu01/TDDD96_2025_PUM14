@@ -8,11 +8,11 @@
   import { searchQuery } from "$lib/stores/searchStore";
   import { powerMode } from "$lib/stores";
   import { stringToColor } from "$lib/utils";
+  import NotePreview from "$lib/components/NotePreview.svelte";
 
   
   let interactInstance: any;
-  let initialPositions = new Map<string, { x: number; y: number }>();
-  
+  let initialPositions = new Map<string, { x: number; y: number }>();  
 
   function handleNoteClick(noteData: Note) {
     $selectedNotes = $selectedNotes || [];
@@ -186,11 +186,14 @@
             month: '2-digit',
             day: '2-digit',
             })}
+            <div class="flex items-center space-x-2">
+          <NotePreview {note} />
           <button
-            class="h-4 w-4 bg-red-500 rounded-full text-[10px] font-bold text-red-500 hover:text-red-700"
+            class="h-4 w-4 text-[10px] font-bold text-red-500 hover:text-red-700"
             on:click={() => handleNoteClick(note)}
             aria-label="deselect note"
           >X</button>
+            </div>
         </div>
         <div class="flex-1 overflow-y-auto p-4 text-sm">
           {@html highlightMatches(note.CaseData.replace(
@@ -209,30 +212,33 @@
       <div class="flex-1 overflow-x-auto p-2">
         <div class="flex space-x-2 h-full min-w-full">
           {#each $selectedNotes as note (note.CaseData)}
-            <div class="w-[100vw] min-w-100 bg-white rounded-lg shadow-md flex-grow overflow-hidden">
+            <div class="w-[100vw] min-w-120 bg-white rounded-lg shadow-md flex-grow overflow-hidden">
               <div class="text-left text-sm text-gray-500 flex justify-between border-b border-gray-200 p-2">
                 {new Date(note?.DateTime).toLocaleDateString('sv-SE', {
                   year: 'numeric',
                   month: '2-digit',
                   day: '2-digit',
                   })}
+                  <div class="flex items-center space-x-2">
+                  <NotePreview {note} />
                 <button
-                  class="h-4 w-4 bg-red-500 rounded-full text-[10px] font-bold text-red-500 hover:text-red-700"
+                  class="font-bold text-md text-red-500 hover:text-red-700"
                   on:click={() => note?.CaseData && handleNoteClick(note)}
                   class:selected={$selectedNotes?.find(
                     (n) => n.CaseData === note?.CaseData
                   )}
                   aria-label="deselect note"
                 >X</button>
+                  </div>
               </div>
               <div class="h-full overflow-y-auto text-sm p-2">
                 {@html highlightMatches(note.CaseData.replace(
                   new RegExp(
-                    `(<b>(${note.keywords.join("|")})</b>)`,
-                    "gi"
+                  `(<b>(${note.keywords.join("|")})</b>)`,
+                  "gi"
                   ),
                   (match, p1, p2) =>
-                    `<span style="background-color: ${stringToColor(p2)}; font-weight: bold;">${p2}</span>`
+                  `<span style="background-color: ${stringToColor(p2)}; font-weight: bold;">${p2}</span>`
                   ), $searchQuery)}
               </div>
             </div>

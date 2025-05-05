@@ -13,6 +13,7 @@
   class:space-x-1={direction === "flex-row"}
   class:space-y-1={direction === "flex-col"}
 >
+  <div title={note.Vårdenhet_Namn}>
   <svg
     class={`w-5 h-5 p-[2px] ${$filter.get("Vårdenhet")?.has(note.Vårdenhet_Namn) ? `bg-[color:var(--tw-color)]` : "bg-gray-400"} text-white rounded-full`}
     style="--tw-color: {stringToColor(note.Vårdenhet_Namn)};"
@@ -29,9 +30,12 @@
       clip-rule="evenodd"
     />
   </svg>
+</div>
+  <div title={note.Dokumentnamn}>
   <svg
     class={`w-5 h-5 p-[2px] ${$filter.get("Journalmall")?.has(note.Dokumentnamn) ? `bg-[color:var(--tw-color)]` : "bg-gray-400"} text-white rounded-full`}
     style="--tw-color: {stringToColor(note.Dokumentnamn)};"
+    name={note.Dokumentnamn}
     aria-hidden="true"
     xmlns="http://www.w3.org/2000/svg"
     width="24"
@@ -45,9 +49,12 @@
       clip-rule="evenodd"
     />
   </svg>
+</div>
+  <div title={note.Dokument_skapad_av_yrkestitel_Namn}>
   <svg
     class={`w-5 h-5 p-[2px] ${$filter.get("Yrkesroll")?.has(note.Dokument_skapad_av_yrkestitel_Namn) ? `bg-[color:var(--tw-color)]` : "bg-gray-400"} text-white rounded-full`}
     style="--tw-color: {stringToColor(note.Dokument_skapad_av_yrkestitel_Namn)};"
+    name={note.Dokument_skapad_av_yrkestitel_Namn}
     aria-hidden="true"
     xmlns="http://www.w3.org/2000/svg"
     width="24"
@@ -61,4 +68,5 @@
       clip-rule="evenodd"
     />
   </svg>
+  </div>
 </div>

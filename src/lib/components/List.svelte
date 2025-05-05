@@ -12,10 +12,6 @@
       .sort((a, b) => new Date(b.DateTime).getTime() - new Date(a.DateTime).getTime())
   );
 
-  $effect(() => {
-    console.log('localItems', $filteredNotes);
-  });
-
   // Reference to DOM element for the list container that is used to resize the list
   let listContainerElement: HTMLDivElement;
 

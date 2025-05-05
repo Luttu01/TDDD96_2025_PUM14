@@ -11,7 +11,27 @@
   const noteHierarchy = writable<Year[]>([]);
 
   $: {
-    noteHierarchy.set(buildDateHierarchy($allNotes));
+    const currentHierarchy = $noteHierarchy;
+    const updatedHierarchy = buildDateHierarchy($allNotes);
+
+    // Preserve collapsed state for years and months
+    for (const year of updatedHierarchy) {
+      const existingYear = currentHierarchy.find((y) => y.year === year.year);
+      if (existingYear) {
+        year.isCollapsed = existingYear.isCollapsed;
+
+        for (const month of year.months) {
+          const existingMonth = existingYear.months.find(
+            (m) => m.month === month.month
+          );
+          if (existingMonth) {
+            month.isCollapsed = existingMonth.isCollapsed;
+          }
+        }
+      }
+    }
+
+    noteHierarchy.set(updatedHierarchy);
   }
 
   function toggleGroup(group: Year | Month) {

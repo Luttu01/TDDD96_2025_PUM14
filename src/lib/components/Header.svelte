@@ -106,6 +106,15 @@
       return { ...note, keywords: matchingKeywords };
     });
     allNotes.set(updatedNotes);
+
+    const updatedSelectedNotes = $selectedNotes.map((note) => {
+      const noteKeywords = extractBoldTitlesFromHTML(note.CaseData);
+      const matchingKeywords = Array.from(filteredKeywords).filter((keyword) =>
+        noteKeywords.includes(keyword)
+      );
+      return { ...note, keywords: matchingKeywords };
+    });
+    selectedNotes.set(updatedSelectedNotes);
   }
 
   function toggle(set: Set<string>, value: string) {
