@@ -18,7 +18,7 @@
   let lastClickedIndex = $state(-1);
 
   // State for resizable list width functionality
-  const MIN_LIST_WIDTH = 150; 
+  const MIN_LIST_WIDTH = 110; 
   const DEFAULT_LIST_WIDTH = 280; 
   let listWidth = $state(DEFAULT_LIST_WIDTH);
   let isDragging = $state(false);
@@ -37,7 +37,9 @@
     return new Date(dateTimeString).toLocaleDateString('sv-SE', {
       year: '2-digit',
       month: '2-digit',
-      day: '2-digit'
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
     });
   }
 
@@ -126,7 +128,8 @@
           <div class="document-item">
             <div class="flex justify-between">
               <div class="document-meta space-x-2">
-              <span class="max-w-15 min-w-15">{formatDate(item.DateTime)}</span>
+              <span class="font-mono">{formatDate(item.DateTime)}</span>
+              <span class="font-mono">{item.Dokument_skapad_av_yrkestitel_Namn === 'Sjuksköterska' ? 'Ssk' : 'Läk'}</span>
               <h3>{item.Dokumentnamn}</h3>
             </div>
             </div>
@@ -178,7 +181,7 @@
   /* Button styling for each document in the list */
   .document-button {
     width: 100%;
-    padding: 0.2rem 1rem;
+    padding: 0.2rem 0.2rem;
     background: none;
     border: none;
     cursor: pointer;
@@ -194,7 +197,6 @@
   .document-button.selected {
     background-color: oklch(97.7% 0.014 308.299);
     border-left: 4px solid #b83bf6;
-    padding-left: calc(1rem - 4px);
   }
 
   .document-button.selected:hover {
@@ -205,7 +207,7 @@
   .document-item h3 {
     margin: 0 0 0.1rem 0;
     color: #333;
-    font-size: 0.80rem;
+    font-size: 0.70rem;
     font-weight: 600;
     white-space: nowrap; 
     overflow: hidden;
@@ -223,8 +225,8 @@
   .document-meta {
     display: flex;
     flex-wrap: row;
-    font-size: 0.80rem;
-    font-weight: 500;
+    font-size: 0.70rem;
+    font-weight: 300;
     color: #6d6d6d;
   }
 

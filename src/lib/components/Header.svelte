@@ -300,9 +300,9 @@
             <li>
               <button
                 class="w-[100%] flex row justify-between text-left text-sm {kw.selected
-                  ? 'bg-[color:var(--tw-color)]'
+                  ? 'bg-[color:var(--bg-color)] hover:bg-[color:var(--hover-color)]'
                   : 'bg-white hover:bg-gray-100'}"
-                style="--tw-color: {stringToColor(kw.name)};"
+                style="--bg-color: {stringToColor(kw.name)}; --hover-color: {stringToColor(kw.name, 80)};"
                 name={kw.name}
                 onclick={handleKeywordClick}
               >
@@ -338,8 +338,8 @@
               <button
                 class="w-[100%] flex row justify-between text-left text-sm {journal.selected ==
                 true
-                  ? 'bg-purple-200 hover:bg-purple-300'
-                  : 'bg-white hover:bg-purple-100'}"
+                  ? 'bg-purple-100 hover:bg-purple-200'
+                  : 'bg-white hover:bg-gray-100'}"
                 name={journal.name}
                 onclick={handleClick}
                 >{journal.name}
@@ -392,8 +392,8 @@
               <button
                 class="w-[100%] flex row justify-between text-left text-sm {unit.selected ==
                 true
-                  ? 'bg-purple-200 hover:bg-purple-300'
-                  : 'bg-white hover:bg-purple-100'}"
+                  ? 'bg-purple-100 hover:bg-purple-200'
+                  : 'bg-white hover:bg-gray-100'}"
                 name={unit.name}
                 onclick={handleClick}
                 >{unit.name}
@@ -446,8 +446,8 @@
               <button
                 class="w-[100%] flex row justify-between text-left text-sm {role.selected ==
                 true
-                  ? 'bg-purple-200 hover:bg-purple-300'
-                  : 'bg-white hover:bg-purple-100'}"
+                  ? 'bg-purple-100 hover:bg-purple-200'
+                  : 'bg-white hover:bg-gray-100'}"
                 name={role.name}
                 onclick={handleClick}
                 >{role.name}

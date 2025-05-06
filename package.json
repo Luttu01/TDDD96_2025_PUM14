@@ -1,7 +1,7 @@
 {
-	"name": "bettercare",
+	"name": "claritycare",
 	"private": true,
-	"version": "0.0.1",
+	"version": "0.2.0",
 	"license": "Apache-2.0",
 	"type": "module",
 	"scripts": {
@@ -17,6 +17,7 @@
 	"devDependencies": {
 		"@playwright/test": "^1.49.1",
 		"@sveltejs/adapter-auto": "^4.0.0",
+		"@sveltejs/adapter-static": "^3.0.8",
 		"@sveltejs/kit": "^2.16.0",
 		"@sveltejs/vite-plugin-svelte": "^5.0.0",
 		"@tailwindcss/vite": "^4.0.0",

@@ -181,7 +181,7 @@
       >
         <div
           id="note_date_{i}"
-          class="text-left text-sm text-gray-500 flex justify-between p-2 border-b border-gray-200 cursor-move"
+          class="text-left text-xs text-gray-500 flex justify-between items-center font-mono p-2 border-b border-gray-200 cursor-move"
         >
             {new Date(note?.DateTime).toLocaleDateString('sv-SE', {
             year: 'numeric',
@@ -191,13 +191,13 @@
             <div id="note_preview_{i}" class="flex items-center space-x-2">
           <NotePreview {note} />
           <button
-            class="h-4 w-4 text-[10px] font-bold text-red-500 hover:text-red-700"
+            class="font-bold text-lg font-sans text-red-500 hover:text-red-700"
             on:click={() => handleNoteClick(note)}
             aria-label="deselect note"
           >X</button>
             </div>
         </div>
-        <div id="note_keywords_{i}" class="flex-1 overflow-y-auto p-4 text-sm">
+        <div id="note_keywords_{i}" class="flex-1 overflow-y-auto p-4 text-xs">
           {@html highlightMatches(note.CaseData.replace(
             new RegExp(
               `(<b>(${note.keywords.join("|")})</b>)`,
@@ -215,7 +215,7 @@
         <div id="note_collection_container_2" class="flex space-x-2 h-full min-w-full">
           {#each $selectedNotes as note, i (note.CaseData)}
             <div id="normal_note_{i}" class="w-[100vw] min-w-120 bg-white rounded-lg shadow-md flex-grow overflow-hidden">
-              <div id="normal_note_info_{i}" class="text-left text-sm text-gray-500 flex justify-between border-b border-gray-200 p-2">
+              <div id="normal_note_info_{i}" class="text-left text-xs text-gray-500 flex justify-between items-center border-b border-gray-200 p-2 font-mono">
                 {new Date(note?.DateTime).toLocaleDateString('sv-SE', {
                   year: 'numeric',
                   month: '2-digit',
@@ -224,7 +224,7 @@
                   <div id="normal_note_preview_{i}" class="flex items-center space-x-2">
                   <NotePreview {note} />
                 <button
-                  class="font-bold text-md text-red-500 hover:text-red-700"
+                  class="font-bold text-lg font-sans text-red-500 hover:text-red-700"
                   on:click={() => note?.CaseData && handleNoteClick(note)}
                   class:selected={$selectedNotes?.find(
                     (n) => n.CaseData === note?.CaseData
@@ -233,7 +233,7 @@
                 >X</button>
                   </div>
               </div>
-              <div id="normal_note_matches_{i}" class="h-full overflow-y-auto text-sm p-2">
+              <div id="normal_note_matches_{i}" class="h-full overflow-y-auto text-xs p-2">
                 {@html highlightMatches(note.CaseData.replace(
                   new RegExp(
                   `(<b>(${note.keywords.join("|")})</b>)`,

@@ -178,7 +178,6 @@
   }
 
   let scrollContainer: HTMLElement | null = null;
-  let transitionContainer: HTMLElement | null = null;
   let noteElements: Record<string, HTMLElement> = {};
 
   const outOfViewKeywords = writable(new Map<string, number>());
@@ -264,8 +263,10 @@ function scrollToKeywordInDirection(keyword: string, direction: string) {
     if (scrollContainer) {
       scrollContainer.addEventListener("scroll", updateOutOfViewNotes);
     }
-    if (transitionContainer) {
-      transitionContainer.addEventListener("transitionend", updateOutOfViewNotes);
+    if (noteElements) {
+      for (const el of Object.values(noteElements)) {
+        el.addEventListener("transitionend", updateOutOfViewNotes);
+      }
     }
   });
 
@@ -273,8 +274,10 @@ function scrollToKeywordInDirection(keyword: string, direction: string) {
     if (scrollContainer) {
       scrollContainer.removeEventListener("scroll", updateOutOfViewNotes);
     }
-    if (transitionContainer) {
-      transitionContainer.removeEventListener("transitionend", updateOutOfViewNotes);
+    if (noteElements) {
+      for (const el of Object.values(noteElements)) {
+        el.removeEventListener("transitionend", updateOutOfViewNotes);
+      }
     }
   });
 </script>
@@ -364,7 +367,7 @@ function scrollToKeywordInDirection(keyword: string, direction: string) {
             <div id="month-{yearGroup.year}-{monthGroup.month}" class="flex flex-col">
               <button
                 id="toggle-month-{yearGroup.year}-{monthGroup.month}"
-                class="{yearGroup.isCollapsed ? 'h-0 py-0' : 'h-6 py-1'} flex bg-purple-200 justify-between px-1 w-full shadow-xs transition-all duration-300 shadow-md {monthGroup.isCollapsed ? 'cursor-zoom-in' : 'cursor-zoom-out'}"
+                class="{yearGroup.isCollapsed ? 'h-0 py-0 w-6' : 'h-6 py-1 w-full'} flex bg-purple-200 justify-between px-1 shadow-xs transition-all duration-300 shadow-md {monthGroup.isCollapsed ? 'cursor-zoom-in' : 'cursor-zoom-out'}"
                 onclick={() => (toggleAllMonthGroups())}
                 aria-label="Toggle month {monthGroup.month}"
               >
@@ -399,7 +402,6 @@ function scrollToKeywordInDirection(keyword: string, direction: string) {
                       }`}
                       onclick={() => handleNoteClick(note)}
                       aria-label="Select note {note.Dokument_ID}"
-                      bind:this={transitionContainer}
                       bind:this={noteElements[note.Dokument_ID]}
                     >
                       <div
@@ -414,7 +416,7 @@ function scrollToKeywordInDirection(keyword: string, direction: string) {
                       {#if getNoteSizeState(yearGroup, monthGroup, note) === "hidden"}
                         <div id="note-hidden-placeholder-{note.Dokument_ID}" class="h-12 bg-white rounded-md"></div>
                       {:else if getNoteSizeState(yearGroup, monthGroup, note) === "compact"}
-                        <span id="note-date-{note.Dokument_ID}" class="text-[10px] text-gray-500">
+                        <span id="note-date-{note.Dokument_ID}" class="text-[10px] text-gray-500 font-mono">
                           {new Date(note.DateTime).toLocaleDateString("sv-SE", {
                             month: "2-digit",
                             day: "2-digit",
@@ -434,7 +436,7 @@ function scrollToKeywordInDirection(keyword: string, direction: string) {
                       {:else if getNoteSizeState(yearGroup, monthGroup, note) === "medium"}
                         <div
                           id="note-metadata-{note.Dokument_ID}"
-                          class="text-gray-500 text-xs flex justify-between border-b-1 border-gray-200 pb-1"
+                          class="text-gray-500 text-xs flex justify-between items-center border-b-1 border-gray-200 pb-1 font-mono"
                         >
                           {new Date(note.DateTime).toLocaleDateString("sv-SE")}
                           <NotePreview {note} />
@@ -476,10 +478,17 @@ function scrollToKeywordInDirection(keyword: string, direction: string) {
                         >
                           <div
                             id="note-detailed-header-{note.Dokument_ID}"
-                            class="text-gray-500 text-xs flex justify-between border-b-1 border-gray-200 pb-1"
+                            class="text-gray-500 text-xs flex justify-between items-center border-b-1 border-gray-200 pb-1 font-mono"
                           >
                             {new Date(note.DateTime).toLocaleDateString(
-                              "sv-SE"
+                              "sv-SE",
+                              {
+                                year: "numeric",
+                                month: "2-digit",
+                                day: "2-digit",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              }
                             )}
                             <div class="flex flex-row">
                             {#each note.keywords as keyword}
