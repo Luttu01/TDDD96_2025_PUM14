@@ -7,13 +7,14 @@
 </script>
 
 <div
+  id="note-preview"
   class="flex items-center"
   class:flex-col={direction === "flex-col"}
   class:flex-row={direction === "flex-row"}
   class:space-x-1={direction === "flex-row"}
   class:space-y-1={direction === "flex-col"}
 >
-  <div title={note.Vårdenhet_Namn}>
+  <div id="vårdenhet-preview" title={note.Vårdenhet_Namn}>
   <svg
     class={`w-5 h-5 p-[2px] ${$filter.get("Vårdenhet")?.has(note.Vårdenhet_Namn) ? `bg-[color:var(--tw-color)]` : "bg-gray-400"} text-white rounded-full`}
     style="--tw-color: {stringToColor(note.Vårdenhet_Namn)};"
@@ -31,7 +32,7 @@
     />
   </svg>
 </div>
-  <div title={note.Dokumentnamn}>
+  <div id="journalmall-preview" title={note.Dokumentnamn}>
   <svg
     class={`w-5 h-5 p-[2px] ${$filter.get("Journalmall")?.has(note.Dokumentnamn) ? `bg-[color:var(--tw-color)]` : "bg-gray-400"} text-white rounded-full`}
     style="--tw-color: {stringToColor(note.Dokumentnamn)};"
@@ -50,7 +51,7 @@
     />
   </svg>
 </div>
-  <div title={note.Dokument_skapad_av_yrkestitel_Namn}>
+  <div id="yrkesroll-preview" title={note.Dokument_skapad_av_yrkestitel_Namn}>
   <svg
     class={`w-5 h-5 p-[2px] ${$filter.get("Yrkesroll")?.has(note.Dokument_skapad_av_yrkestitel_Namn) ? `bg-[color:var(--tw-color)]` : "bg-gray-400"} text-white rounded-full`}
     style="--tw-color: {stringToColor(note.Dokument_skapad_av_yrkestitel_Namn)};"

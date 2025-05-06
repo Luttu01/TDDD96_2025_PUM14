@@ -34,10 +34,6 @@
     noteHierarchy.set(updatedHierarchy);
   }
 
-  function showDescription(event : MouseEvent) {
-    const keyword = event.target as HTMLSpanElement;
-  }
-
   function toggleGroup(group: Year | Month) {
     group.isCollapsed = !group.isCollapsed;
     noteHierarchy.set($noteHierarchy);
@@ -182,128 +178,199 @@
   }
 
   let scrollContainer: HTMLElement | null = null;
+  let transitionContainer: HTMLElement | null = null;
   let noteElements: Record<string, HTMLElement> = {};
 
-  const outOfViewKeywords = writable(
-    new Map<string, { direction: string; count: number }>()
-  );
+  const outOfViewKeywords = writable(new Map<string, number>());
 
-  function sleep(ms: number) {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-  }
+function makeKey(keyword: string, direction: string): string {
+  return `${keyword}::${direction}`;
+}
 
-  function updateOutOfViewNotes() {
-    if (!scrollContainer) return;
-    sleep(400);
-    const containerRect = scrollContainer.getBoundingClientRect();
-    outOfViewKeywords.set(new Map());
+function updateOutOfViewNotes() {
+  if (!scrollContainer) return;
+  const containerRect = scrollContainer.getBoundingClientRect();
+  const updatedMap = new Map<string, number>();
 
-    for (const [noteId, el] of Object.entries(noteElements)) {
-      const rect = el.getBoundingClientRect();
-      if (rect.right > containerRect.right || rect.left < containerRect.left) {
-        const note = $allNotes.find((n) => n.Dokument_ID === noteId);
-        if (note) {
-          for (const keyword of note.keywords) {
-            const existingEntry = $outOfViewKeywords.get(keyword);
-            const direction =
-              rect.right > containerRect.right ? "right" : "left";
-            const count = existingEntry?.count || 0;
-            const updatedMap = new Map($outOfViewKeywords);
-            updatedMap.set(keyword, { direction, count: count + 1 });
-            outOfViewKeywords.set(updatedMap);
-          }
-        }
+  for (const [noteId, el] of Object.entries(noteElements)) {
+    const rect = el.getBoundingClientRect();
+    const note = $allNotes.find((n) => n.Dokument_ID === noteId);
+    if (!note) continue;
+
+    for (const keyword of note.keywords) {
+      const isOutOfRight = rect.right > containerRect.right;
+      const isOutOfLeft = rect.left < containerRect.left;
+
+      if (isOutOfRight) {
+        const key = makeKey(keyword, "right");
+        const count = updatedMap.get(key) || 0;
+        updatedMap.set(key, count + 1);
+      }
+
+      if (isOutOfLeft) {
+        const key = makeKey(keyword, "left");
+        const count = updatedMap.get(key) || 0;
+        updatedMap.set(key, count + 1);
       }
     }
   }
+
+  outOfViewKeywords.set(updatedMap);
+}
+
+function scrollToKeywordInDirection(keyword: string, direction: string) {
+  if (!scrollContainer) return;
+
+  const containerRect = scrollContainer.getBoundingClientRect();
+  const notesWithKeyword = Object.entries(noteElements)
+    .map(([noteId, el]) => {
+      const note = $allNotes.find((n) => n.Dokument_ID === noteId);
+      if (note && note.keywords.includes(keyword)) {
+        return { el, rect: el.getBoundingClientRect(), note };
+      }
+      return null;
+    })
+    .filter((item): item is { el: HTMLElement; rect: DOMRect; note: Note } => item !== null);
+
+  const outOfViewNotes = notesWithKeyword.filter(({ rect }) =>
+    direction === "right"
+      ? rect.right > containerRect.right
+      : rect.left < containerRect.left
+  );
+
+  if (outOfViewNotes.length === 0) return;
+
+  const nearest = outOfViewNotes.reduce((closest, current) => {
+    const distance = direction === "right"
+      ? current.rect.left - containerRect.right
+      : containerRect.left - current.rect.right;
+
+    const closestDistance = direction === "right"
+      ? closest.rect.left - containerRect.right
+      : containerRect.left - closest.rect.right;
+
+    return distance < closestDistance ? current : closest;
+  }, outOfViewNotes[0]);
+
+  if (nearest) {
+    nearest.el.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
+  }
+}
+
+
 
   onMount(() => {
     updateOutOfViewNotes();
     if (scrollContainer) {
       scrollContainer.addEventListener("scroll", updateOutOfViewNotes);
-      scrollContainer.addEventListener("resize", updateOutOfViewNotes);
+    }
+    if (transitionContainer) {
+      transitionContainer.addEventListener("transitionend", updateOutOfViewNotes);
     }
   });
 
   onDestroy(() => {
     if (scrollContainer) {
       scrollContainer.removeEventListener("scroll", updateOutOfViewNotes);
-      scrollContainer.removeEventListener("resize", updateOutOfViewNotes);
+    }
+    if (transitionContainer) {
+      transitionContainer.removeEventListener("transitionend", updateOutOfViewNotes);
     }
   });
 </script>
 
-{#if $outOfViewKeywords.size > 0}
+{#if $outOfViewKeywords.entries().filter(([key]) => key.split("::")[1] === "right").toArray().length > 0}
   <div
+    id="out-of-view-keywords-right"
     class="absolute right-0 top-18 flex flex-col space-y-1 bg-white p-2 rounded-l-md shadow-md"
     style="z-index: 100;"
   >
-    {#each Array.from($outOfViewKeywords.entries()).filter(([_, { direction }]) => direction === "right") as [key, { count }]}
-      <div
-        class="w-5 h-5 rounded-md text-xs flex items-center justify-center relative"
-        style="background-color: {stringToColor(key)}"
-      >
-        {count}
-        <div
-          class="absolute right-[-12px] top-1/2 -translate-y-1/2 w-0 h-0 border-l-[6px] border-r-transparent border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-r-[6px]"
-          style="border-left-color: {stringToColor(key)}"
-        ></div>
-      </div>
-    {/each}
-  </div>
-  <div
-    class="absolute left-0 top-18 flex flex-col space-y-1 bg-white p-2 rounded-r-md shadow-md"
-    style="z-index: 100;"
-  >
-    {#each Array.from($outOfViewKeywords.entries()).filter(([_, { direction }]) => direction === "left") as [key, { count }]}
-      <div
-        class="w-5 h-5 rounded-md text-xs flex items-center justify-center relative"
-        style="background-color: {stringToColor(key)}"
-      >
-        {count}
-        <div
-          class="absolute left-[-12px] top-1/2 -translate-y-1/2 w-0 h-0 border-r-[6px] border-l-transparent border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-l-[6px]"
-          style="border-right-color: {stringToColor(key)}"
-        ></div>
-      </div>
+    {#each Array.from($outOfViewKeywords.entries()).filter(([key]) => key.split("::")[1] === "right") as [key, count]}
+      {#key key}
+        {#if key.split("::").length === 2}
+          <button
+            id="keyword-bubble-right-{key.split('::')[0].replace(/\s+/g, '-')}"
+            class="w-5 h-5 rounded-md text-xs flex items-center justify-center relative"
+            style="background-color: {stringToColor(key.split('::')[0])}"
+            onclick={() => scrollToKeywordInDirection(key.split("::")[0], "right")}
+            aria-label="Scroll to keyword {key.split('::')[0]}"
+            title="Scroll to keyword {key.split('::')[0]}"
+          >
+            {count}
+            <div
+              id="keyword-pointer-right-{key.split('::')[0].replace(/\s+/g, '-')}"
+              class="absolute right-[-12px] top-1/2 -translate-y-1/2 w-0 h-0 border-l-[6px] border-r-transparent border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-r-[6px]"
+              style="border-left-color: {stringToColor(key.split('::')[0])}"
+            ></div>
+          </button>
+        {/if}
+      {/key}
     {/each}
   </div>
 {/if}
 
+{#if $outOfViewKeywords.entries().filter(([key]) => key.split("::")[1] === "left").toArray().length > 0}
+  <div
+    id="out-of-view-keywords-left"
+    class="absolute left-0 top-18 flex flex-col space-y-1 bg-white p-2 rounded-r-md shadow-md"
+    style="z-index: 100;"
+  >
+    {#each Array.from($outOfViewKeywords.entries()).filter(([key]) => key.split("::")[1] === "left") as [key, count]}
+      {#key key}
+        {#if key.split("::").length === 2}
+          <button
+            id="keyword-bubble-left-{key.split('::')[0].replace(/\s+/g, '-')}"
+            class="w-5 h-5 rounded-md text-xs flex items-center justify-center relative"
+            style="background-color: {stringToColor(key.split('::')[0])}"
+            onclick={() => scrollToKeywordInDirection(key.split("::")[0], "left")}
+            aria-label="Scroll to keyword {key.split('::')[0]}"
+            title="Scroll to keyword {key.split('::')[0]}"
+          >
+            {count}
+            <div
+              id="keyword-pointer-left-{key.split('::')[0].replace(/\s+/g, '-')}"
+              class="absolute left-[-12px] top-1/2 -translate-y-1/2 w-0 h-0 border-r-[6px] border-l-transparent border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-l-[6px]"
+              style="border-right-color: {stringToColor(key.split('::')[0])}"
+            ></div>
+          </button>
+        {/if}
+      {/key}
+    {/each}
+  </div>
+{/if}
+
+
+
 <div
+  id="scroll-container"
   class="flex h-full bg-gray-100 overflow-x-auto overflow-y-hidden"
   bind:this={scrollContainer}
 >
-  <div class="flex flex-row w-max h-full space-x-[2px]">
+  <div id="years-container" class="flex flex-row w-max h-full space-x-[2px]">
     {#each $noteHierarchy as yearGroup (yearGroup.year)}
-      <div class="h-full flex flex-col">
+      <div id="year-{yearGroup.year}" class="h-full flex flex-col">
         <button
-          class="flex bg-purple-100 py-1 text-left text-sm px-1 w-full shadow-md justify-between {yearGroup.isCollapsed
-            ? 'cursor-zoom-in'
-            : 'cursor-zoom-out'}"
-            onclick={() => (toggleAllYearGroups())}
+          id="toggle-year-{yearGroup.year}"
+          class="flex bg-purple-100 py-1 text-left text-sm px-1 w-full shadow-md justify-between {yearGroup.isCollapsed ? 'cursor-zoom-in' : 'cursor-zoom-out'}"
+          onclick={() => (toggleAllYearGroups())}
           aria-label="Toggle year {yearGroup.year}"
         >
-          <div class="text-xs sticky left-1 w-7 font-bold text-gray-900">
+          <div id="year-label-{yearGroup.year}" class="text-xs sticky left-1 w-7 font-bold text-gray-900">
             {yearGroup.year}
           </div>
         </button>
-        <div class="flex flex-row space-x-[2px]">
+        <div id="months-container-year-{yearGroup.year}" class="flex flex-row space-x-[2px]">
           {#each yearGroup.months as monthGroup}
-            <div class="flex flex-col">
+            <div id="month-{yearGroup.year}-{monthGroup.month}" class="flex flex-col">
               <button
-                class="{yearGroup.isCollapsed
-                  ? 'h-0 py-0'
-                  : 'h-6 py-1'} flex bg-purple-200 justify-between px-1 w-full shadow-xs transition-all duration-300 shadow-md {monthGroup.isCollapsed
-                  ? 'cursor-zoom-in'
-                  : 'cursor-zoom-out'}"
+                id="toggle-month-{yearGroup.year}-{monthGroup.month}"
+                class="{yearGroup.isCollapsed ? 'h-0 py-0' : 'h-6 py-1'} flex bg-purple-200 justify-between px-1 w-full shadow-xs transition-all duration-300 shadow-md {monthGroup.isCollapsed ? 'cursor-zoom-in' : 'cursor-zoom-out'}"
                 onclick={() => (toggleAllMonthGroups())}
                 aria-label="Toggle month {monthGroup.month}"
               >
                 <div
-                  class="{yearGroup.isCollapsed
-                    ? 'text-transparent'
-                    : 'text-gray-900'} text-xs sticky left-1 w-7 font-semibold text-left"
+                  id="month-label-{yearGroup.year}-{monthGroup.month}"
+                  class="{yearGroup.isCollapsed ? 'text-transparent' : 'text-gray-900'} text-xs sticky left-1 w-7 font-semibold text-left"
                 >
                   {new Date(0, monthGroup.month).toLocaleString("sv-SE", {
                     month: "short",
@@ -311,11 +378,13 @@
                 </div>
               </button>
               <div
+                id="notes-container-{yearGroup.year}-{monthGroup.month}"
                 class="flex flex-row overflow-hidden p-[2px] space-x-[4px] items-start"
               >
                 {#each monthGroup.notes as note}
                   {#key note.Dokument_ID}
                     <button
+                      id="note-{note.Dokument_ID}"
                       class={`transition-all mt-2 duration-300 border rounded-md shadow-xs ${isInSelectedNotes(note) ? "bg-purple-50 border-purple-300 hover:bg-purple-100" : "bg-white border-gray-200 hover:bg-gray-50"} relative cursor-pointer ${
                         getNoteSizeState(yearGroup, monthGroup, note) ===
                         "compact"
@@ -330,9 +399,11 @@
                       }`}
                       onclick={() => handleNoteClick(note)}
                       aria-label="Select note {note.Dokument_ID}"
+                      bind:this={transitionContainer}
                       bind:this={noteElements[note.Dokument_ID]}
                     >
                       <div
+                        id="note-pointer-{note.Dokument_ID}"
                         class="transition-all duration-300 absolute -top-2.5 left-1/2 -translate-x-1/2 w-0 h-0 border-b-10
                {getNoteSizeState(yearGroup, monthGroup, note) === "hidden" ? 'border-l-4 border-r-4' : 'border-l-10 border-r-10'} border-transparent {isInSelectedNotes(
                           note
@@ -341,18 +412,19 @@
                           : 'border-b-white'}"
                       ></div>
                       {#if getNoteSizeState(yearGroup, monthGroup, note) === "hidden"}
-                        <div class="h-12 bg-white rounded-md"></div>
+                        <div id="note-hidden-placeholder-{note.Dokument_ID}" class="h-12 bg-white rounded-md"></div>
                       {:else if getNoteSizeState(yearGroup, monthGroup, note) === "compact"}
-                        <span class="text-[10px] text-gray-500">
+                        <span id="note-date-{note.Dokument_ID}" class="text-[10px] text-gray-500">
                           {new Date(note.DateTime).toLocaleDateString("sv-SE", {
                             month: "2-digit",
                             day: "2-digit",
                           })}
                         </span>
                         <NotePreview {note} direction="flex-col" />
-                        <span class="flex flex-col">
+                        <span id="note-keywords-{note.Dokument_ID}" class="flex flex-col">
                           {#each note.keywords as keyword}
                             <div
+                              id="note-keyword-{note.Dokument_ID}-{keyword}"
                               class="h-2"
                               style="background-color: {stringToColor(keyword)}"
                               title={keyword}
@@ -361,29 +433,25 @@
                         </span>
                       {:else if getNoteSizeState(yearGroup, monthGroup, note) === "medium"}
                         <div
+                          id="note-metadata-{note.Dokument_ID}"
                           class="text-gray-500 text-xs flex justify-between border-b-1 border-gray-200 pb-1"
                         >
                           {new Date(note.DateTime).toLocaleDateString("sv-SE")}
                           <NotePreview {note} />
                         </div>
-                        <div class="">
-                          <div
-                            class="text-gray-900 text-xs font-bold flex justify-between h-10"
-                          >
+                        <div id="note-title-container-{note.Dokument_ID}" class="text-gray-900 text-xs font-bold flex justify-between h-10">
                             {note.Dokumentnamn}
-                          </div>
                         </div>
                         <span
+                          id="note-keywords-list-{note.Dokument_ID}"
                           class="text-sm font-medium border-gray-200 flex flex-col"
                         >
                           {#each note.keywords as keyword, index}
                             {#if index < 4 || note.keywords.length <= 5}
                               <span
+                                id="note-keyword-context-{note.Dokument_ID}-{keyword}"
                                 class="text-xs font-light px-1"
-                                style="background-color: {stringToColor(
-                                  keyword
-                                )}"
-                                title={keyword}
+                                style="background-color: {stringToColor(keyword)}"
                               >
                                 {@html getKeywordContext(
                                   note.CaseData,
@@ -392,6 +460,7 @@
                               </span>
                             {:else if index === 4}
                               <span
+                                id="note-keyword-more-{note.Dokument_ID}"
                                 class="text-xs font-light px-1 bg-gray-200 cursor-pointer"
                                 title="Show more keywords"
                               >
@@ -402,9 +471,11 @@
                         </span>
                       {:else}
                         <div
+                          id="note-detailed-view-{note.Dokument_ID}"
                           class="text-gray-900 text-left text-xs w-full flex flex-col"
                         >
                           <div
+                            id="note-detailed-header-{note.Dokument_ID}"
                             class="text-gray-500 text-xs flex justify-between border-b-1 border-gray-200 pb-1"
                           >
                             {new Date(note.DateTime).toLocaleDateString(
@@ -413,6 +484,7 @@
                             <div class="flex flex-row">
                             {#each note.keywords as keyword}
                               <span
+                                id="note-detailed-keyword-{note.Dokument_ID}-{keyword}"
                                 class="text-xs font-light px-1"
                                 style="background-color: {stringToColor(
                                   keyword
@@ -423,10 +495,7 @@
                           </div>
                             <NotePreview {note} />
                           </div>
-                          <!-- Temporary fix with max-h -->
-                          <div class="overflow-y-auto w-full max-h-[140px]">
-                            <div class="whitespace-pre-wrap text-xs">
-                              {console.log(note.CaseData)}
+                          <div id="note-detailed-text-{note.Dokument_ID}" class="overflow-y-auto w-full max-h-[140px] whitespace-pre-wrap text-xs">
                               {@html note.CaseData.replace(
                                 new RegExp(
                                   `(<b>(${note.keywords.join("|")})</b>)`,
@@ -435,7 +504,6 @@
                                 (match, p1, p2) =>
                                   `<span style="background-color: ${stringToColor(p2)}; font-weight: bold;">${p2}</span>`
                               )}
-                            </div>
                           </div>
                         </div>
                       {/if}

@@ -29,7 +29,7 @@
     });
   </script>
   
-  <div class="relative">
+  <div id="search-input" class="relative">
     <input
       bind:this={searchInput}
       bind:value={$searchQuery}
