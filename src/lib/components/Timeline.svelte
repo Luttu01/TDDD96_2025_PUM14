@@ -252,7 +252,11 @@ function scrollToKeywordInDirection(keyword: string, direction: string) {
   }, outOfViewNotes[0]);
 
   if (nearest) {
-    nearest.el.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
+    const offset = (containerRect.width - nearest.rect.width) / 2;
+    scrollContainer.scrollTo({
+      left: nearest.rect.left - containerRect.left + scrollContainer.scrollLeft - offset,
+      behavior: "smooth",
+    });
   }
 }
 
@@ -441,12 +445,15 @@ function scrollToKeywordInDirection(keyword: string, direction: string) {
                           {new Date(note.DateTime).toLocaleDateString("sv-SE")}
                           <NotePreview {note} />
                         </div>
-                        <div id="note-title-container-{note.Dokument_ID}" class="text-gray-900 text-xs font-bold flex justify-between h-10">
-                            {note.Dokumentnamn}
+                        <div
+                          id="note-title-container-{note.Dokument_ID}"
+                          class="text-gray-900 text-xs font-bold flex justify-between h-5 text-ellipsis whitespace-nowrap overflow-hidden"
+                        >
+                          {note.Dokumentnamn}
                         </div>
                         <span
                           id="note-keywords-list-{note.Dokument_ID}"
-                          class="text-sm font-medium border-gray-200 flex flex-col"
+                          class="text-sm font-medium flex flex-col"
                         >
                           {#each note.keywords as keyword, index}
                             {#if index < 4 || note.keywords.length <= 5}
