@@ -2,6 +2,7 @@
     import { onMount, onDestroy } from 'svelte';
     import { searchQuery } from '$lib/stores/searchStore';
     import { createEventDispatcher } from 'svelte';
+    import { browser } from '$app/environment';
   
     let searchInput: HTMLInputElement;
     const dispatch = createEventDispatcher();
@@ -16,15 +17,19 @@
     }
   
     onMount(() => {
+      if (!browser) return;
+  
       window.addEventListener('keydown', handleKeyDown);
     });
   
     onDestroy(() => {
+      if (!browser) return;
+  
       window.removeEventListener('keydown', handleKeyDown);
     });
   </script>
   
-  <div class="relative">
+  <div id="search-input" class="relative">
     <input
       bind:this={searchInput}
       bind:value={$searchQuery}

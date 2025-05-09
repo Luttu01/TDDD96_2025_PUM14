@@ -1,14 +1,13 @@
 <script lang="ts">
   import type { Note } from '$lib/models';
   import { onDestroy } from 'svelte';
-  import { allNotes, selectedNotes, filteredNotes, filter } from '$lib/stores';
-  import NotePreview from './NotePreview.svelte';
+  import { selectedNotes, filteredNotes, showTimeline } from '$lib/stores';
 
   // Get notes from global store and sort them by date 
-  let localItems : Note[] = $derived([...$filteredNotes]
+  let localItems: Note[] = $derived([...$filteredNotes]
       .map((item, index) => ({
         ...item,
-        uniqueId: item.CompositionId || `${index}-${Date.now()}` 
+        uniqueId: item.CompositionId || `${index}-${Date.now()}`
       }))
       .sort((a, b) => new Date(b.DateTime).getTime() - new Date(a.DateTime).getTime())
   );
@@ -19,78 +18,29 @@
   let lastClickedIndex = $state(-1);
 
   // State for resizable list width functionality
-  const MIN_LIST_WIDTH = 150; 
-  const DEFAULT_LIST_WIDTH = 300; 
+  const MIN_LIST_WIDTH = 110; 
+  const DEFAULT_LIST_WIDTH = 280; 
   let listWidth = $state(DEFAULT_LIST_WIDTH);
   let isDragging = $state(false);
   let initialX = $state(0);
   let initialWidth = $state(0);
 
-  // Check if note matches any filter criteria
-  function matchesFilter(note: Note) {
-    // Check if there are any filters selected
-    const templateFilters = $filter.get("Journalmall");
-    const unitFilters = $filter.get("Vårdenhet");
-    const roleFilters = $filter.get("Yrkesroll");
-    
-    // If no filters are active, don't highlight anything
-    const hasTemplateFilters = templateFilters && templateFilters.size > 0;
-    const hasUnitFilters = unitFilters && unitFilters.size > 0;
-    const hasRoleFilters = roleFilters && roleFilters.size > 0;
-    
-    if (!hasTemplateFilters && !hasUnitFilters && !hasRoleFilters) {
-      return false;
+  showTimeline.subscribe((value) => {
+    if (value) {
+      listWidth = 0;
+    } else {
+      listWidth = DEFAULT_LIST_WIDTH;
     }
-    
-    // Check if note matches template filter
-    const matchesTemplate = hasTemplateFilters ? 
-      templateFilters!.has(note.Dokumentnamn) : false;
-    
-    // Check if note matches unit filter
-    const matchesUnit = hasUnitFilters ? 
-      unitFilters!.has(note.Vårdenhet_Namn) : false;
-    
-    // Check if note matches role filter
-    const matchesRole = hasRoleFilters ? 
-      roleFilters!.has(note.Dokument_skapad_av_yrkestitel_Namn) : false;
-    
-    return (hasTemplateFilters && matchesTemplate) || 
-           (hasUnitFilters && matchesUnit) ||
-           (hasRoleFilters && matchesRole);
-  }
-
-  // Determine specific filter match type for color highlighting
-  function getFilterMatchType(note: Note) {
-    // Check if there are any filters selected
-    const templateFilters = $filter.get("Journalmall");
-    const unitFilters = $filter.get("Vårdenhet");
-    const roleFilters = $filter.get("Yrkesroll");
-    
-    // Check for active filters
-    const hasTemplateFilters = templateFilters && templateFilters.size > 0;
-    const hasUnitFilters = unitFilters && unitFilters.size > 0;
-    const hasRoleFilters = roleFilters && roleFilters.size > 0;
-    
-    // Match specific filter types
-    const matchesTemplate = hasTemplateFilters ? 
-      templateFilters!.has(note.Dokumentnamn) : false;
-    
-    const matchesUnit = hasUnitFilters ? 
-      unitFilters!.has(note.Vårdenhet_Namn) : false;
-    
-    const matchesRole = hasRoleFilters ? 
-      roleFilters!.has(note.Dokument_skapad_av_yrkestitel_Namn) : false;
-    
-    // Priority: template > unit > role (if matches multiple filters)
-    if (matchesTemplate) return 'template-match';
-    if (matchesUnit) return 'unit-match';
-    if (matchesRole) return 'role-match';
-    
-    return '';
-  }
+  });
 
   function formatDate(dateTimeString: string): string {
-    return new Date(dateTimeString).toLocaleDateString('sv-SE');
+    return new Date(dateTimeString).toLocaleDateString('sv-SE', {
+      year: '2-digit',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
   }
 
   function handleDocumentClick(clickedNote: Note, event: MouseEvent) {
@@ -162,29 +112,26 @@
 </script>
 
 <!-- List container -->
-<div class="list-container" bind:this={listContainerElement} style="width: {listWidth}px;" aria-label="Note list container">
-  <ul class="list-view" role="listbox" aria-multiselectable="true" aria-label="Clinical notes list">
+<div data-testid="list-view-container" class="list-container" class:transition-all={isDragging === false} class:duration-300={isDragging === false} bind:this={listContainerElement} style="width: {listWidth}px;">
+  <ul data-testid="list-view" class="list-view" role="listbox" aria-multiselectable="true" aria-label="Clinical notes list">
     <!-- Iterate through sorted notes using CompositionId as unique key -->
     {#each localItems as item}
       <!-- List item-->
-      <li role="option" aria-selected={$selectedNotes.some(note => note.CompositionId === item.CompositionId)} class="document-list-item" aria-label={item.Dokumentnamn}>
+      <li data-testid="list-item-{item.CompositionId}" role="option" aria-selected={$selectedNotes.some(note => note.CompositionId === item.CompositionId)} class="document-list-item">
         <button
+          data-testid="list-item-button-{item.CompositionId}"
           type="button"
           class="document-button"
           class:selected={$selectedNotes.some(note => note.CompositionId === item.CompositionId)}
           onclick={(e) => handleDocumentClick(item, e)}
-          aria-pressed={$selectedNotes.some(note => note.CompositionId === item.CompositionId)}
-          id={"note-" + item.CompositionId}
         >
-          <div class="document-item" aria-describedby={"meta-" + item.CompositionId}>
-            <div id="document-header">
-              <h3 id={"title-" + item.CompositionId}>{item.Dokumentnamn}</h3>
-              <NotePreview note={ item }/>
+          <div class="document-item">
+            <div class="flex justify-between">
+              <div class="document-meta space-x-2">
+              <span class="font-mono">{formatDate(item.DateTime)}</span>
+              <span class="font-mono">{item.Dokument_skapad_av_yrkestitel_Namn === 'Sjuksköterska' ? 'Ssk' : 'Läk'}</span>
+              <h3>{item.Dokumentnamn}</h3>
             </div>
-            <div class="document-meta" id={"meta-" + item.CompositionId}>
-              <span class="date">{formatDate(item.DateTime)} -</span>
-              <span class="professional">{item.Dokument_skapad_av_yrkestitel_Namn} -</span>
-              <span class="unit">{item.Vårdenhet_Namn}</span>
             </div>
           </div>
         </button>
@@ -193,6 +140,7 @@
   </ul>
   <!-- Resize handle for adjusting list width -->
   <button 
+    data-testid="resize-handle" 
     class="resize-handle" 
     onmousedown={handleMouseDown}
     aria-label="Resize list width"
@@ -206,11 +154,9 @@
     position: relative;
     overflow: hidden; 
     height: 100%; 
-    min-width: 150px; 
     max-width: 500px;
     border: 1px solid #ccc; 
     background-color: white;
-    border-radius: 4px;
   }
 
   /* Scrollable list of documents */
@@ -225,7 +171,7 @@
   /* Individual list items with border between them */
   .document-list-item {
     margin: 0;
-    border-bottom: 1px solid #e0e0e0;
+    border-bottom: 2px solid #e0e0e0;
   }
 
   .document-list-item:last-child {
@@ -235,7 +181,7 @@
   /* Button styling for each document in the list */
   .document-button {
     width: 100%;
-    padding: 0.5rem;
+    padding: 0.2rem 0.2rem;
     background: none;
     border: none;
     cursor: pointer;
@@ -249,30 +195,23 @@
 
   /* Selected document styling with left border accent */
   .document-button.selected {
-    background-color: #e3f2fd;
-    border-left: 4px solid #3b82f6;
-    padding-left: calc(1rem - 4px);
+    background-color: oklch(97.7% 0.014 308.299);
+    border-left: 4px solid #b83bf6;
   }
 
   .document-button.selected:hover {
-    background-color: #bbdefb;
+    background-color: oklch(94.6% 0.033 307.174);
   }
 
   /* Document title styling with text overflow handling */
   .document-item h3 {
     margin: 0 0 0.1rem 0;
     color: #333;
-    font-size: 1rem;
+    font-size: 0.70rem;
+    font-weight: 600;
     white-space: nowrap; 
     overflow: hidden;
     text-overflow: ellipsis;
-  }
-
-  #document-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.5rem;
   }
 
   /* Metadata sections with overflow handling */
@@ -286,19 +225,9 @@
   .document-meta {
     display: flex;
     flex-wrap: row;
-    gap: 0.2rem 0.4rem;
-    font-size: 0.85rem;
-  }
-
-  /* Style for unit name */
-  .unit {
-    font-style: italic;
-    color: #555;
-  }
-
-  /* Date and professional styling */
-  .date, .professional {
-    color: #555;
+    font-size: 0.70rem;
+    font-weight: 300;
+    color: #6d6d6d;
   }
 
   /* Resize handle on the right side of the list */

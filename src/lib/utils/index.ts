@@ -1,2 +1,3 @@
-export {buildDateHierarchy} from './timelineHelpers';
-export {colorMap, shapeMap} from './propertyMaps'
+export {buildDateHierarchy} from './timelineUtils';
+export {stringToColor} from './colorUtils';
+export {extractBoldTitlesFromHTML, getSortedUniqueKeywordNames} from './keywordUtils';

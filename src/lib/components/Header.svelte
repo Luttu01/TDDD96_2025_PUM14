@@ -1,362 +1,545 @@
 <script lang="ts">
-    import { onMount } from "svelte";
-    import { allNotes, filteredNotes, filter } from "$lib/stores"
-    import type { filterSelect } from "$lib/models";
-    import { derived, get } from "svelte/store"
-    import { getPropertyForFilter } from "$lib/models"
-    import Search from "./Search.svelte";
-    import SearchInput from "./SearchInput.svelte";
-    import { searchQuery } from '$lib/stores/searchStore';
-    import SearchDropdown from "./SearchDropdown.svelte";
-    import { extractBoldTitlesFromHTML } from "$lib/utils/keywords";
+  import {
+    allNotes,
+    filteredNotes,
+    filter,
+    powerMode,
+    showTimeline,
+    destructMode,
+    selectedNotes,
+    allKeywords,
+  } from "$lib/stores";
+  import { stringToColor } from "$lib/utils";
 
-    /**
-     * TODO Sprint 2-3
-     * 1. Vid fler än X alternativ i en drop-down: lägg till overflow-scroll ist för oändligt lång lista (DONE)
-     * 2. Flera filteralternativ ska kunna vara aktiva samtidigt från samma kategori, färgmarkerade (DONE)
-     * 3. Varje kategori ska vara återställbar utan att påverka de andra kategorierna (DONE)
-     * 4. Filtrering ska ske vid val av filter (just nu genom färgläggning av dok) (DONE)
-     * 5. Datum -> FilteredDocuments (Ska faktiskt ta bort) (DONE)
-     * 6. Annan filtrering -> Sätt till "Filter" (DONE)
-     * 7. Sätt min och max datum från början (sådant att det inkapslar alla dokument för patienten)
-     */
-    
-    let selectedFilters : Map<string, Set<filterSelect>> = new Map;
-    selectedFilters.set("Vårdenhet", new Set<filterSelect>);
-    selectedFilters.set("Journalmall", new Set<filterSelect>);
-    selectedFilters.set("Yrkesroll", new Set<filterSelect>);
+  import {
+    extractBoldTitlesFromHTML,
+    getSortedUniqueKeywordNames,
+  } from "$lib/utils/keywordUtils";
+  import type { filterSelect } from "$lib/models";
 
-    let template: string = "Journalmall";
-    let unit: string = "Vårdenhet";
-    let role: string = "Yrkesroll";
+  let filteredTemplates = new Set<string>();
+  let filteredUnits = new Set<string>();
+  let filteredRoles = new Set<string>();
+  let filteredKeywords = new Set<string>();
 
-    //let searchQuery: string = "";
-    let searchInput: HTMLInputElement;
+  $: templates = new Map(
+    $allNotes.map((n) => [
+      n.Dokumentnamn,
+      { name: n.Dokumentnamn, selected: filteredTemplates.has(n.Dokumentnamn) },
+    ])
+  );
+  $: units = new Map(
+    $allNotes.map((n) => [
+      n.Vårdenhet_Namn,
+      { name: n.Vårdenhet_Namn, selected: filteredUnits.has(n.Vårdenhet_Namn) },
+    ])
+  );
+  $: roles = new Map(
+    $allNotes.map((n) => [
+      n.Dokument_skapad_av_yrkestitel_Namn,
+      {
+        name: n.Dokument_skapad_av_yrkestitel_Namn,
+        selected: filteredRoles.has(n.Dokument_skapad_av_yrkestitel_Namn),
+      },
+    ])
+  );
 
-    const filterNotes = derived(allNotes, $allNotes => {
-        /**
-         * Derives a map of sets of filter options from all notes for select patient
-         */
-        let notes : Map<string, Map<string, filterSelect>> = new Map;
-        notes.set("Vårdenhet", new Map<string, filterSelect>);
-        notes.set("Journalmall", new Map<string, filterSelect>);
-        notes.set("Yrkesroll", new Map<string, filterSelect>);
-        notes.set("Äldsta dokument", new Map<string, filterSelect>);
-        notes.set("Nyaste dokument", new Map<string, filterSelect>);
-        $allNotes.forEach(note => {
-            notes.get("Vårdenhet")!.set(
-                note.Vårdenhet_Namn, 
-                {name: note.Vårdenhet_Namn, selected : false}
-            );
-            notes.get("Journalmall")!.set(
-                note.Dokumentnamn, 
-                {name: note.Dokumentnamn, selected : false}
-            );
-            notes.get("Yrkesroll")!.set(
-                note.Dokument_skapad_av_yrkestitel_Namn, 
-                {name: note.Dokument_skapad_av_yrkestitel_Namn, selected : false}
-            );
+  let minDate = "";
+  let maxDate = "";
+  let absMin = "";
+  let absMax = "";
 
-            // Set min and max date for notes
-            if(notes.get("Nyaste dokument")!.size == 0 && notes.get("Äldsta dokument")!.size == 0) {
-                notes.get("Nyaste dokument")!.set(
-                    "Nyast", 
-                    {
-                        name: note.DateTime,
-                        selected : false
-                    }
-                );
-                notes.get("Äldsta dokument")!.set(
-                    "Äldst", 
-                    {
-                        name: note.DateTime,
-                        selected : false
-                    }
-                );
-            } else {
-                if(notes.get("Nyaste dokument")!.get("Nyast")!.name < note.DateTime) {
-                    notes.get("Nyaste dokument")!.set(
-                        "Nyast",
-                        {
-                            name: note.DateTime,
-                            selected : false
-                        }
-                    );
-                }
-                if(notes.get("Äldsta dokument")!.get("Äldst")!.name > note.DateTime) {
-                    notes.get("Äldsta dokument")!.set(
-                        "Äldst",
-                        {
-                            name: note.DateTime,
-                            selected : false
-                        }
-                    );
-                }
-            }
-        });
-        return notes;
+  let template = "Journalmall";
+  let unit = "Vårdenhet";
+  let role = "Yrkesroll";
+
+  // Generate keyword map
+  $: {
+    const keywordNames = getSortedUniqueKeywordNames($allKeywords);
+    const keywordTitles = $allNotes.flatMap((n) =>
+      extractBoldTitlesFromHTML(n.CaseData)
+    );
+    const titleSet = new Set(keywordTitles);
+    keywordsMap = new Map(
+      keywordNames
+        .filter((name) => titleSet.has(name))
+        .map((name) => [name, { name, selected: filteredKeywords.has(name) }])
+    );
+  }
+
+  let keywordsMap: Map<string, filterSelect> = new Map();
+
+  // Automatically filter notes based on active filters
+  $: {
+    const result = $allNotes.filter((note) => {
+      const date = note.DateTime.substring(0, 10);
+      const titleMatches = Array.from(filteredKeywords).every((keyword) =>
+        note.CaseData.includes(keyword)
+      );
+      return (
+        (filteredTemplates.size === 0 ||
+          filteredTemplates.has(note.Dokumentnamn)) &&
+        (filteredUnits.size === 0 || filteredUnits.has(note.Vårdenhet_Namn)) &&
+        (filteredRoles.size === 0 ||
+          filteredRoles.has(note.Dokument_skapad_av_yrkestitel_Namn)) &&
+        (minDate === "" || date >= minDate) &&
+        (maxDate === "" || date <= maxDate) &&
+        (filteredKeywords.size === 0 || titleMatches)
+      );
     });
+    filteredNotes.set(result);
+    filter.set(
+      new Map([
+        [template, filteredTemplates],
+        [unit, filteredUnits],
+        [role, filteredRoles],
+      ])
+    );
+  }
 
-    const readNotes = get(filterNotes);
-    let templates: Map<string, filterSelect> = readNotes.get("Journalmall")!;
-    let units: Map<string, filterSelect> = readNotes.get("Vårdenhet")!;
-    let roles: Map<string, filterSelect> = readNotes.get("Yrkesroll")!;
-    let minDate: string = readNotes.get("Äldsta dokument")!.get("Äldst")!.name.substring(0, 10);
-    let maxDate: string = readNotes.get("Nyaste dokument")!.get("Nyast")!.name.substring(0, 10);
-    const absMax = maxDate; // Reset value
-    const absMin = minDate; // Reset value
-    let filteredTemplates : Set<string> = new Set;
-    let filteredUnits : Set<string> = new Set;
-    let filteredRoles : Set<string> = new Set;
+  $: {
+    const updatedNotes = $allNotes.map((note) => {
+      const noteKeywords = extractBoldTitlesFromHTML(note.CaseData);
+      const matchingKeywords = Array.from(filteredKeywords).filter((keyword) =>
+        noteKeywords.includes(keyword)
+      );
+      return { ...note, keywords: matchingKeywords };
+    });
+    allNotes.set(updatedNotes);
 
-    allNotes.subscribe(notes => {
-        filteredNotes.set(notes);
-    })();
+    const updatedSelectedNotes = $selectedNotes.map((note) => {
+      const noteKeywords = extractBoldTitlesFromHTML(note.CaseData);
+      const matchingKeywords = Array.from(filteredKeywords).filter((keyword) =>
+        noteKeywords.includes(keyword)
+      );
+      return { ...note, keywords: matchingKeywords };
+    });
+    selectedNotes.set(updatedSelectedNotes);
+  }
 
-    function updateFilter() {
-        allNotes.subscribe(notes => {
-            const filtered = notes.filter(
-                (note) => {
-                    return (minDate <= note.DateTime.substring(0, 10) || minDate === "") && 
-                    (maxDate >= note.DateTime.substring(0, 10) || maxDate === "");
-                    /*(templates.get(note.Dokumentnamn)!.selected || filteredTemplates.size == 0) &&
-                    (units.get(note.Vårdenhet_Namn)!.selected || filteredUnits.size == 0) &&
-                    (roles.get(note.Dokument_skapad_av_yrkestitel_Namn)!.selected || filteredRoles.size == 0) &&*/
-                }
-            );
-            filteredNotes.set(filtered);
-        })();
-        let activeFilters : Map<string, Set<string>> = new Map;
-        activeFilters.set(template, filteredTemplates);
-        activeFilters.set(unit, filteredUnits);
-        activeFilters.set(role, filteredRoles);
-        filter.set(activeFilters);
-        
-        console.log(filteredNotes);
-        return;
+  function toggle(set: Set<string>, value: string) {
+    const newSet = new Set(set);
+    newSet.has(value) ? newSet.delete(value) : newSet.add(value);
+    return newSet;
+  }
+
+  function handleClick(event: Event) {
+    const name = (event.target as HTMLButtonElement).name;
+
+    if (templates.has(name)) {
+      filteredTemplates = toggle(filteredTemplates, name);
+    } else if (units.has(name)) {
+      filteredUnits = toggle(filteredUnits, name);
+    } else if (roles.has(name)) {
+      filteredRoles = toggle(filteredRoles, name);
     }
+  }
 
-    function updateDocument(event: MouseEvent) {
-        /***
-         * Dynamically update selected filter options for templates, units and roles. 
-        */
-        const button = event.target as HTMLButtonElement;
-        let selectedFilter = button.name; 
-        let selectedFilterOption : filterSelect
-
-        console.log(selectedFilter)
-
-        // Check if selected filter is a template filter 
-        if(templates.has(selectedFilter)) {
-            const newTemplates = new Map(templates); // create temporary placeholder for templates
-            selectedFilterOption = templates.get(selectedFilter) as filterSelect; // Get value from key
-            newTemplates.set(selectedFilter, {name : selectedFilter, selected : !selectedFilterOption.selected}); // set new value in temporary map
-            templates = newTemplates; // replace existing map with new one
-            if(!selectedFilterOption.selected) { 
-                filteredTemplates.add(selectedFilter); // Add to "keep track" list
-            } else {
-                filteredTemplates.delete(selectedFilter); // Remove from "keep track" list
-            }
-            filteredTemplates = new Set(filteredTemplates);
-        }
-        // Repeat (look at template for brief)
-        else if(units.has(selectedFilter)) {
-            const newUnits = new Map(units);
-            selectedFilterOption = units.get(selectedFilter) as filterSelect;
-            newUnits.set(selectedFilter, {name : selectedFilter, selected : !selectedFilterOption.selected});
-            units = newUnits;
-            if(!selectedFilterOption.selected) {
-                filteredUnits.add(selectedFilter);
-            } else {
-                filteredUnits.delete(selectedFilter);
-            }
-            filteredUnits = new Set(filteredUnits);
-        }
-        // Repeat (look at template for brief)
-        else if(roles.has(selectedFilter)) {
-            const newRoles = new Map(roles);
-            selectedFilterOption = roles.get(selectedFilter) as filterSelect;
-            newRoles.set(selectedFilter, {name : selectedFilter, selected : !selectedFilterOption.selected});
-            roles = newRoles;
-            if(!selectedFilterOption.selected) {
-                filteredRoles.add(selectedFilter);
-            } else {
-                filteredRoles.delete(selectedFilter);
-            }
-            filteredRoles = new Set(filteredRoles);
-        } else { // If function called from somewhere not associated with filter
-            return;
-        }
-        
-        // Filter all notes by filter criteria 
-        updateFilter()
+  function handleKeywordClick(event: Event) {
+    const name = (event.target as HTMLButtonElement).name;
+    if (keywordsMap.has(name)) {
+      filteredKeywords = toggle(filteredKeywords, name);
     }
+  }
 
-    function reset(event : MouseEvent, arg : string) {
-        const newTemplates = new Map(templates);
-        const newUnits = new Map(units);
-        const newRoles = new Map(roles);
-        if(arg == template || arg == "") {
-            newTemplates.forEach(element => {
-                element.selected = false;
-            });
-            filteredTemplates.clear()
-            filteredTemplates = new Set(filteredTemplates);
-        }
-        if(arg == unit || arg == "") {
-            newUnits.forEach(element => {
-                element.selected = false;
-            });
-            filteredUnits.clear();
-            filteredUnits = new Set(filteredUnits);
-        }
-        if(arg == role || arg == "") {
-            newRoles.forEach(element => {
-                element.selected = false;
-            });
-            filteredRoles.clear();
-            filteredRoles = new Set(filteredRoles);
-        } 
-        if(arg == "") {
-            minDate = absMin;
-            maxDate = absMax;
-        }
-        
-        templates = newTemplates;
-        units = newUnits;
-        roles = newRoles;
-        updateFilter();
+  function reset(filterName: string = "") {
+    if (filterName === template || filterName === "") {
+      filteredTemplates = new Set();
     }
+    if (filterName === unit || filterName === "") {
+      filteredUnits = new Set();
+    }
+    if (filterName === role || filterName === "") {
+      filteredRoles = new Set();
+    }
+    if (filterName === "Sökord" || filterName === "") {
+      filteredKeywords = new Set();
+    }
+    if (filterName === "") {
+      minDate = absMin;
+      maxDate = absMax;
+    }
+  }
+
+  function closeDocs() {
+    selectedNotes.set([]);
+  }
 </script>
 
-<div id="Header" class="flex flex-row justify-between outline-solid outline-gray-300 p-2 space-x-4">
-    <h1 id="ProjectTitle" class="hidden xl:flex text-2xl"><a href="/" onclick={(event) => reset(event, "")}>Demo<span class="text-purple-700"> 2</span></a></h1>
-    <div id="Filtermenu" class="grid grid-flow-col grid-rows-2 lg:flex lg:flex-row lg:flex-grow text-md items-center justify-end gap-2">
-            <div id="SearchDropdown" class="max-w-[44em] rounded-md bg-white flex flex-grow">
-                <SearchDropdown />
-                <!--<input class="pl-3 w-[100%] bg-white outline-1 outline-gray-300 rounded-md" type="text" placeholder="Sök:" bind:value={searchQuery}>-->
-            </div>
-            <div id="DateDiv" class="outline-1 outline-gray-300 rounded-md bg-white flex flex-row space-x-4 px-3">
-                <input type="date" name="OldestDate" id="OldestDate" min={absMin} max={maxDate} oninput={updateFilter} bind:value={minDate}/>
-                <p>-</p>
-                <input type="date" name="NewestDate" id="NewestDate" min={minDate} max={absMax} oninput={updateFilter} bind:value={maxDate}>
-            </div>
-            <div id="template" class="outline-1 outline-gray-300 rounded-md bg-white">
-                <div id="dropdown_button" class="px-3 flex flex-row justify-between">
-                    <button>
-                        {template}
-                    </button>
-                    {#if filteredTemplates.size != 0}
-                        <button onclick={(event) => reset(event, template)} class="text-red-600 text-1xl">X</button>
-                    {:else}
-                    <i class="fa fa-caret-down pt-1"></i>
-                    {/if}
-                </div>
-                
-                <div class="w-full flex justify-center">
-                <ul id="dropdown_1">
-                    {#each Array.from(templates) as [key, journal]}
-                        <li>
-                            <button class="w-[100%] flex row justify-between {journal.selected == true ? 'bg-blue-200 hover:bg-blue-300' : 'bg-white hover:bg-purple-100'}" name={journal.name} onclick={updateDocument}>{journal.name}
-                                <div class={`w-0 h-0 border-l-6 border-r-6 border-b-12 border-transparent border-b-current ${getPropertyForFilter("Journalmall", journal.name)}`}></div>
-                            </button>
-                        </li>
-                    {/each}
-                </ul>
-                </div>
-            </div>
-            <div id="Vårdenhet" class="outline-1 outline-gray-300 rounded-md bg-white justify-center">
-                <div id="dropdown_button" class="px-3 flex flex-row justify-between">
-                    <button>
-                        {unit}
-                    </button>
-                    {#if filteredUnits.size != 0}
-                        <button onclick={(event) => reset(event, unit)} class="text-red-600 text-1xl">X</button>
-                    {:else}
-                    <i class="fa fa-caret-down pt-1"></i>
-                    {/if}
-                </div>
-                <div class="w-full flex justify-center">
-                <ul id="dropdown_2">
-                    {#each Array.from(units) as [key, unit]}
-                        <li>
-                            <button class="w-[100%] flex row justify-between {unit.selected == true ? 'bg-blue-200 hover:bg-blue-300' : 'bg-white hover:bg-purple-100'}" name={unit.name} onclick={updateDocument}>{unit.name}
-                                <div class={`w-3 h-3 rounded-full ${getPropertyForFilter("Vårdenhet", unit.name)}`}></div>
-                            </button>
-                        </li>
-                    {/each}
-                </ul>
-            </div>
-            </div>
-            <div id="role" class="outline-1 outline-gray-300 rounded-md bg-white justify-center">
-                <div id="dropdown_button" class="px-3 flex flex-row justify-between">
-                    <button>
-                        {role}
-                    </button>
-                    {#if filteredRoles.size != 0}
-                        <button onclick={(event) => reset(event, role)} class="text-red-600 text-1xl">X</button>
-                    {:else}
-                    <i class="fa fa-caret-down pt-1"></i>
-                    {/if}
-                </div>
-                <div class="w-full flex justify-center">
-                <ul id="dropdown_3">
-                    {#each Array.from(roles) as [key, role]}
-                        <li>
-                            <button class="w-[100%] flex row justify-between {role.selected == true ? 'bg-blue-200 hover:bg-blue-300' : 'bg-white hover:bg-purple-100'}" name={role.name} onclick={updateDocument}>{role.name}
-                                <div class={`w-3 h-3 ${getPropertyForFilter("Yrkesroll", role.name)}`}></div>
-                            </button>
-                        </li>
-                    {/each}
-                </ul>
-            </div>
-            </div>
+<div id="Header" class="flex flex-row justify-between p-1 space-x-4">
+  <div
+    id="settingsJournal"
+    class="flex flex-row flex-grow text-sm items-center justify-beginning space-x-1 border-r border-gray-300"
+  >
+    <span class="text-xs font-bold">Journalvy:</span>
+
+    <div id="ToggleCanvas" class="p-1 flex">
+      <label for="toggleCanvas" class="text-xs items-center flex gap-1">
+        Canvas
+        <div class="relative inline-block w-8 h-4 items-center">
+          <input
+            id="toggleCanvas"
+            type="checkbox"
+            bind:checked={$powerMode}
+            class="sr-only peer"
+          />
+          <div
+            class="w-full h-full bg-gray-300 rounded-full peer-checked:bg-purple-500 transition-colors"
+          ></div>
+          <div
+            class="absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full shadow-md transition-all peer-checked:translate-x-4"
+          ></div>
+        </div>
+      </label>
     </div>
-    <button id="Reset" class="text-sm hover:text-purple-500 self-center" onclick={(event) => reset(event, "")}>Återställ</button>
+
+    <div id="CloseDocs" class="p-1 flex items-center">
+      <button
+        id="Close"
+        class="hover:text-purple-500 self-center text-xs"
+        onclick={closeDocs}>Återställ Journalvy</button
+      >
+    </div>
+  </div>
+  <div
+    id="settingsTimeline"
+    class="flex flex-row flex-grow text-sm items-center justify-beginning space-x-1 border-r border-gray-300"
+  >
+    <span class="text-xs font-bold">Tidslinje:</span>
+
+    <div id="ToggleTimeline" class="p-1 flex">
+      <label for="toggleTimeline" class="text-xs items-center flex gap-1">
+        Tidslinje
+        <div class="relative inline-block w-8 h-4 items-center">
+          <input
+            id="toggleTimeline"
+            type="checkbox"
+            bind:checked={$showTimeline}
+            class="sr-only peer"
+          />
+          <div
+            class="w-full h-full bg-gray-300 rounded-full peer-checked:bg-purple-500 transition-colors"
+          ></div>
+          <div
+            class="absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full shadow-md transition-all peer-checked:translate-x-4"
+          ></div>
+        </div>
+      </label>
+    </div>
+
+    <div id="ToggleDestruct" class="p-1 flex">
+      <label for="toggleDestruct" class="text-xs items-center flex gap-1">
+        Gömma
+        <div class="relative inline-block w-8 h-4 items-center">
+          <input
+            id="toggleDestruct"
+            type="checkbox"
+            bind:checked={$destructMode}
+            class="sr-only peer"
+          />
+          <div
+            class="w-full h-full bg-gray-300 rounded-full peer-checked:bg-purple-500 transition-colors"
+          ></div>
+          <div
+            class="absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full shadow-md transition-all peer-checked:translate-x-4"
+          ></div>
+        </div>
+      </label>
+    </div>
+  </div>
+  <div
+    id="Filtermenu"
+    class="grid grid-flow-col grid-rows-2 xl:flex xl:flex-row xl:flex-grow text-sm items-center justify-end gap-1"
+  >
+    <div
+      id="DateDiv"
+      class="outline-1 outline-gray-300 rounded-md bg-white flex flex-row space-x-2 px-2 text-sm"
+    >
+      <input
+        type="date"
+        name="OldestDate"
+        id="OldestDate"
+        min={absMin}
+        max={maxDate}
+        oninput={handleClick}
+        bind:value={minDate}
+      />
+      <p>-</p>
+      <input
+        type="date"
+        name="NewestDate"
+        id="NewestDate"
+        min={minDate}
+        max={absMax}
+        oninput={handleClick}
+        bind:value={maxDate}
+      />
+    </div>
+    <!-- Keywords dropdown -->
+    <div
+      id="keywords"
+      class="outline-1 outline-gray-300 rounded-md bg-white justify-center"
+    >
+      <div
+        id="dropdown_button"
+        class="px-2 flex flex-row justify-between text-sm"
+      >
+        <button>Sökord</button>
+        {#if filteredKeywords.size != 0}
+          <button
+            onclick={(event) => reset("Sökord")}
+            class="text-red-500 text-sm font-bold">X</button
+          >
+        {:else}
+          <i class="fa fa-caret-down pt-1"></i>
+        {/if}
+      </div>
+      <div class="w-full flex justify-center">
+        <ul id="dropdown_keywords">
+          {#each Array.from(keywordsMap) as [key, kw]}
+            <li>
+              <button
+                class="w-[100%] flex row justify-between text-left text-sm {kw.selected
+                  ? 'bg-[color:var(--bg-color)] hover:bg-[color:var(--hover-color)]'
+                  : 'bg-white hover:bg-gray-100'}"
+                style="--bg-color: {stringToColor(kw.name)}; --hover-color: {stringToColor(kw.name, 80)};"
+                name={kw.name}
+                onclick={handleKeywordClick}
+              >
+                {kw.name}
+              </button>
+            </li>
+          {/each}
+        </ul>
+      </div>
+    </div>
+    <div id="template" class="outline-1 outline-gray-300 rounded-md bg-white">
+      <div
+        id="dropdown_button"
+        class="px-2 flex flex-row justify-between text-sm"
+      >
+        <button>
+          {template}
+        </button>
+        {#if filteredTemplates.size != 0}
+          <button
+            onclick={(event) => reset(template)}
+            class="text-red-500 text-sm font-bold">X</button
+          >
+        {:else}
+          <i class="fa fa-caret-down pt-1"></i>
+        {/if}
+      </div>
+
+      <div class="w-full flex justify-center">
+        <ul id="dropdown_1">
+          {#each Array.from(templates) as [key, journal]}
+            <li>
+              <button
+                class="w-[100%] flex row justify-between text-left text-sm {journal.selected ==
+                true
+                  ? 'bg-purple-100 hover:bg-purple-200'
+                  : 'bg-white hover:bg-gray-100'}"
+                name={journal.name}
+                onclick={handleClick}
+                >{journal.name}
+                <svg
+                  class="w-5 h-5 p-[2px] flex-none bg-[color:var(--tw-color)] text-white rounded-full"
+                  aria-hidden="true"
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                  style="--tw-color: {stringToColor(journal.name)};"
+                >
+                  <path
+                    fill-rule="evenodd"
+                    d="M9 2.221V7H4.221a2 2 0 0 1 .365-.5L8.5 2.586A2 2 0 0 1 9 2.22ZM11 2v5a2 2 0 0 1-2 2H4v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2h-7ZM8 16a1 1 0 0 1 1-1h6a1 1 0 1 1 0 2H9a1 1 0 0 1-1-1Zm1-5a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2H9Z"
+                    clip-rule="evenodd"
+                  />
+                </svg>
+              </button>
+            </li>
+          {/each}
+        </ul>
+      </div>
+    </div>
+    <div
+      id="Vårdenhet"
+      class="outline-1 outline-gray-300 rounded-md bg-white justify-center"
+    >
+      <div
+        id="dropdown_button"
+        class="px-2 flex flex-row justify-between text-sm"
+      >
+        <button>
+          {unit}
+        </button>
+        {#if filteredUnits.size != 0}
+          <button
+            onclick={() => reset(unit)}
+            class="text-red-500 text-sm font-bold">X</button
+          >
+        {:else}
+          <i class="fa fa-caret-down pt-1"></i>
+        {/if}
+      </div>
+      <div class="w-full flex justify-center">
+        <ul id="dropdown_2">
+          {#each Array.from(units) as [key, unit]}
+            <li>
+              <button
+                class="w-[100%] flex row justify-between text-left text-sm {unit.selected ==
+                true
+                  ? 'bg-purple-100 hover:bg-purple-200'
+                  : 'bg-white hover:bg-gray-100'}"
+                name={unit.name}
+                onclick={handleClick}
+                >{unit.name}
+                <svg
+                  class="w-5 h-5 p-[2px] flex-none bg-[color:var(--tw-color)] text-white rounded-full"
+                  aria-hidden="true"
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                  style="--tw-color: {stringToColor(unit.name)};"
+                >
+                  <path
+                    fill-rule="evenodd"
+                    d="M11.293 3.293a1 1 0 0 1 1.414 0l6 6 2 2a1 1 0 0 1-1.414 1.414L19 12.414V19a2 2 0 0 1-2 2h-3a1 1 0 0 1-1-1v-3h-2v3a1 1 0 0 1-1 1H7a2 2 0 0 1-2-2v-6.586l-.293.293a1 1 0 0 1-1.414-1.414l2-2 6-6Z"
+                    clip-rule="evenodd"
+                  />
+                </svg>
+              </button>
+            </li>
+          {/each}
+        </ul>
+      </div>
+    </div>
+    <div
+      id="role"
+      class="outline-1 outline-gray-300 rounded-md bg-white justify-center"
+    >
+      <div
+        id="dropdown_button"
+        class="px-2 flex flex-row justify-between text-sm"
+      >
+        <button>
+          {role}
+        </button>
+        {#if filteredRoles.size != 0}
+          <button
+            onclick={() => reset(role)}
+            class="text-red-500 text-sm font-bold">X</button
+          >
+        {:else}
+          <i class="fa fa-caret-down pt-1"></i>
+        {/if}
+      </div>
+      <div class="w-full flex justify-center">
+        <ul id="dropdown_3">
+          {#each Array.from(roles) as [_, role]}
+            <li>
+              <button
+                class="w-[100%] flex row justify-between text-left text-sm {role.selected ==
+                true
+                  ? 'bg-purple-100 hover:bg-purple-200'
+                  : 'bg-white hover:bg-gray-100'}"
+                name={role.name}
+                onclick={handleClick}
+                >{role.name}
+                <svg
+                  class="w-5 h-5 p-[1px] flex-none bg-[color:var(--tw-color)] text-white rounded-full"
+                  aria-hidden="true"
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                  style="--tw-color: {stringToColor(role.name)};"
+                >
+                  <path
+                    fill-rule="evenodd"
+                    d="M12 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm-2 9a4 4 0 0 0-4 4v1a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-1a4 4 0 0 0-4-4h-4Z"
+                    clip-rule="evenodd"
+                  />
+                </svg>
+              </button>
+            </li>
+          {/each}
+        </ul>
+      </div>
+    </div>
+    <div id="ResetFilters" class="p-1 flex items-center">
+      <button
+        id="Reset"
+        class="hover:text-purple-500 self-center text-xs"
+        onclick={() => reset("")}>Återställ Filter</button
+      >
+    </div>
+  </div>
 </div>
 
 <style>
-    #template, #role, #Vårdenhet {
-        list-style: none;
-        position: relative;
-        display: block;
-        text-align: left;
-        height: fit-content;
-        width: 11em;
-    }
-    #dropdown_button {
-        color: #000;
-        text-decoration: none;
-        white-space: nowrap;
-        overflow: hidden;
-    }
-    #dropdown_1, #dropdown_2, #dropdown_3 {
-        display: none;
-        text-align: left;
-    }
-    #dropdown_1 button, #dropdown_2 button, #dropdown_3 button {
-        color: black;
-        text-decoration: none;
-        padding: 5px;
-    }
+  #template,
+  #role,
+  #Vårdenhet,
+  #keywords {
+    list-style: none;
+    position: relative;
+    display: block;
+    text-align: left;
+    height: fit-content;
+    width: 8em;
+  }
+  #dropdown_button {
+    color: #000;
+    text-decoration: none;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  #dropdown_1,
+  #dropdown_2,
+  #dropdown_3,
+  #dropdown_keywords {
+    display: none;
+    text-align: left;
+  }
+  #dropdown_1 button,
+  #dropdown_2 button,
+  #dropdown_3 button,
+  #dropdown_keywords button {
+    color: black;
+    text-decoration: none;
+    padding: 5px;
+  }
 
-    #template:hover ul, #role:hover ul, #Vårdenhet:hover ul {
-        display: flex;
-        position: absolute;
-        flex-direction: column;
-        font-size: 15px;
-        background: white;
-        width: 90%;
-        min-width: fit-content;
-        box-shadow: 0px 10px 10px 0px rgba(0, 0, 0, 0.2);
-        z-index: 50;
-        overflow-y: auto;
-        max-height: 20em;
-    }
-    #template:hover, #role:hover, #Vårdenhet:hover {
-        background-color: lightskyblue;
-    }
-    #DateDiv {
-        height: fit-content;
-    }
+  #template:hover ul,
+  #role:hover ul,
+  #Vårdenhet:hover ul,
+  #keywords:hover ul {
+    display: flex;
+    position: absolute;
+    flex-direction: column;
+    font-size: 15px;
+    background: white;
+    width: 100%;
+    min-width: fit-content;
+    box-shadow: 0px 10px 10px 0px rgba(0, 0, 0, 0.2);
+    z-index: 50;
+    overflow-y: auto;
+    max-height: 20em;
+  }
+  #template:hover,
+  #role:hover,
+  #Vårdenhet:hover,
+  #keywords:hover {
+    background-color: rgb(233, 233, 233);
+  }
+  #DateDiv {
+    height: fit-content;
+  }
 </style>
