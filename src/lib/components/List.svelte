@@ -20,10 +20,23 @@
   // State for resizable list width functionality
   const MIN_LIST_WIDTH = 110; 
   const DEFAULT_LIST_WIDTH = 280; 
+  const COMPACT_THRESHOLD = 200;  // Threshold for compact mode
+  const EXPANDED_THRESHOLD = 300; // Threshold for expanded mode (lowered from 380)
+  
   let listWidth = $state(DEFAULT_LIST_WIDTH);
   let isDragging = $state(false);
   let initialX = $state(0);
   let initialWidth = $state(0);
+
+  // Function to determine layout mode based on width
+  function getLayoutMode(width: number): 'compact' | 'normal' | 'expanded' {
+    if (width < COMPACT_THRESHOLD) return 'compact';
+    if (width > EXPANDED_THRESHOLD) return 'expanded';
+    return 'normal';
+  }
+
+  // Reactive layout modes based on width using $derived instead of $:
+  let layoutMode = $derived(getLayoutMode(listWidth));
 
   showTimeline.subscribe((value) => {
     if (value) {
@@ -41,6 +54,32 @@
       hour: '2-digit',
       minute: '2-digit',
     });
+  }
+
+  // Format date with different levels of detail based on layout mode
+  function formatDateByMode(dateTimeString: string, mode: string): string {
+    const date = new Date(dateTimeString);
+    
+    if (mode === 'compact') {
+      return date.toLocaleDateString('sv-SE', {
+        month: '2-digit',
+        day: '2-digit',
+      });
+    } else if (mode === 'normal') {
+      return date.toLocaleDateString('sv-SE', {
+        year: '2-digit',
+        month: '2-digit',
+        day: '2-digit',
+      });
+    } else {
+      return date.toLocaleDateString('sv-SE', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    }
   }
 
   function handleDocumentClick(clickedNote: Note, event: MouseEvent) {
@@ -112,7 +151,17 @@
 </script>
 
 <!-- List container -->
-<div data-testid="list-view-container" class="list-container" class:transition-all={isDragging === false} class:duration-300={isDragging === false} bind:this={listContainerElement} style="width: {listWidth}px;">
+<div 
+  data-testid="list-view-container" 
+  class="list-container" 
+  class:transition-all={isDragging === false} 
+  class:duration-300={isDragging === false}
+  class:list-compact={layoutMode === 'compact'}
+  class:list-normal={layoutMode === 'normal'}
+  class:list-expanded={layoutMode === 'expanded'}
+  bind:this={listContainerElement} 
+  style="width: {listWidth}px;"
+>
   <ul data-testid="list-view" class="list-view" role="listbox" aria-multiselectable="true" aria-label="Clinical notes list">
     <!-- Iterate through sorted notes using CompositionId as unique key -->
     {#each localItems as item}
@@ -126,13 +175,41 @@
           onclick={(e) => handleDocumentClick(item, e)}
         >
           <div class="document-item">
-            <div class="flex justify-between">
-              <div class="document-meta space-x-2">
-              <span class="font-mono">{formatDate(item.DateTime)}</span>
-              <span class="font-mono">{item.Dokument_skapad_av_yrkestitel_Namn === 'Sjuksköterska' ? 'Ssk' : 'Läk'}</span>
-              <h3>{item.Dokumentnamn}</h3>
-            </div>
-            </div>
+            <!-- Dynamic layout based on width -->
+            {#if layoutMode === 'compact'}
+              <!-- Compact layout -->
+              <div class="flex flex-col">
+                <div class="flex items-center gap-1">
+                  <span class="font-mono text-xs">{formatDateByMode(item.DateTime, 'compact')}</span>
+                  <span class="text-[0.6rem] text-gray-500">{item.Dokument_skapad_av_yrkestitel_Namn === 'Sjuksköterska' ? 'Ssk' : 'Läk'}</span>
+                </div>
+                <h3 class="text-xs mt-1">{item.Dokumentnamn}</h3>
+                <div class="text-[0.6rem] text-gray-500 mt-0.5 truncate">
+                  <span>{item.Vårdenhet_Namn}</span>
+                </div>
+              </div>
+            {:else if layoutMode === 'normal'}
+              <!-- Normal layout -->
+              <div class="flex flex-col">
+                <div class="document-meta space-x-2">
+                  <span class="font-mono">{formatDateByMode(item.DateTime, 'normal')}</span>
+                  <span class="font-mono">{item.Dokument_skapad_av_yrkestitel_Namn === 'Sjuksköterska' ? 'Ssk' : 'Läk'}</span>
+                </div>
+                <h3>{item.Dokumentnamn}</h3>
+              </div>
+            {:else}
+              <!-- Expanded layout -->
+              <div class="flex flex-col space-y-1">
+                <div class="flex justify-between items-center">
+                  <span class="font-mono">{formatDateByMode(item.DateTime, 'expanded')}</span>
+                  <span class="bg-gray-100 px-2 py-0.5 rounded text-xs">{item.Dokument_skapad_av_yrkestitel_Namn}</span>
+                </div>
+                <h3 class="text-sm">{item.Dokumentnamn}</h3>
+                <div class="text-xs text-gray-500 mt-1">
+                  <span>Vårdenhet: {item.Vårdenhet_Namn}</span>
+                </div>
+              </div>
+            {/if}
           </div>
         </button>
       </li>
@@ -214,6 +291,15 @@
     text-overflow: ellipsis;
   }
 
+  /* Responsive styling based on list width */
+  .list-compact .document-item h3 {
+    font-size: 0.65rem;
+  }
+
+  .list-expanded .document-item h3 {
+    font-size: 0.8rem;
+  }
+
   /* Metadata sections with overflow handling */
   .document-meta {
     white-space: nowrap;
@@ -228,6 +314,15 @@
     font-size: 0.70rem;
     font-weight: 300;
     color: #6d6d6d;
+  }
+
+  /* Responsive font sizes based on layout */
+  .list-compact .document-meta {
+    font-size: 0.65rem;
+  }
+
+  .list-expanded .document-meta {
+    font-size: 0.75rem;
   }
 
   /* Resize handle on the right side of the list */
