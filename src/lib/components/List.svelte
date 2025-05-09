@@ -361,15 +361,17 @@
 
   /* Top and bottom sections */
   .top-section {
-    height: 50%;
-    min-height: 50px;
+    flex-grow: 1;
     overflow-y: auto;
     border-bottom: 1px solid #eaeaea;
+    display: flex;
+    flex-direction: column;
+    min-height: 100px;
+    max-height: calc(100% - 50px);
   }
 
   .bottom-section {
-    height: 50%;
-    min-height: 50px;
+    max-height: 50%;
     overflow-y: auto;
     background-color: #fafafa;
   }
