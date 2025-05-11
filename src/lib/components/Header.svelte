@@ -44,11 +44,11 @@
     ])
   );
 
-  let minDate = "";
-  let maxDate = "";
-  let absMin = "";
-  let absMax = "";
-
+  let absMin = ($allNotes.at($allNotes.length-1)?.DateTime as string).substring(0, 10);
+  let absMax = ($allNotes.at(0)?.DateTime as string).substring(0, 10);
+  let minDate = absMin;
+  let maxDate = absMax;
+  
   let template = "Journalmall";
   let unit = "Vårdenhet";
   let role = "Yrkesroll";
