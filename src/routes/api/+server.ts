@@ -1,9 +1,6 @@
 import { json } from '@sveltejs/kit';
-
-const config = {
-  username: 'liu',
-  password: 'pum',
-};
+import * as dotenv from 'dotenv';
+dotenv.config();
 
 const BASE_URL = 'https://open-platform-migration.service.tietoevry.com/ehr/rest/v1/view/';
 
@@ -28,7 +25,7 @@ const styleNotFound = 'text-indent:10px; margin-bottom:10px;';
 const ehrId = "2b8d6cc8-0e30-439f-aeaa-0b0edfa09127";
 
 export async function GET() {
-  const authHeader = createBasicAuth(config.username, config.password);
+  const authHeader = createBasicAuth(process.env.USER as string, process.env.PASS as string);
 
   const caseNoteListUrl = getCaseNoteListUrl(ehrId);
   const keywordsUrl = getKeywordsUrl(ehrId);
