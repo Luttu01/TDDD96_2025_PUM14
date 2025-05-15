@@ -25,8 +25,7 @@ const styleNotFound = 'text-indent:10px; margin-bottom:10px;';
 const ehrId = "2b8d6cc8-0e30-439f-aeaa-0b0edfa09127";
 
 export async function GET() {
-  const authHeader = createBasicAuth(process.env.USER as string, process.env.PASS as string);
-
+  const authHeader = createBasicAuth(process.env.API_USER as string, process.env.API_PASS as string);
   const caseNoteListUrl = getCaseNoteListUrl(ehrId);
   const keywordsUrl = getKeywordsUrl(ehrId);
   const caseNoteFilterUrl = getCaseNoteFilterUrl(ehrId);
