@@ -166,22 +166,17 @@
   }
 </script>
 
-<div id="Header" class="flex flex-row p-1 space-y-0 justify-end space-x-4 items-center">
-
-  <span id="title" class="text-md xl:flex hidden font-bold flex-grow">
-    Clarity<span class="text-purple-500">Care</span>
-  </span>
-
+<div id="Header" class="flex flex-row p-1 space-y-0 justify-between space-x-4 items-center">
   <div
     id="settings"
-    class="flex flex-row items-center space-x-1"
+    class="flex flex-row items-center space-x-1 xl:text-sm text-xs"
   >
     <div
       id="settingsTimeline"
       class="flex flex-row items-center space-x-1"
     >
       <div id="ToggleTimeline" class="p-1 flex">
-        <label for="toggleTimeline" class="text-xs items-center flex gap-1">
+        <label for="toggleTimeline" class=" items-center flex gap-1">
           Tidslinje
           <div class="relative inline-block w-8 h-4 items-center">
             <input
@@ -201,7 +196,7 @@
       </div>
 
       <div id="ToggleDestruct" class="p-1 flex">
-        <label for="toggleDestruct" class="text-xs items-center flex gap-1">
+        <label for="toggleDestruct" class=" items-center flex gap-1">
           Dölj
           <div class="relative inline-block w-8 h-4 items-center">
             <input
@@ -226,7 +221,7 @@
       class="flex flex-row items-center justify-beginning space-x-1"
     >
       <div id="ToggleCanvas" class="p-1 flex">
-        <label for="toggleCanvas" class="text-xs items-center flex gap-1">
+        <label for="toggleCanvas" class=" items-center flex gap-1">
           Canvas
           <div class="relative inline-block w-8 h-4 items-center">
             <input
@@ -248,7 +243,7 @@
       <div id="CloseDocs" class="p-1 flex items-center">
         <button
           id="Close"
-          class="hover:text-purple-500 self-center text-xs"
+          class="hover:text-purple-500 self-center"
           onclick={closeDocs}>Återställ Journalvy</button
         >
       </div>
@@ -257,7 +252,7 @@
 
   <div
     id="Filtermenu"
-    class="flex flex-row text-xs items-center space-x-1"
+    class="flex flex-row xl:text-sm text-xs items-center space-x-1"
   >
     <div
       id="DateDiv"
@@ -486,7 +481,7 @@
     <div id="ResetFilters" class="p-1 flex items-center">
       <button
         id="Reset"
-        class="hover:text-purple-500 self-center text-xs"
+        class="hover:text-purple-500 self-center"
         onclick={() => reset("")}>Återställ Filter</button
       >
     </div>
