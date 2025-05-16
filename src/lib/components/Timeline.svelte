@@ -353,12 +353,12 @@ function scrollToKeywordInDirection(keyword: string, direction: string) {
   class="flex h-full bg-gray-100 overflow-x-auto overflow-y-hidden"
   bind:this={scrollContainer}
 >
-  <div id="years-container" class="flex flex-row w-max h-full space-x-[2px]">
+  <div id="years-container" class="flex flex-row h-full space-x-[2px]">
     {#each $noteHierarchy as yearGroup (yearGroup.year)}
       <div id="year-{yearGroup.year}" class="h-full flex flex-col">
         <button
           id="toggle-year-{yearGroup.year}"
-          class="flex bg-purple-100 py-1 text-left text-sm px-1 w-full shadow-md justify-between {yearGroup.isCollapsed ? 'cursor-zoom-in' : 'cursor-zoom-out'}"
+          class="flex bg-purple-100 py-1 text-left text-sm px-1 w-full shadow-sm justify-between {yearGroup.isCollapsed ? 'cursor-zoom-in' : 'cursor-zoom-out'}"
           onclick={() => (toggleAllYearGroups())}
           aria-label="Toggle year {yearGroup.year}"
         >
@@ -533,4 +533,7 @@ function scrollToKeywordInDirection(keyword: string, direction: string) {
       </div>
     {/each}
   </div>
+    <div class="flex-grow flex items-center justify-center text-gray-400 text-xs shadow-sm font-medium h-6 bg-gray-200 overflow-hidden pl-1">
+      Inga äldre anteckningar
+    </div>
 </div>

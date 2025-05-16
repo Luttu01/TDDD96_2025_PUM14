@@ -172,6 +172,44 @@
     class="flex flex-row items-center space-x-1 xl:text-sm text-xs"
   >
     <div
+      id="settingsJournal"
+      class="flex flex-row items-center justify-beginning space-x-1"
+    >
+    <div id="CloseDocs" class="p-1 flex items-center">
+      <button
+      id="Close"
+      class="px-2 py-[1px] rounded-md transition-colors self-center
+        { $selectedNotes.length === 0
+        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+        : 'bg-gray-200 hover:bg-gray-300'}"
+      onclick={closeDocs}
+      disabled={$selectedNotes.length === 0}
+      >
+      Avmarkera alla
+      </button>
+    </div>
+      <div id="ToggleCanvas" class="p-1 flex">
+        <label for="toggleCanvas" class=" items-center flex gap-1">
+          Canvas
+          <div class="relative inline-block w-8 h-4 items-center">
+            <input
+              id="toggleCanvas"
+              type="checkbox"
+              bind:checked={$powerMode}
+              class="sr-only peer"
+            />
+            <div
+              class="w-full h-full bg-gray-300 rounded-full peer-checked:bg-purple-500 transition-colors"
+            ></div>
+            <div
+              class="absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full shadow-md transition-all peer-checked:translate-x-4"
+            ></div>
+          </div>
+        </label>
+      </div>
+    </div>
+
+    <div
       id="settingsTimeline"
       class="flex flex-row items-center space-x-1"
     >
@@ -194,7 +232,8 @@
           </div>
         </label>
       </div>
-
+      
+      {#if $showTimeline}
       <div id="ToggleDestruct" class="p-1 flex">
         <label for="toggleDestruct" class=" items-center flex gap-1">
           Dölj
@@ -214,39 +253,7 @@
           </div>
         </label>
       </div>
-    </div>
-
-    <div
-      id="settingsJournal"
-      class="flex flex-row items-center justify-beginning space-x-1"
-    >
-      <div id="ToggleCanvas" class="p-1 flex">
-        <label for="toggleCanvas" class=" items-center flex gap-1">
-          Canvas
-          <div class="relative inline-block w-8 h-4 items-center">
-            <input
-              id="toggleCanvas"
-              type="checkbox"
-              bind:checked={$powerMode}
-              class="sr-only peer"
-            />
-            <div
-              class="w-full h-full bg-gray-300 rounded-full peer-checked:bg-purple-500 transition-colors"
-            ></div>
-            <div
-              class="absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full shadow-md transition-all peer-checked:translate-x-4"
-            ></div>
-          </div>
-        </label>
-      </div>
-
-      <div id="CloseDocs" class="p-1 flex items-center">
-        <button
-          id="Close"
-          class="hover:text-purple-500 self-center"
-          onclick={closeDocs}>Återställ Journalvy</button
-        >
-      </div>
+      {/if}
     </div>
   </div>
 
@@ -480,10 +487,16 @@
     </div>
     <div id="ResetFilters" class="p-1 flex items-center">
       <button
-        id="Reset"
-        class="hover:text-purple-500 self-center"
-        onclick={() => reset("")}>Återställ Filter</button
+      id="Reset"
+      class="px-2 py-[1px] rounded-md transition-colors self-center
+        {filteredTemplates.size === 0 && filteredUnits.size === 0 && filteredRoles.size === 0 && filteredKeywords.size === 0 && minDate === absMin && maxDate === absMax
+        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+        : 'bg-gray-200 hover:bg-gray-300'}"
+      onclick={() => reset("")}
+      disabled={filteredTemplates.size === 0 && filteredUnits.size === 0 && filteredRoles.size === 0 && filteredKeywords.size === 0 && minDate === absMin && maxDate === absMax}
       >
+      Återställ Filter
+      </button>
     </div>
   </div>
 </div>
