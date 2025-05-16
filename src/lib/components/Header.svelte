@@ -8,6 +8,7 @@
     destructMode,
     selectedNotes,
     allKeywords,
+    selectedKeywords
   } from "$lib/stores";
   import { stringToColor } from "$lib/utils";
 
@@ -75,7 +76,7 @@
   $: {
     const result = $allNotes.filter((note) => {
       const date = note.DateTime.substring(0, 10);
-      const titleMatches = Array.from(filteredKeywords).every((keyword) =>
+      const titleMatches = Array.from(filteredKeywords).some((keyword) =>
         note.CaseData.includes(keyword)
       );
       return (
@@ -97,6 +98,7 @@
         [role, filteredRoles],
       ])
     );
+    selectedKeywords.set(filteredKeywords);
   }
 
   $: {
@@ -169,46 +171,7 @@
 </script>
 
 <div id="Header" class="flex flex-row justify-between p-1 space-x-4">
-  <div
-    id="settingsJournal"
-    class="flex flex-row flex-grow text-sm items-center justify-beginning space-x-1 border-r border-gray-300"
-  >
-    <span class="text-xs font-bold">Journalvy:</span>
-
-    <div id="ToggleCanvas" class="p-1 flex">
-      <label for="toggleCanvas" class="text-xs items-center flex gap-1">
-        Canvas
-        <div class="relative inline-block w-8 h-4 items-center">
-          <input
-            id="toggleCanvas"
-            type="checkbox"
-            bind:checked={$powerMode}
-            class="sr-only peer"
-          />
-          <div
-            class="w-full h-full bg-gray-300 rounded-full peer-checked:bg-purple-500 transition-colors"
-          ></div>
-          <div
-            class="absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full shadow-md transition-all peer-checked:translate-x-4"
-          ></div>
-        </div>
-      </label>
-    </div>
-
-    <div id="CloseDocs" class="p-1 flex items-center">
-      <button
-        id="Close"
-        class="hover:text-purple-500 self-center text-xs"
-        onclick={closeDocs}>Återställ Journalvy</button
-      >
-    </div>
-  </div>
-  <div
-    id="settingsTimeline"
-    class="flex flex-row flex-grow text-sm items-center justify-beginning space-x-1 border-r border-gray-300"
-  >
-    <span class="text-xs font-bold">Tidslinje:</span>
-
+  <div id="Toggleable" class="flex justify-between">
     <div id="ToggleTimeline" class="p-1 flex">
       <label for="toggleTimeline" class="text-xs items-center flex gap-1">
         Tidslinje
@@ -228,15 +191,35 @@
         </div>
       </label>
     </div>
-
+    {#if $showTimeline }
     <div id="ToggleDestruct" class="p-1 flex">
       <label for="toggleDestruct" class="text-xs items-center flex gap-1">
-        Gömma
+        Dölj Ofiltrerat
         <div class="relative inline-block w-8 h-4 items-center">
           <input
             id="toggleDestruct"
             type="checkbox"
             bind:checked={$destructMode}
+            class="sr-only peer"
+          />
+          <div
+            class="w-full h-full bg-gray-300 rounded-full peer-checked:bg-purple-500 transition-colors"
+          ></div>
+          <div
+            class="absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full shadow-md transition-all peer-checked:translate-x-4"
+          ></div>
+        </div>
+      </label>
+    </div>
+    {/if}
+    <div id="ToggleCanvas" class="p-1 flex">
+      <label for="toggleCanvas" class="text-xs items-center flex gap-1">
+        Canvas
+        <div class="relative inline-block w-8 h-4 items-center">
+          <input
+            id="toggleCanvas"
+            type="checkbox"
+            bind:checked={$powerMode}
             class="sr-only peer"
           />
           <div
@@ -476,6 +459,13 @@
           {/each}
         </ul>
       </div>
+    </div>
+    <div id="CloseDocs" class="p-1 flex items-center">
+      <button
+        id="Close"
+        class="hover:text-purple-500 self-center text-xs"
+        onclick={closeDocs}>Återställ Journalvy</button
+      >
     </div>
     <div id="ResetFilters" class="p-1 flex items-center">
       <button

@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { Note } from '$lib/models';
   import { onDestroy, onMount } from 'svelte';
-  import { selectedNotes, filteredNotes, showTimeline, allNotes, filter } from '$lib/stores';
+  import { selectedNotes, filteredNotes, showTimeline, allNotes, filter, selectedKeywords } from '$lib/stores';
 
   // Get notes from global store and sort them by date 
   let localFilteredItems: Note[] = $derived([...$filteredNotes]
@@ -23,25 +23,31 @@
   );
 
   // Get active filter descriptions using proper runes mode
-  let activeFilterText = $derived(getActiveFilterText($filter));
+  let activeFilterText = $derived(getActiveFilterText($filter, $selectedKeywords));
 
-  function getActiveFilterText(currentFilter: Map<string, Set<string>>): string {
+  function getActiveFilterText(currentFilter: Map<string, Set<string>>, keywords: Set<string>): string {
     let filterText = [];
     
     // Check each filter category
     for (const [key, activeValues] of currentFilter.entries()) {
       if (activeValues.size > 0) {
+        /*
         const values = Array.from(activeValues);
         if (values.length === 1) {
           filterText.push(`${key}: ${values[0]}`);
         } else if (values.length > 1) {
           filterText.push(`${key}: ${values.length} valda`);
         }
+          */
+        filterText[0] = "Filtrerade Journaler";
       }
+    }
+    if(keywords.size > 0) {
+      filterText[0] = "Filtrerade Journaler";
     }
     
     // Return filter text or default
-    return filterText.length > 0 ? filterText.join(', ') : 'Alla journaler';
+    return filterText.length > 0 ? filterText.join(', ') : 'Alla Journaler';
   }
 
   // Reference to DOM element for the list container and list views
@@ -55,7 +61,7 @@
   const MIN_LIST_WIDTH = 110; 
   const DEFAULT_LIST_WIDTH = 280; 
   const COMPACT_THRESHOLD = 200;  // Threshold for compact mode
-  const EXPANDED_THRESHOLD = 300; // Threshold for expanded mode (lowered from 380)
+  const EXPANDED_THRESHOLD = 400; // Threshold for expanded mode (lowered from 380)
   
   let listWidth = $state(DEFAULT_LIST_WIDTH);
   let isDragging = $state(false);
@@ -209,13 +215,13 @@
   style="width: {listWidth}px;"
 >
   <!-- Top section with filtered items -->
-  <div class="top-section">
+   <div id="filtered-header" aria-hidden="true">
+    <div id="filtered-header-text">{activeFilterText}</div>
+  </div>
+  <div id="top-section">
     {#if localFilteredItems.length > 0}
-      <div class="filtered-header" aria-hidden="true">
-        <div class="filtered-header-text">{activeFilterText}</div>
-      </div>
       
-      <ul data-testid="filtered-list-view" class="filtered-list-view" role="listbox" aria-multiselectable="true" aria-label="Filtered clinical notes list">
+      <ul data-testid="filtered-list-view" id="filtered-list-view" role="listbox" aria-multiselectable="true" aria-label="Filtered clinical notes list">
         <!-- Iterate through filtered notes using CompositionId as unique key -->
         {#each localFilteredItems as item}
           <!-- List item-->
@@ -227,39 +233,38 @@
               class:selected={$selectedNotes.some(note => note.CompositionId === item.CompositionId)}
               onclick={(e) => handleDocumentClick(item, e)}
             >
-              <div class="document-item">
+              <div id="document-item">
                 <!-- Dynamic layout based on width -->
                 {#if layoutMode === 'compact'}
                   <!-- Compact layout -->
-                  <div class="flex flex-col">
-                    <div class="flex items-center gap-1">
-                      <span class="font-mono text-xs">{formatDateByMode(item.DateTime, 'compact')}</span>
-                      <span class="text-[0.6rem] text-gray-500">{item.Dokument_skapad_av_yrkestitel_Namn === 'Sjuksköterska' ? 'Ssk' : 'Läk'}</span>
+                  <div id="compact-container" class="flex flex-col">
+                    <h3>{item.Dokumentnamn}</h3>
+                    <div id="document-meta">
+                      <span class="font-mono">{item.Vårdenhet_Namn}</span>
                     </div>
-                    <h3 class="text-xs mt-1">{item.Dokumentnamn}</h3>
-                    <div class="text-[0.6rem] text-gray-500 mt-0.5 truncate">
-                      <span>{item.Vårdenhet_Namn}</span>
+                    <div id="document-meta" class="space-x-1">
+                      <span class="font-mono">{formatDateByMode(item.DateTime, 'normal')}</span>
+                      <span class="font-mono">{item.Dokument_skapad_av_yrkestitel_Namn === 'Sjuksköterska' ? 'Ssk' : 'Läk'}</span>
                     </div>
                   </div>
                 {:else if layoutMode === 'normal'}
                   <!-- Normal layout -->
-                  <div class="flex flex-col">
-                    <div class="document-meta space-x-2">
+                  <div id="normal-container" class="flex flex-col">
+                    <h3>{item.Dokumentnamn}</h3>
+                    <div id="document-meta" class="space-x-1">
+                      <span class="font-mono">{item.Vårdenhet_Namn}</span>
                       <span class="font-mono">{formatDateByMode(item.DateTime, 'normal')}</span>
                       <span class="font-mono">{item.Dokument_skapad_av_yrkestitel_Namn === 'Sjuksköterska' ? 'Ssk' : 'Läk'}</span>
                     </div>
-                    <h3>{item.Dokumentnamn}</h3>
                   </div>
                 {:else}
                   <!-- Expanded layout -->
-                  <div class="flex flex-col space-y-1">
-                    <div class="flex justify-between items-center">
-                      <span class="font-mono">{formatDateByMode(item.DateTime, 'expanded')}</span>
-                      <span class="bg-gray-100 px-2 py-0.5 rounded text-xs">{item.Dokument_skapad_av_yrkestitel_Namn}</span>
-                    </div>
-                    <h3 class="text-sm">{item.Dokumentnamn}</h3>
-                    <div class="text-xs text-gray-500 mt-1">
-                      <span>Vårdenhet: {item.Vårdenhet_Namn}</span>
+                  <div id="expanded-container" class="flex justify-between items-center">
+                    <h3>{item.Dokumentnamn}</h3>
+                    <div id="document-meta" class="space-x-1">
+                      <span class="font-mono">{item.Vårdenhet_Namn}</span>
+                      <span class="font-mono">{item.Dokument_skapad_av_yrkestitel_Namn === 'Sjuksköterska' ? 'Ssk' : 'Läk'}</span>
+                      <span class="font-mono">{formatDateByMode(item.DateTime, 'normal')}</span>
                     </div>
                   </div>
                 {/if}
@@ -273,14 +278,13 @@
 
   <!-- Bottom section with non-filtered items -->
   {#if localNonFilteredItems.length > 0}
-    <div class="bottom-section">
+    <div id="filtered-header" aria-hidden="true">
+      <div id="filtered-header-text">Ofiltrerade journaler</div>
+    </div>
+    <div id="bottom-section">
       <!-- Separator for non-filtered items with no text -->
-      <div class="separator" aria-hidden="true">
-        <div class="separator-line"></div>
-        <div class="separator-line"></div>
-      </div>
       
-      <ul data-testid="non-filtered-list-view" class="non-filtered-list-view" role="listbox" aria-multiselectable="true" aria-label="Non-filtered clinical notes list">
+      <ul data-testid="non-filtered-list-view" id="non-filtered-list-view" role="listbox" aria-multiselectable="true" aria-label="Non-filtered clinical notes list">
         <!-- Iterate through non-filtered notes -->
         {#each localNonFilteredItems as item}
           <!-- List item with muted styling -->
@@ -292,39 +296,38 @@
               class:selected={$selectedNotes.some(note => note.CompositionId === item.CompositionId)}
               onclick={(e) => handleDocumentClick(item, e)}
             >
-              <div class="document-item">
+              <div id="document-item">
                 <!-- Dynamic layout based on width, same as above but with muted styling -->
                 {#if layoutMode === 'compact'}
                   <!-- Compact layout -->
-                  <div class="flex flex-col">
-                    <div class="flex items-center gap-1">
-                      <span class="font-mono text-xs">{formatDateByMode(item.DateTime, 'compact')}</span>
-                      <span class="text-[0.6rem] text-gray-500">{item.Dokument_skapad_av_yrkestitel_Namn === 'Sjuksköterska' ? 'Ssk' : 'Läk'}</span>
+                  <div id="compact-container" class="flex flex-col">
+                    <h3>{item.Dokumentnamn}</h3>
+                    <div id="document-meta">
+                      <span class="font-mono">{item.Vårdenhet_Namn}</span>
                     </div>
-                    <h3 class="text-xs mt-1">{item.Dokumentnamn}</h3>
-                    <div class="text-[0.6rem] text-gray-500 mt-0.5 truncate">
-                      <span>{item.Vårdenhet_Namn}</span>
+                    <div id="document-meta" class="space-x-1">
+                      <span class="font-mono">{formatDateByMode(item.DateTime, 'normal')}</span>
+                      <span class="font-mono">{item.Dokument_skapad_av_yrkestitel_Namn === 'Sjuksköterska' ? 'Ssk' : 'Läk'}</span>
                     </div>
                   </div>
                 {:else if layoutMode === 'normal'}
                   <!-- Normal layout -->
-                  <div class="flex flex-col">
-                    <div class="document-meta space-x-2">
+                  <div id="normal-container" class="flex flex-col">
+                    <h3>{item.Dokumentnamn}</h3>
+                    <div id="document-meta" class="space-x-1">
+                      <span class="font-mono">{item.Vårdenhet_Namn}</span>
                       <span class="font-mono">{formatDateByMode(item.DateTime, 'normal')}</span>
                       <span class="font-mono">{item.Dokument_skapad_av_yrkestitel_Namn === 'Sjuksköterska' ? 'Ssk' : 'Läk'}</span>
                     </div>
-                    <h3>{item.Dokumentnamn}</h3>
                   </div>
                 {:else}
                   <!-- Expanded layout -->
-                  <div class="flex flex-col space-y-1">
-                    <div class="flex justify-between items-center">
-                      <span class="font-mono">{formatDateByMode(item.DateTime, 'expanded')}</span>
-                      <span class="bg-gray-100 px-2 py-0.5 rounded text-xs">{item.Dokument_skapad_av_yrkestitel_Namn}</span>
-                    </div>
-                    <h3 class="text-sm">{item.Dokumentnamn}</h3>
-                    <div class="text-xs text-gray-500 mt-1">
-                      <span>Vårdenhet: {item.Vårdenhet_Namn}</span>
+                  <div id="expanded-container" class="flex justify-between items-center">
+                    <h3>{item.Dokumentnamn}</h3>
+                    <div id="document-meta" class="space-x-1">
+                      <span class="font-mono">{item.Vårdenhet_Namn}</span>
+                      <span class="font-mono">{item.Dokument_skapad_av_yrkestitel_Namn === 'Sjuksköterska' ? 'Ssk' : 'Läk'}</span>
+                      <span class="font-mono">{formatDateByMode(item.DateTime, 'normal')}</span>
                     </div>
                   </div>
                 {/if}
@@ -339,7 +342,7 @@
   <!-- Resize handle for adjusting list width -->
   <button 
     data-testid="resize-handle" 
-    class="resize-handle" 
+    id="resize-handle" 
     onmousedown={handleMouseDown}
     aria-label="Resize list width"
     type="button"
@@ -360,7 +363,7 @@
   }
 
   /* Top and bottom sections */
-  .top-section {
+  #top-section {
     flex-grow: 1;
     overflow-y: auto;
     border-bottom: 1px solid #eaeaea;
@@ -370,14 +373,14 @@
     max-height: calc(100% - 50px);
   }
 
-  .bottom-section {
+  #bottom-section {
     max-height: 50%;
     overflow-y: auto;
     background-color: #fafafa;
   }
 
   /* Scrollable lists of documents */
-  .filtered-list-view, .non-filtered-list-view {
+  #filtered-list-view, #non-filtered-list-view {
     list-style: none;
     padding: 0;
     margin: 0;
@@ -436,7 +439,7 @@
   }
 
   /* Document title styling with text overflow handling */
-  .document-item h3 {
+  #document-item h3 {
     margin: 0 0 0.1rem 0;
     color: #333;
     font-size: 0.70rem;
@@ -447,23 +450,23 @@
   }
 
   /* Responsive styling based on list width */
-  .list-compact .document-item h3 {
+  .list-compact #document-item h3 {
     font-size: 0.65rem;
   }
 
-  .list-expanded .document-item h3 {
+  .list-expanded #document-item h3 {
     font-size: 0.8rem;
   }
 
   /* Metadata sections with overflow handling */
-  .document-meta {
+  #document-meta {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
 
   /* Document metadata (type and date) */
-  .document-meta {
+  #document-meta {
     display: flex;
     flex-wrap: row;
     font-size: 0.70rem;
@@ -472,16 +475,16 @@
   }
 
   /* Responsive font sizes based on layout */
-  .list-compact .document-meta {
+  .list-compact #document-meta {
     font-size: 0.65rem;
   }
 
-  .list-expanded .document-meta {
+  .list-expanded #document-meta {
     font-size: 0.75rem;
   }
 
   /* Resize handle on the right side of the list */
-  .resize-handle {
+  #resize-handle {
     position: absolute;
     top: 0;
     right: 0;
@@ -491,33 +494,19 @@
     background-color: rgba(0, 0, 0, 0.1); 
   }
 
-  .resize-handle:hover {
+  #resize-handle:hover {
     background-color: rgba(0, 0, 0, 0.3);
   }
 
-  /* Separator styling */
-  .separator {
-    display: flex;
-    align-items: center;
-    padding: 0.8rem 0.2rem 0.4rem 0.2rem;
-    background-color: #f0f0f0;
-  }
-
-  .separator-line {
-    flex-grow: 1;
-    height: 1px;
-    background-color: #ccc;
-  }
-
   /* Filtered header styling */
-  .filtered-header {
+  #filtered-header {
     display: flex;
     justify-content: center;
-    padding: 0.8rem 0.2rem 0.4rem 0.2rem;
+    padding: 0.4rem 0.2rem 0.1rem 0.2rem;
     background-color: #f5f8ff;
   }
 
-  .filtered-header-text {
+  #filtered-header-text {
     font-size: 0.8rem;
     font-weight: 600;
     color: #4a5568;

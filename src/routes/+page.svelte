@@ -6,7 +6,8 @@
   import { showTimeline } from "$lib/stores";
 
   const MIN_TIMELINE_HEIGHT = 40;
-  const DEFAULT_TIMELINE_HEIGHT = 250;
+  const DEFAULT_TIMELINE_HEIGHT = 180;
+  const MAX_TIMELINE_HEIGHT = 600;
 
   let timelineHeight = 0;
   let isDragging = false;
@@ -75,7 +76,7 @@
     {/if}
     <div
       style="height: {timelineHeight}px;"
-      class="overflow-hidden flex-none relative max-h-[250px]"
+      class="overflow-hidden flex-none relative max-h-[{MAX_TIMELINE_HEIGHT}px]"
       class:transition-all={isDragging === false}
       class:duration-300={isDragging === false}
     >
