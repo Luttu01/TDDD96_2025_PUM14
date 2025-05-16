@@ -226,11 +226,11 @@
                   <div id="compact-container" class="flex flex-col">
                     <h3>{item.Dokumentnamn}</h3>
                     <div id="document-meta">
-                      <span class="font-mono">{item.Vårdenhet_Namn}</span>
+                      <span>{item.Vårdenhet_Namn}</span>
                     </div>
                     <div id="document-meta" class="space-x-1">
+                      <span>{item.Dokument_skapad_av_yrkestitel_Namn === 'Sjuksköterska' ? 'Ssk' : 'Läk'}</span>
                       <span class="font-mono">{formatDateByMode(item.DateTime, 'normal')}</span>
-                      <span class="font-mono">{item.Dokument_skapad_av_yrkestitel_Namn === 'Sjuksköterska' ? 'Ssk' : 'Läk'}</span>
                     </div>
                   </div>
                 {:else if layoutMode === 'normal'}
@@ -238,18 +238,18 @@
                   <div id="normal-container" class="flex flex-col">
                     <h3>{item.Dokumentnamn}</h3>
                     <div id="document-meta" class="space-x-1">
-                      <span class="font-mono">{item.Vårdenhet_Namn}</span>
+                      <span>{item.Vårdenhet_Namn}</span>
+                      <span>{item.Dokument_skapad_av_yrkestitel_Namn === 'Sjuksköterska' ? 'Ssk' : 'Läk'}</span>
                       <span class="font-mono">{formatDateByMode(item.DateTime, 'normal')}</span>
-                      <span class="font-mono">{item.Dokument_skapad_av_yrkestitel_Namn === 'Sjuksköterska' ? 'Ssk' : 'Läk'}</span>
                     </div>
                   </div>
                 {:else}
                   <!-- Expanded layout -->
                   <div id="expanded-container" class="flex justify-between items-center">
                     <h3>{item.Dokumentnamn}</h3>
-                    <div id="document-meta" class="space-x-1">
-                      <span class="font-mono">{item.Vårdenhet_Namn}</span>
-                      <span class="font-mono">{item.Dokument_skapad_av_yrkestitel_Namn === 'Sjuksköterska' ? 'Ssk' : 'Läk'}</span>
+                    <div id="document-meta" class="space-x-2">
+                      <span class="w-20 overflow-hidden text-ellipsis justify-left pr-1">{item.Vårdenhet_Namn}</span>
+                      <span class="w-10">{item.Dokument_skapad_av_yrkestitel_Namn === 'Sjuksköterska' ? 'Ssk' : 'Läk'}</span>
                       <span class="font-mono">{formatDateByMode(item.DateTime, 'normal')}</span>
                     </div>
                   </div>
@@ -282,18 +282,18 @@
               class:selected={$selectedNotes.some(note => note.CompositionId === item.CompositionId)}
               onclick={(e) => handleDocumentClick(item, e)}
             >
-              <div id="document-item">
+              <div id="document-item" class="pr-1">
                 <!-- Dynamic layout based on width, same as above but with muted styling -->
                 {#if layoutMode === 'compact'}
                   <!-- Compact layout -->
                   <div id="compact-container" class="flex flex-col">
                     <h3>{item.Dokumentnamn}</h3>
                     <div id="document-meta">
-                      <span class="font-mono">{item.Vårdenhet_Namn}</span>
+                      <span>{item.Vårdenhet_Namn}</span>
                     </div>
                     <div id="document-meta" class="space-x-1">
+                      <span>{item.Dokument_skapad_av_yrkestitel_Namn === 'Sjuksköterska' ? 'Ssk' : 'Läk'}</span>
                       <span class="font-mono">{formatDateByMode(item.DateTime, 'normal')}</span>
-                      <span class="font-mono">{item.Dokument_skapad_av_yrkestitel_Namn === 'Sjuksköterska' ? 'Ssk' : 'Läk'}</span>
                     </div>
                   </div>
                 {:else if layoutMode === 'normal'}
@@ -301,18 +301,18 @@
                   <div id="normal-container" class="flex flex-col">
                     <h3>{item.Dokumentnamn}</h3>
                     <div id="document-meta" class="space-x-1">
-                      <span class="font-mono">{item.Vårdenhet_Namn}</span>
+                      <span>{item.Vårdenhet_Namn}</span>
+                      <span>{item.Dokument_skapad_av_yrkestitel_Namn === 'Sjuksköterska' ? 'Ssk' : 'Läk'}</span>
                       <span class="font-mono">{formatDateByMode(item.DateTime, 'normal')}</span>
-                      <span class="font-mono">{item.Dokument_skapad_av_yrkestitel_Namn === 'Sjuksköterska' ? 'Ssk' : 'Läk'}</span>
                     </div>
                   </div>
                 {:else}
                   <!-- Expanded layout -->
                   <div id="expanded-container" class="flex justify-between items-center">
                     <h3>{item.Dokumentnamn}</h3>
-                    <div id="document-meta" class="space-x-1">
-                      <span class="font-mono">{item.Vårdenhet_Namn}</span>
-                      <span class="font-mono">{item.Dokument_skapad_av_yrkestitel_Namn === 'Sjuksköterska' ? 'Ssk' : 'Läk'}</span>
+                    <div id="document-meta" class="space-x-2">
+                      <span class="w-20 overflow-hidden text-ellipsis justify-left pr-1">{item.Vårdenhet_Namn}</span>
+                      <span class="w-10">{item.Dokument_skapad_av_yrkestitel_Namn === 'Sjuksköterska' ? 'Ssk' : 'Läk'}</span>
                       <span class="font-mono">{formatDateByMode(item.DateTime, 'normal')}</span>
                     </div>
                   </div>
@@ -455,7 +455,6 @@
   /* Document metadata (type and date) */
   #document-meta {
     display: flex;
-    flex-wrap: row;
     font-size: 0.70rem;
     font-weight: 300;
     color: #6d6d6d;
