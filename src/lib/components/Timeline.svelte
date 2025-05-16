@@ -252,7 +252,11 @@ function scrollToKeywordInDirection(keyword: string, direction: string) {
   }, outOfViewNotes[0]);
 
   if (nearest) {
-    nearest.el.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
+    const offset = (containerRect.width - nearest.rect.width) / 2;
+    scrollContainer.scrollTo({
+      left: nearest.rect.left - containerRect.left + scrollContainer.scrollLeft - offset,
+      behavior: "smooth",
+    });
   }
 }
 
@@ -349,12 +353,12 @@ function scrollToKeywordInDirection(keyword: string, direction: string) {
   class="flex h-full bg-gray-100 overflow-x-auto overflow-y-hidden"
   bind:this={scrollContainer}
 >
-  <div id="years-container" class="flex flex-row w-max h-full space-x-[2px]">
+  <div id="years-container" class="flex flex-row h-full space-x-[8px]">
     {#each $noteHierarchy as yearGroup (yearGroup.year)}
       <div id="year-{yearGroup.year}" class="h-full flex flex-col">
         <button
           id="toggle-year-{yearGroup.year}"
-          class="flex bg-purple-100 py-1 text-left text-sm px-1 w-full shadow-md justify-between {yearGroup.isCollapsed ? 'cursor-zoom-in' : 'cursor-zoom-out'}"
+          class="flex bg-purple-100 py-1 text-left text-sm px-1 w-full shadow-sm justify-between {yearGroup.isCollapsed ? 'cursor-zoom-in' : 'cursor-zoom-out'}"
           onclick={() => (toggleAllYearGroups())}
           aria-label="Toggle year {yearGroup.year}"
         >
@@ -362,7 +366,7 @@ function scrollToKeywordInDirection(keyword: string, direction: string) {
             {yearGroup.year}
           </div>
         </button>
-        <div id="months-container-year-{yearGroup.year}" class="flex flex-row space-x-[2px]">
+        <div id="months-container-year-{yearGroup.year}" class="flex flex-row space-x-[8px]">
           {#each yearGroup.months as monthGroup}
             <div id="month-{yearGroup.year}-{monthGroup.month}" class="flex flex-col">
               <button
@@ -382,7 +386,7 @@ function scrollToKeywordInDirection(keyword: string, direction: string) {
               </button>
               <div
                 id="notes-container-{yearGroup.year}-{monthGroup.month}"
-                class="flex flex-row overflow-hidden p-[2px] space-x-[4px] items-start"
+                class="flex flex-row overflow-hidden space-x-[8px] items-start"
               >
                 {#each monthGroup.notes as note}
                   {#key note.Dokument_ID}
@@ -441,12 +445,15 @@ function scrollToKeywordInDirection(keyword: string, direction: string) {
                           {new Date(note.DateTime).toLocaleDateString("sv-SE")}
                           <NotePreview {note} />
                         </div>
-                        <div id="note-title-container-{note.Dokument_ID}" class="text-gray-900 text-xs font-bold flex justify-between h-10">
-                            {note.Dokumentnamn}
+                        <div
+                          id="note-title-container-{note.Dokument_ID}"
+                          class="text-gray-900 text-xs font-bold flex justify-between h-5 text-ellipsis whitespace-nowrap overflow-hidden"
+                        >
+                          {note.Dokumentnamn}
                         </div>
                         <span
                           id="note-keywords-list-{note.Dokument_ID}"
-                          class="text-sm font-medium border-gray-200 flex flex-col"
+                          class="text-sm font-medium flex flex-col"
                         >
                           {#each note.keywords as keyword, index}
                             {#if index < 4 || note.keywords.length <= 5}
@@ -526,4 +533,7 @@ function scrollToKeywordInDirection(keyword: string, direction: string) {
       </div>
     {/each}
   </div>
+    <div class="flex-grow flex items-center justify-left text-gray-500 text-xs shadow-sm font-medium h-6 bg-gray-200 overflow-hidden pl-1 ml-[8px]">
+      Inga äldre anteckningar
+    </div>
 </div>
