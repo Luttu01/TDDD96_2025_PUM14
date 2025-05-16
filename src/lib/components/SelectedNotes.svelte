@@ -72,7 +72,7 @@
         },
       })
       .resizable({
-        edges: { left: true, right: true, bottom: true, top: true },
+        edges: { left: true, right: true, bottom: true, top: false },
         modifiers: [
           interact.modifiers.snapSize({
             targets: [interact.snappers.grid({ width: 50, height: 50 })],
@@ -87,6 +87,18 @@
           move(event) {
             const target = event.target;
             const { width, height } = event.rect;
+
+            const x = (parseFloat(target.getAttribute("data-x")) || 0);
+            const y = (parseFloat(target.getAttribute("data-y")) || 0);
+
+            // Adjust position when resizing from the left
+            if (event.deltaRect.left) {
+              const newX = x + event.deltaRect.left;
+              target.setAttribute("data-x", newX);
+              target.style.transform = `translate(${newX}px, ${y}px)`;
+            } else {
+              target.style.transform = `translate(${x}px, ${y}px)`;
+            }
 
             target.style.width = `${width}px`;
             target.style.height = `${height}px`;
@@ -197,7 +209,7 @@
           >X</button>
             </div>
         </div>
-        <div id="note_keywords_{i}" class="flex-1 overflow-y-auto p-4 text-xs">
+       <div id="note_keywords_{i}" class="flex-1 overflow-y-scroll hide-scrollbar p-4 text-xs">
           {@html highlightMatches(note.CaseData.replace(
             new RegExp(
               `(<b>(${note.keywords.join("|")})</b>)`,
@@ -270,4 +282,13 @@
   #main-container.no-gridlines {
     background-image: none;
   }
+
+  .hide-scrollbar {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE 10+ */
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Edge */
+}
 </style>

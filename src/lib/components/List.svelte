@@ -1,10 +1,10 @@
 <script lang="ts">
   import type { Note } from '$lib/models';
-  import { onDestroy } from 'svelte';
-  import { selectedNotes, filteredNotes, showTimeline } from '$lib/stores';
+  import { onDestroy, onMount } from 'svelte';
+  import { selectedNotes, filteredNotes, showTimeline, allNotes, filter } from '$lib/stores';
 
   // Get notes from global store and sort them by date 
-  let localItems: Note[] = $derived([...$filteredNotes]
+  let localFilteredItems: Note[] = $derived([...$filteredNotes]
       .map((item, index) => ({
         ...item,
         uniqueId: item.CompositionId || `${index}-${Date.now()}`
@@ -12,18 +12,65 @@
       .sort((a, b) => new Date(b.DateTime).getTime() - new Date(a.DateTime).getTime())
   );
 
-  // Reference to DOM element for the list container that is used to resize the list
+  // Get all non-filtered items
+  let localNonFilteredItems: Note[] = $derived([...$allNotes]
+      .filter(item => !$filteredNotes.some(filteredItem => filteredItem.CompositionId === item.CompositionId))
+      .map((item, index) => ({
+        ...item,
+        uniqueId: item.CompositionId || `${index}-${Date.now()}`
+      }))
+      .sort((a, b) => new Date(b.DateTime).getTime() - new Date(a.DateTime).getTime())
+  );
+
+  // Get active filter descriptions using proper runes mode
+  let activeFilterText = $derived(getActiveFilterText($filter));
+
+  function getActiveFilterText(currentFilter: Map<string, Set<string>>): string {
+    let filterText = [];
+    
+    // Check each filter category
+    for (const [key, activeValues] of currentFilter.entries()) {
+      if (activeValues.size > 0) {
+        const values = Array.from(activeValues);
+        if (values.length === 1) {
+          filterText.push(`${key}: ${values[0]}`);
+        } else if (values.length > 1) {
+          filterText.push(`${key}: ${values.length} valda`);
+        }
+      }
+    }
+    
+    // Return filter text or default
+    return filterText.length > 0 ? filterText.join(', ') : 'Alla journaler';
+  }
+
+  // Reference to DOM element for the list container and list views
   let listContainerElement: HTMLDivElement;
+  let filteredListElement: HTMLUListElement;
+  let nonFilteredListElement: HTMLUListElement;
 
   let lastClickedIndex = $state(-1);
 
   // State for resizable list width functionality
   const MIN_LIST_WIDTH = 110; 
   const DEFAULT_LIST_WIDTH = 280; 
+  const COMPACT_THRESHOLD = 200;  // Threshold for compact mode
+  const EXPANDED_THRESHOLD = 300; // Threshold for expanded mode (lowered from 380)
+  
   let listWidth = $state(DEFAULT_LIST_WIDTH);
   let isDragging = $state(false);
   let initialX = $state(0);
   let initialWidth = $state(0);
+
+  // Function to determine layout mode based on width
+  function getLayoutMode(width: number): 'compact' | 'normal' | 'expanded' {
+    if (width < COMPACT_THRESHOLD) return 'compact';
+    if (width > EXPANDED_THRESHOLD) return 'expanded';
+    return 'normal';
+  }
+
+  // Reactive layout modes based on width using $derived instead of $:
+  let layoutMode = $derived(getLayoutMode(listWidth));
 
   showTimeline.subscribe((value) => {
     if (value) {
@@ -43,11 +90,50 @@
     });
   }
 
+  // Format date with different levels of detail based on layout mode
+  function formatDateByMode(dateTimeString: string, mode: string): string {
+    const date = new Date(dateTimeString);
+    
+    if (mode === 'compact') {
+      return date.toLocaleDateString('sv-SE', {
+        month: '2-digit',
+        day: '2-digit',
+      });
+    } else if (mode === 'normal') {
+      return date.toLocaleDateString('sv-SE', {
+        year: '2-digit',
+        month: '2-digit',
+        day: '2-digit',
+      });
+    } else {
+      return date.toLocaleDateString('sv-SE', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    }
+  }
+
   function handleDocumentClick(clickedNote: Note, event: MouseEvent) {
     event.stopPropagation();
 
-    // Find the index of the clicked note in our local array
-    const currentIndex = localItems.findIndex(item => item.CompositionId === clickedNote.CompositionId);
+    // Find the index of the clicked note in our local array - check both filtered and non-filtered items
+    const filteredIndex = localFilteredItems.findIndex(item => item.CompositionId === clickedNote.CompositionId);
+    const nonFilteredIndex = localNonFilteredItems.findIndex(item => item.CompositionId === clickedNote.CompositionId);
+    
+    // Set currentIndex based on which array the note was found in
+    let currentIndex = -1;
+    let items = localFilteredItems;
+    
+    if (filteredIndex !== -1) {
+      currentIndex = filteredIndex;
+    } else if (nonFilteredIndex !== -1) {
+      currentIndex = nonFilteredIndex;
+      items = localNonFilteredItems;
+    }
+    
     if (currentIndex === -1) return;
 
     // Handle shift+click for multi-select range
@@ -55,7 +141,7 @@
       // Select all notes between last clicked and current
       const start = Math.min(lastClickedIndex, currentIndex);
       const end = Math.max(lastClickedIndex, currentIndex);
-      selectedNotes.set(localItems.slice(start, end + 1));
+      selectedNotes.set(items.slice(start, end + 1));
     } else {
       // Toggle selection for individual note
       const isAlreadySelected = $selectedNotes.some(note => note.CompositionId === clickedNote.CompositionId);
@@ -74,7 +160,6 @@
     }
   }
 
-  
   // Start resizing when mouse down on resize handle
   function handleMouseDown(event: MouseEvent) {
     isDragging = true;
@@ -112,32 +197,145 @@
 </script>
 
 <!-- List container -->
-<div data-testid="list-view-container" class="list-container" class:transition-all={isDragging === false} class:duration-300={isDragging === false} bind:this={listContainerElement} style="width: {listWidth}px;">
-  <ul data-testid="list-view" class="list-view" role="listbox" aria-multiselectable="true" aria-label="Clinical notes list">
-    <!-- Iterate through sorted notes using CompositionId as unique key -->
-    {#each localItems as item}
-      <!-- List item-->
-      <li data-testid="list-item-{item.CompositionId}" role="option" aria-selected={$selectedNotes.some(note => note.CompositionId === item.CompositionId)} class="document-list-item">
-        <button
-          data-testid="list-item-button-{item.CompositionId}"
-          type="button"
-          class="document-button"
-          class:selected={$selectedNotes.some(note => note.CompositionId === item.CompositionId)}
-          onclick={(e) => handleDocumentClick(item, e)}
-        >
-          <div class="document-item">
-            <div class="flex justify-between">
-              <div class="document-meta space-x-2">
-              <span class="font-mono">{formatDate(item.DateTime)}</span>
-              <span class="font-mono">{item.Dokument_skapad_av_yrkestitel_Namn === 'Sjuksköterska' ? 'Ssk' : 'Läk'}</span>
-              <h3>{item.Dokumentnamn}</h3>
-            </div>
-            </div>
-          </div>
-        </button>
-      </li>
-    {/each}
-  </ul>
+<div 
+  data-testid="list-view-container" 
+  class="list-container" 
+  class:transition-all={isDragging === false} 
+  class:duration-300={isDragging === false}
+  class:list-compact={layoutMode === 'compact'}
+  class:list-normal={layoutMode === 'normal'}
+  class:list-expanded={layoutMode === 'expanded'}
+  bind:this={listContainerElement} 
+  style="width: {listWidth}px;"
+>
+  <!-- Top section with filtered items -->
+  <div class="top-section">
+    {#if localFilteredItems.length > 0}
+      <div class="filtered-header" aria-hidden="true">
+        <div class="filtered-header-text">{activeFilterText}</div>
+      </div>
+      
+      <ul data-testid="filtered-list-view" class="filtered-list-view" role="listbox" aria-multiselectable="true" aria-label="Filtered clinical notes list">
+        <!-- Iterate through filtered notes using CompositionId as unique key -->
+        {#each localFilteredItems as item}
+          <!-- List item-->
+          <li data-testid="list-item-{item.CompositionId}" role="option" aria-selected={$selectedNotes.some(note => note.CompositionId === item.CompositionId)} class="document-list-item">
+            <button
+              data-testid="list-item-button-{item.CompositionId}"
+              type="button"
+              class="document-button"
+              class:selected={$selectedNotes.some(note => note.CompositionId === item.CompositionId)}
+              onclick={(e) => handleDocumentClick(item, e)}
+            >
+              <div class="document-item">
+                <!-- Dynamic layout based on width -->
+                {#if layoutMode === 'compact'}
+                  <!-- Compact layout -->
+                  <div class="flex flex-col">
+                    <div class="flex items-center gap-1">
+                      <span class="font-mono text-xs">{formatDateByMode(item.DateTime, 'compact')}</span>
+                      <span class="text-[0.6rem] text-gray-500">{item.Dokument_skapad_av_yrkestitel_Namn === 'Sjuksköterska' ? 'Ssk' : 'Läk'}</span>
+                    </div>
+                    <h3 class="text-xs mt-1">{item.Dokumentnamn}</h3>
+                    <div class="text-[0.6rem] text-gray-500 mt-0.5 truncate">
+                      <span>{item.Vårdenhet_Namn}</span>
+                    </div>
+                  </div>
+                {:else if layoutMode === 'normal'}
+                  <!-- Normal layout -->
+                  <div class="flex flex-col">
+                    <div class="document-meta space-x-2">
+                      <span class="font-mono">{formatDateByMode(item.DateTime, 'normal')}</span>
+                      <span class="font-mono">{item.Dokument_skapad_av_yrkestitel_Namn === 'Sjuksköterska' ? 'Ssk' : 'Läk'}</span>
+                    </div>
+                    <h3>{item.Dokumentnamn}</h3>
+                  </div>
+                {:else}
+                  <!-- Expanded layout -->
+                  <div class="flex flex-col space-y-1">
+                    <div class="flex justify-between items-center">
+                      <span class="font-mono">{formatDateByMode(item.DateTime, 'expanded')}</span>
+                      <span class="bg-gray-100 px-2 py-0.5 rounded text-xs">{item.Dokument_skapad_av_yrkestitel_Namn}</span>
+                    </div>
+                    <h3 class="text-sm">{item.Dokumentnamn}</h3>
+                    <div class="text-xs text-gray-500 mt-1">
+                      <span>Vårdenhet: {item.Vårdenhet_Namn}</span>
+                    </div>
+                  </div>
+                {/if}
+              </div>
+            </button>
+          </li>
+        {/each}
+      </ul>
+    {/if}
+  </div>
+
+  <!-- Bottom section with non-filtered items -->
+  {#if localNonFilteredItems.length > 0}
+    <div class="bottom-section">
+      <!-- Separator for non-filtered items with no text -->
+      <div class="separator" aria-hidden="true">
+        <div class="separator-line"></div>
+        <div class="separator-line"></div>
+      </div>
+      
+      <ul data-testid="non-filtered-list-view" class="non-filtered-list-view" role="listbox" aria-multiselectable="true" aria-label="Non-filtered clinical notes list">
+        <!-- Iterate through non-filtered notes -->
+        {#each localNonFilteredItems as item}
+          <!-- List item with muted styling -->
+          <li data-testid="list-item-non-filtered-{item.CompositionId}" role="option" aria-selected={$selectedNotes.some(note => note.CompositionId === item.CompositionId)} class="document-list-item document-list-item-muted">
+            <button
+              data-testid="list-item-button-{item.CompositionId}"
+              type="button"
+              class="document-button document-button-muted"
+              class:selected={$selectedNotes.some(note => note.CompositionId === item.CompositionId)}
+              onclick={(e) => handleDocumentClick(item, e)}
+            >
+              <div class="document-item">
+                <!-- Dynamic layout based on width, same as above but with muted styling -->
+                {#if layoutMode === 'compact'}
+                  <!-- Compact layout -->
+                  <div class="flex flex-col">
+                    <div class="flex items-center gap-1">
+                      <span class="font-mono text-xs">{formatDateByMode(item.DateTime, 'compact')}</span>
+                      <span class="text-[0.6rem] text-gray-500">{item.Dokument_skapad_av_yrkestitel_Namn === 'Sjuksköterska' ? 'Ssk' : 'Läk'}</span>
+                    </div>
+                    <h3 class="text-xs mt-1">{item.Dokumentnamn}</h3>
+                    <div class="text-[0.6rem] text-gray-500 mt-0.5 truncate">
+                      <span>{item.Vårdenhet_Namn}</span>
+                    </div>
+                  </div>
+                {:else if layoutMode === 'normal'}
+                  <!-- Normal layout -->
+                  <div class="flex flex-col">
+                    <div class="document-meta space-x-2">
+                      <span class="font-mono">{formatDateByMode(item.DateTime, 'normal')}</span>
+                      <span class="font-mono">{item.Dokument_skapad_av_yrkestitel_Namn === 'Sjuksköterska' ? 'Ssk' : 'Läk'}</span>
+                    </div>
+                    <h3>{item.Dokumentnamn}</h3>
+                  </div>
+                {:else}
+                  <!-- Expanded layout -->
+                  <div class="flex flex-col space-y-1">
+                    <div class="flex justify-between items-center">
+                      <span class="font-mono">{formatDateByMode(item.DateTime, 'expanded')}</span>
+                      <span class="bg-gray-100 px-2 py-0.5 rounded text-xs">{item.Dokument_skapad_av_yrkestitel_Namn}</span>
+                    </div>
+                    <h3 class="text-sm">{item.Dokumentnamn}</h3>
+                    <div class="text-xs text-gray-500 mt-1">
+                      <span>Vårdenhet: {item.Vårdenhet_Namn}</span>
+                    </div>
+                  </div>
+                {/if}
+              </div>
+            </button>
+          </li>
+        {/each}
+      </ul>
+    </div>
+  {/if}
+
   <!-- Resize handle for adjusting list width -->
   <button 
     data-testid="resize-handle" 
@@ -157,15 +355,33 @@
     max-width: 500px;
     border: 1px solid #ccc; 
     background-color: white;
+    display: flex;
+    flex-direction: column;
   }
 
-  /* Scrollable list of documents */
-  .list-view {
+  /* Top and bottom sections */
+  .top-section {
+    flex-grow: 1;
+    overflow-y: auto;
+    border-bottom: 1px solid #eaeaea;
+    display: flex;
+    flex-direction: column;
+    min-height: 100px;
+    max-height: calc(100% - 50px);
+  }
+
+  .bottom-section {
+    max-height: 50%;
+    overflow-y: auto;
+    background-color: #fafafa;
+  }
+
+  /* Scrollable lists of documents */
+  .filtered-list-view, .non-filtered-list-view {
     list-style: none;
     padding: 0;
     margin: 0;
-    height: 100%; 
-    overflow-y: auto; 
+    width: 100%;
   }
 
   /* Individual list items with border between them */
@@ -178,10 +394,15 @@
     border-bottom: none;
   }
 
+  /* Muted styling for non-filtered items */
+  .document-list-item-muted {
+    background-color: #f8f8f8;
+  }
+
   /* Button styling for each document in the list */
   .document-button {
     width: 100%;
-    padding: 0.2rem 0.2rem;
+    padding: 0.4rem 0.5rem;
     background: none;
     border: none;
     cursor: pointer;
@@ -191,6 +412,17 @@
 
   .document-button:hover {
     background-color: #f5f5f5;
+  }
+
+  /* Muted button styling */
+  .document-button-muted {
+    opacity: 0.7;
+    padding: 0.2rem 0.2rem;
+  }
+
+  .document-button-muted:hover {
+    background-color: #f0f0f0;
+    opacity: 0.9;
   }
 
   /* Selected document styling with left border accent */
@@ -214,6 +446,15 @@
     text-overflow: ellipsis;
   }
 
+  /* Responsive styling based on list width */
+  .list-compact .document-item h3 {
+    font-size: 0.65rem;
+  }
+
+  .list-expanded .document-item h3 {
+    font-size: 0.8rem;
+  }
+
   /* Metadata sections with overflow handling */
   .document-meta {
     white-space: nowrap;
@@ -230,6 +471,15 @@
     color: #6d6d6d;
   }
 
+  /* Responsive font sizes based on layout */
+  .list-compact .document-meta {
+    font-size: 0.65rem;
+  }
+
+  .list-expanded .document-meta {
+    font-size: 0.75rem;
+  }
+
   /* Resize handle on the right side of the list */
   .resize-handle {
     position: absolute;
@@ -243,5 +493,33 @@
 
   .resize-handle:hover {
     background-color: rgba(0, 0, 0, 0.3);
+  }
+
+  /* Separator styling */
+  .separator {
+    display: flex;
+    align-items: center;
+    padding: 0.8rem 0.2rem 0.4rem 0.2rem;
+    background-color: #f0f0f0;
+  }
+
+  .separator-line {
+    flex-grow: 1;
+    height: 1px;
+    background-color: #ccc;
+  }
+
+  /* Filtered header styling */
+  .filtered-header {
+    display: flex;
+    justify-content: center;
+    padding: 0.8rem 0.2rem 0.4rem 0.2rem;
+    background-color: #f5f8ff;
+  }
+
+  .filtered-header-text {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #4a5568;
   }
 </style>

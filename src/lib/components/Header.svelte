@@ -22,6 +22,8 @@
   let filteredRoles = new Set<string>();
   let filteredKeywords = new Set<string>();
 
+  let search = "";
+
   $: templates = new Map(
     $allNotes.map((n) => [
       n.Dokumentnamn,
@@ -44,11 +46,11 @@
     ])
   );
 
-  let minDate = "";
-  let maxDate = "";
-  let absMin = "";
-  let absMax = "";
-
+  let absMin = ($allNotes.at($allNotes.length-1)?.DateTime as string).substring(0, 10);
+  let absMax = ($allNotes.at(0)?.DateTime as string).substring(0, 10);
+  let minDate = absMin;
+  let maxDate = absMax;
+  
   let template = "Journalmall";
   let unit = "Vårdenhet";
   let role = "Yrkesroll";
@@ -294,7 +296,7 @@
         id="dropdown_button"
         class="px-2 flex flex-row justify-between"
       >
-        <button>Sökord</button>
+        <input id="keyword-searcher" class="w-[80%]" type="search" bind:value={search} placeholder="Sökord">
         {#if filteredKeywords.size != 0}
           <button
             onclick={(event) => reset("Sökord")}
@@ -306,21 +308,21 @@
       </div>
       <div class="w-full flex justify-center">
         <ul id="dropdown_keywords">
-          {#each Array.from(keywordsMap) as [key, kw]}
-            <li>
-              <button
-                class="w-[100%] flex row justify-between text-left  {kw.selected
-                  ? 'bg-[color:var(--bg-color)] hover:bg-[color:var(--hover-color)]'
-                  : 'bg-white hover:bg-gray-100'}"
-                style="--bg-color: {stringToColor(
-                  kw.name
-                )}; --hover-color: {stringToColor(kw.name, 80)};"
-                name={kw.name}
-                onclick={handleKeywordClick}
-              >
-                {kw.name}
-              </button>
-            </li>
+          {#each Array.from(keywordsMap).sort((a, b) => ((b[1].selected as unknown) as number) - ((a[1].selected as unknown) as number)) as [key, kw]}
+            {#if (kw.name.toLocaleLowerCase()).includes(search.toLowerCase())}
+              <li>
+                <button
+                  class="w-[100%] flex row justify-between text-left text-sm {kw.selected
+                    ? 'bg-[color:var(--bg-color)] hover:bg-[color:var(--hover-color)]'
+                    : 'bg-white hover:bg-gray-100'}"
+                  style="--bg-color: {stringToColor(kw.name)}; --hover-color: {stringToColor(kw.name, 80)};"
+                  name={kw.name}
+                  onclick={handleKeywordClick}
+                >
+                  {kw.name}
+                </button>
+              </li>
+            {/if}
           {/each}
         </ul>
       </div>
@@ -538,7 +540,7 @@
   #template:hover ul,
   #role:hover ul,
   #Vårdenhet:hover ul,
-  #keywords:hover ul {
+  #keywords:hover ul, #keywords:has(input:focus) ul {
     display: flex;
     position: absolute;
     flex-direction: column;
@@ -559,4 +561,8 @@
   #DateDiv {
     height: fit-content;
   }
+  #keyword-searcher:focus {
+    outline: none;
+  }
+
 </style>
