@@ -162,30 +162,29 @@
   }
 </script>
 
-<!-- 🧭 Main Layout -->
+<!-- Main Layout -->
 <div
   id="main-container"
-  class="flex-grow w-full relative overflow-hidden bg-gray-100 {$powerMode
-    ? ''
-    : 'no-gridlines'}"
+  class="flex-grow w-full relative overflow-hidden bg-gray-100 {$powerMode ? '' : 'no-gridlines'}"
 >
   {#if $selectedNotes.length <= 0}
     <div id="Absence_of_notes" class="flex items-center justify-center h-full">
       <p class="text-gray-400 text-lg">Tryck på Journalanteckningar i listan eller tidslinjen för att öppna här</p>
     </div>
   {/if}
+
   {#if showSearchInput}
-  <div id="SearchInput" class="fixed top-10 left-1/2 transform -translate-x-1/2 z-50 bg-white rounded-md shadow-lg max-w-md w-[90%] p-2">
-    <SearchInput on:close={() => showSearchInput = false} />
-  </div>
+    <div id="SearchInput" class="fixed top-10 left-1/2 transform -translate-x-1/2 z-50 bg-white rounded-md shadow-lg max-w-md w-[90%] p-2">
+      <SearchInput on:close={() => showSearchInput = false} />
+    </div>
   {/if}
+
   {#if $powerMode}
     {#each $selectedNotes as note, i (note.CaseData)}
       <div
         id="note_nr_{i}"
-        class="draggable bg-white rounded-lg shadow-md flex flex-col overflow-hidden"
-        style="transform: translate({initialPositions.get(note.CaseData)?.x ||
-          0}px, {initialPositions.get(note.CaseData)?.y || 0}px);"
+        class="draggable bg-white rounded-lg shadow-md flex flex-col overflow-hidden h-full max-h-full"
+        style="transform: translate({initialPositions.get(note.CaseData)?.x || 0}px, {initialPositions.get(note.CaseData)?.y || 0}px);"
         on:mousedown={() => {}}
         role="button"
         tabindex="0"
@@ -195,29 +194,26 @@
           id="note_date_{i}"
           class="text-left text-xs text-gray-500 flex justify-between items-center font-mono p-2 border-b border-gray-200 cursor-move h-8"
         >
-            {new Date(note?.DateTime).toLocaleDateString('sv-SE', {
+          {new Date(note?.DateTime).toLocaleDateString('sv-SE', {
             year: 'numeric',
             month: '2-digit',
-            day: '2-digit',
-            })}
-            <div id="note_preview_{i}" class="flex items-center space-x-2">
-          <NotePreview {note} />
-          <button
-            class="font-bold text-lg font-sans text-red-500 hover:text-red-700"
-            on:click={() => handleNoteClick(note)}
-            aria-label="deselect note"
-          >X</button>
-            </div>
+            day: '2-digit'
+          })}
+          <div id="note_preview_{i}" class="flex items-center space-x-2">
+            <NotePreview {note} />
+            <button
+              class="font-bold text-lg font-sans text-red-500 hover:text-red-700"
+              on:click={() => handleNoteClick(note)}
+              aria-label="deselect note"
+            >X</button>
+          </div>
         </div>
-       <div id="note_keywords_{i}" class="flex-1 overflow-y-scroll hide-scrollbar p-4 text-xs">
+        <div id="note_keywords_{i}" class="flex-1 overflow-y-auto hide-scrollbar p-4 text-xs min-h-0">
           {@html highlightMatches(note.CaseData.replace(
-            new RegExp(
-              `(<b>(${note.keywords.join("|")})</b>)`,
-              "gi"
-            ),
+            new RegExp(`(<b>(${note.keywords.join("|")})</b>)`, "gi"),
             (match, p1, p2) =>
               `<span style="background-color: ${stringToColor(p2)}; font-weight: bold;">${p2}</span>`
-            ), $searchQuery)}
+          ), $searchQuery)}
         </div>
       </div>
     {/each}
@@ -226,34 +222,29 @@
       <div id="note_collection_container" class="flex-1 overflow-x-auto p-2">
         <div id="note_collection_container_2" class="flex space-x-2 h-full min-w-full">
           {#each $selectedNotes as note, i (note.CaseData)}
-            <div id="normal_note_{i}" class="w-[100vw] min-w-120 bg-white rounded-lg shadow-md flex-grow overflow-hidden">
-              <div id="normal_note_info_{i}" class="text-left text-xs text-gray-500 flex justify-between items-center border-b border-gray-200 px-2 font-mono">
+            <div id="normal_note_{i}" class="w-[100vw] min-w-120 bg-white rounded-lg shadow-md flex flex-col flex-grow overflow-hidden h-full">
+              <div id="normal_note_info_{i}" class="text-left text-xs text-gray-500 flex justify-between items-center border-b border-gray-200 px-2 font-mono h-8">
                 {new Date(note?.DateTime).toLocaleDateString('sv-SE', {
                   year: 'numeric',
                   month: '2-digit',
-                  day: '2-digit',
-                  })}
-                  <div id="normal_note_preview_{i}" class="flex items-center space-x-2">
+                  day: '2-digit'
+                })}
+                <div id="normal_note_preview_{i}" class="flex items-center space-x-2">
                   <NotePreview {note} />
-                <button
-                  class="font-bold text-lg font-sans text-red-500 hover:text-red-700"
-                  on:click={() => note?.CaseData && handleNoteClick(note)}
-                  class:selected={$selectedNotes?.find(
-                    (n) => n.CaseData === note?.CaseData
-                  )}
-                  aria-label="deselect note"
-                >X</button>
-                  </div>
+                  <button
+                    class="font-bold text-lg font-sans text-red-500 hover:text-red-700"
+                    on:click={() => note?.CaseData && handleNoteClick(note)}
+                    class:selected={$selectedNotes?.find((n) => n.CaseData === note?.CaseData)}
+                    aria-label="deselect note"
+                  >X</button>
+                </div>
               </div>
-              <div id="normal_note_matches_{i}" class="h-full overflow-y-auto text-xs p-2">
+              <div id="normal_note_matches_{i}" class="flex-1 overflow-y-auto text-xs p-2 min-h-0">
                 {@html highlightMatches(note.CaseData.replace(
-                  new RegExp(
-                  `(<b>(${note.keywords.join("|")})</b>)`,
-                  "gi"
-                  ),
+                  new RegExp(`(<b>(${note.keywords.join("|")})</b>)`, "gi"),
                   (match, p1, p2) =>
-                  `<span style="background-color: ${stringToColor(p2)}; font-weight: bold;">${p2}</span>`
-                  ), $searchQuery)}
+                    `<span style="background-color: ${stringToColor(p2)}; font-weight: bold;">${p2}</span>`
+                ), $searchQuery)}
               </div>
             </div>
           {/each}

@@ -350,12 +350,12 @@ function scrollToKeywordInDirection(keyword: string, direction: string) {
 
 <div
   id="scroll-container"
-  class="flex h-full bg-gray-100 overflow-x-auto overflow-y-hidden"
+  class="flex bg-gray-100 overflow-x-auto h-full"
   bind:this={scrollContainer}
 >
-  <div id="years-container" class="flex flex-row h-full space-x-[8px]">
+  <div id="years-container" class="flex flex-row space-x-[8px] h-full min-h-0">
     {#each $noteHierarchy as yearGroup (yearGroup.year)}
-      <div id="year-{yearGroup.year}" class="h-full flex flex-col">
+      <div id="year-{yearGroup.year}" class="flex flex-col h-full min-h-0">
         <button
           id="toggle-year-{yearGroup.year}"
           class="flex bg-purple-100 py-1 text-left text-sm px-1 w-full shadow-sm justify-between {yearGroup.isCollapsed ? 'cursor-zoom-in' : 'cursor-zoom-out'}"
@@ -366,9 +366,9 @@ function scrollToKeywordInDirection(keyword: string, direction: string) {
             {yearGroup.year}
           </div>
         </button>
-        <div id="months-container-year-{yearGroup.year}" class="flex flex-row space-x-[8px]">
+        <div id="months-container-year-{yearGroup.year}" class="flex flex-row space-x-[8px] h-full min-h-0">
           {#each yearGroup.months as monthGroup}
-            <div id="month-{yearGroup.year}-{monthGroup.month}" class="flex flex-col">
+            <div id="month-{yearGroup.year}-{monthGroup.month}" class="flex flex-col h-full min-h-0">
               <button
                 id="toggle-month-{yearGroup.year}-{monthGroup.month}"
                 class="{yearGroup.isCollapsed ? 'h-0 py-0 w-6' : 'h-6 py-1 w-full'} flex bg-purple-200 justify-between px-1 shadow-xs transition-all duration-300 shadow-md {monthGroup.isCollapsed ? 'cursor-zoom-in' : 'cursor-zoom-out'}"
@@ -386,23 +386,20 @@ function scrollToKeywordInDirection(keyword: string, direction: string) {
               </button>
               <div
                 id="notes-container-{yearGroup.year}-{monthGroup.month}"
-                class="flex flex-row overflow-hidden space-x-[8px] items-start"
+                class="flex flex-row space-x-[8px] items-start h-full min-h-0 mb-4"
               >
                 {#each monthGroup.notes as note}
                   {#key note.Dokument_ID}
                     <button
                       id="note-{note.Dokument_ID}"
                       class={`transition-all mt-2 duration-300 border rounded-md shadow-xs ${isInSelectedNotes(note) ? "bg-purple-50 border-purple-300 hover:bg-purple-100" : "bg-white border-gray-200 hover:bg-gray-50"} relative cursor-pointer ${
-                        getNoteSizeState(yearGroup, monthGroup, note) ===
-                        "compact"
+                        getNoteSizeState(yearGroup, monthGroup, note) === "compact"
                           ? "flex flex-col py-2 px-1 w-12 space-y-1"
-                          : getNoteSizeState(yearGroup, monthGroup, note) ===
-                              "medium"
+                          : getNoteSizeState(yearGroup, monthGroup, note) === "medium"
                             ? "flex flex-col p-2 w-42 text-sm text-left"
-                            : getNoteSizeState(yearGroup, monthGroup, note) ===
-                                "hidden"
+                            : getNoteSizeState(yearGroup, monthGroup, note) === "hidden"
                               ? "w-6 flex flex-col"
-                              : "flex justify-between p-2 w-100"
+                              : "flex flex-col p-2 w-100 h-full min-h-0"
                       }`}
                       onclick={() => handleNoteClick(note)}
                       aria-label="Select note {note.Dokument_ID}"
@@ -410,8 +407,8 @@ function scrollToKeywordInDirection(keyword: string, direction: string) {
                     >
                       <div
                         id="note-pointer-{note.Dokument_ID}"
-                        class="transition-all duration-300 absolute -top-2.5 left-1/2 -translate-x-1/2 w-0 h-0 border-b-10
-               {getNoteSizeState(yearGroup, monthGroup, note) === "hidden" ? 'border-l-4 border-r-4' : 'border-l-10 border-r-10'} border-transparent {isInSelectedNotes(
+                        class="transition-all duration-300 absolute -top-2 left-1/2 -translate-x-1/2 w-0 h-0 border-b-10
+                 {getNoteSizeState(yearGroup, monthGroup, note) === "hidden" ? 'border-l-4 border-r-4' : 'border-l-10 border-r-10'} border-transparent {isInSelectedNotes(
                           note
                         )
                           ? 'border-b-purple-300'
@@ -481,7 +478,7 @@ function scrollToKeywordInDirection(keyword: string, direction: string) {
                       {:else}
                         <div
                           id="note-detailed-view-{note.Dokument_ID}"
-                          class="text-gray-900 text-left text-xs w-full flex flex-col"
+                          class="text-gray-900 text-left text-xs w-full flex flex-col h-full min-h-0"
                         >
                           <div
                             id="note-detailed-header-{note.Dokument_ID}"
@@ -498,28 +495,30 @@ function scrollToKeywordInDirection(keyword: string, direction: string) {
                               }
                             )}
                             <div class="flex flex-row">
-                            {#each note.keywords as keyword}
-                              <span
-                                id="note-detailed-keyword-{note.Dokument_ID}-{keyword}"
-                                class="text-xs font-light px-1"
-                                style="background-color: {stringToColor(
-                                  keyword
-                                )}"
-                              >
-                              </span>
-                            {/each}
-                          </div>
+                              {#each note.keywords as keyword}
+                                <span
+                                  id="note-detailed-keyword-{note.Dokument_ID}-{keyword}"
+                                  class="text-xs font-light px-1"
+                                  style="background-color: {stringToColor(
+                                    keyword
+                                  )}"
+                                ></span>
+                              {/each}
+                            </div>
                             <NotePreview {note} />
                           </div>
-                          <div id="note-detailed-text-{note.Dokument_ID}" class="overflow-y-auto w-full max-h-[140px] whitespace-pre-wrap text-xs">
-                              {@html note.CaseData.replace(
-                                new RegExp(
-                                  `(<b>(${note.keywords.join("|")})</b>)`,
-                                  "gi"
-                                ),
-                                (match, p1, p2) =>
-                                  `<span style="background-color: ${stringToColor(p2)}; font-weight: bold;">${p2}</span>`
-                              )}
+                          <div
+                            id="note-detailed-text-{note.Dokument_ID}"
+                            class="overflow-y-auto w-full whitespace-pre-wrap text-xs flex-grow min-h-0"
+                          >
+                            {@html note.CaseData.replace(
+                              new RegExp(
+                                `(<b>(${note.keywords.join("|")})</b>)`,
+                                "gi"
+                              ),
+                              (match, p1, p2) =>
+                                `<span style="background-color: ${stringToColor(p2)}; font-weight: bold;">${p2}</span>`
+                            )}
                           </div>
                         </div>
                       {/if}
@@ -533,7 +532,7 @@ function scrollToKeywordInDirection(keyword: string, direction: string) {
       </div>
     {/each}
   </div>
-    <div class="flex-grow flex items-center justify-left text-gray-500 text-xs shadow-sm font-medium h-6 bg-gray-200 overflow-hidden pl-1 ml-[8px]">
-      Inga äldre anteckningar
-    </div>
+  <div class="flex-grow flex items-center justify-left text-gray-500 text-xs shadow-sm font-medium h-6 bg-gray-200 overflow-hidden pl-1 ml-[8px]">
+    Inga äldre anteckningar
+  </div>
 </div>

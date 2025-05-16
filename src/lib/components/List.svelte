@@ -438,11 +438,11 @@
 
   /* Responsive styling based on list width */
   .list-compact #document-item h3 {
-    font-size: 0.65rem;
+    font-size: 0.7rem;
   }
 
   .list-expanded #document-item h3 {
-    font-size: 0.8rem;
+    font-size: 0.7rem;
   }
 
   /* Metadata sections with overflow handling */
@@ -463,11 +463,11 @@
 
   /* Responsive font sizes based on layout */
   .list-compact #document-meta {
-    font-size: 0.65rem;
+    font-size: 0.7rem;
   }
 
   .list-expanded #document-meta {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
   }
 
   /* Resize handle on the right side of the list */
