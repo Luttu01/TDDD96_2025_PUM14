@@ -259,26 +259,6 @@
       </div>
       {/if}
     </div>
-    {/if}
-    <div id="ToggleCanvas" class="p-1 flex">
-      <label for="toggleCanvas" class="text-xs items-center flex gap-1">
-        Canvas
-        <div class="relative inline-block w-8 h-4 items-center">
-          <input
-            id="toggleCanvas"
-            type="checkbox"
-            bind:checked={$powerMode}
-            class="sr-only peer"
-          />
-          <div
-            class="w-full h-full bg-gray-300 rounded-full peer-checked:bg-purple-500 transition-colors"
-          ></div>
-          <div
-            class="absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full shadow-md transition-all peer-checked:translate-x-4"
-          ></div>
-        </div>
-      </label>
-    </div>
   </div>
 
   <div
@@ -508,13 +488,6 @@
           {/each}
         </ul>
       </div>
-    </div>
-    <div id="CloseDocs" class="p-1 flex items-center">
-      <button
-        id="Close"
-        class="hover:text-purple-500 self-center text-xs"
-        onclick={closeDocs}>Återställ Journalvy</button
-      >
     </div>
     <div id="ResetFilters" class="p-1 flex items-center">
       <button
