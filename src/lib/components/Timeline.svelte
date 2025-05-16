@@ -353,7 +353,7 @@ function scrollToKeywordInDirection(keyword: string, direction: string) {
   class="flex h-full bg-gray-100 overflow-x-auto overflow-y-hidden"
   bind:this={scrollContainer}
 >
-  <div id="years-container" class="flex flex-row h-full space-x-[2px]">
+  <div id="years-container" class="flex flex-row h-full space-x-[8px]">
     {#each $noteHierarchy as yearGroup (yearGroup.year)}
       <div id="year-{yearGroup.year}" class="h-full flex flex-col">
         <button
@@ -366,7 +366,7 @@ function scrollToKeywordInDirection(keyword: string, direction: string) {
             {yearGroup.year}
           </div>
         </button>
-        <div id="months-container-year-{yearGroup.year}" class="flex flex-row space-x-[2px]">
+        <div id="months-container-year-{yearGroup.year}" class="flex flex-row space-x-[8px]">
           {#each yearGroup.months as monthGroup}
             <div id="month-{yearGroup.year}-{monthGroup.month}" class="flex flex-col">
               <button
@@ -386,7 +386,7 @@ function scrollToKeywordInDirection(keyword: string, direction: string) {
               </button>
               <div
                 id="notes-container-{yearGroup.year}-{monthGroup.month}"
-                class="flex flex-row overflow-hidden p-[2px] space-x-[4px] items-start"
+                class="flex flex-row overflow-hidden space-x-[8px] items-start"
               >
                 {#each monthGroup.notes as note}
                   {#key note.Dokument_ID}
@@ -533,7 +533,7 @@ function scrollToKeywordInDirection(keyword: string, direction: string) {
       </div>
     {/each}
   </div>
-    <div class="flex-grow flex items-center justify-center text-gray-400 text-xs shadow-sm font-medium h-6 bg-gray-200 overflow-hidden pl-1">
+    <div class="flex-grow flex items-center justify-left text-gray-500 text-xs shadow-sm font-medium h-6 bg-gray-200 overflow-hidden pl-1 ml-[8px]">
       Inga äldre anteckningar
     </div>
 </div>
