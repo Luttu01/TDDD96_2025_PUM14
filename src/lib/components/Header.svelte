@@ -170,46 +170,94 @@
   }
 </script>
 
-<div id="Header" class="flex flex-row justify-between p-1 space-x-4">
-  <div id="Toggleable" class="flex justify-between">
-    <div id="ToggleTimeline" class="p-1 flex">
-      <label for="toggleTimeline" class="text-xs items-center flex gap-1">
-        Tidslinje
-        <div class="relative inline-block w-8 h-4 items-center">
-          <input
-            id="toggleTimeline"
-            type="checkbox"
-            bind:checked={$showTimeline}
-            class="sr-only peer"
-          />
-          <div
-            class="w-full h-full bg-gray-300 rounded-full peer-checked:bg-purple-500 transition-colors"
-          ></div>
-          <div
-            class="absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full shadow-md transition-all peer-checked:translate-x-4"
-          ></div>
-        </div>
-      </label>
+<div id="Header" class="flex flex-row p-1 space-y-0 justify-between space-x-4 items-center">
+  <div
+    id="settings"
+    class="flex flex-row items-center space-x-1 xl:text-sm text-xs"
+  >
+    <div
+      id="settingsJournal"
+      class="flex flex-row items-center justify-beginning space-x-1"
+    >
+    <div id="CloseDocs" class="p-1 flex items-center">
+      <button
+      id="Close"
+      class="px-2 py-[1px] rounded-md transition-colors self-center
+        { $selectedNotes.length === 0
+        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+        : 'bg-gray-200 hover:bg-gray-300'}"
+      onclick={closeDocs}
+      disabled={$selectedNotes.length === 0}
+      >
+      Avmarkera alla
+      </button>
     </div>
-    {#if $showTimeline }
-    <div id="ToggleDestruct" class="p-1 flex">
-      <label for="toggleDestruct" class="text-xs items-center flex gap-1">
-        Dölj Ofiltrerat
-        <div class="relative inline-block w-8 h-4 items-center">
-          <input
-            id="toggleDestruct"
-            type="checkbox"
-            bind:checked={$destructMode}
-            class="sr-only peer"
-          />
-          <div
-            class="w-full h-full bg-gray-300 rounded-full peer-checked:bg-purple-500 transition-colors"
-          ></div>
-          <div
-            class="absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full shadow-md transition-all peer-checked:translate-x-4"
-          ></div>
-        </div>
-      </label>
+      <div id="ToggleCanvas" class="p-1 flex">
+        <label for="toggleCanvas" class=" items-center flex gap-1">
+          Canvas
+          <div class="relative inline-block w-8 h-4 items-center">
+            <input
+              id="toggleCanvas"
+              type="checkbox"
+              bind:checked={$powerMode}
+              class="sr-only peer"
+            />
+            <div
+              class="w-full h-full bg-gray-300 rounded-full peer-checked:bg-purple-500 transition-colors"
+            ></div>
+            <div
+              class="absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full shadow-md transition-all peer-checked:translate-x-4"
+            ></div>
+          </div>
+        </label>
+      </div>
+    </div>
+
+    <div
+      id="settingsTimeline"
+      class="flex flex-row items-center space-x-1"
+    >
+      <div id="ToggleTimeline" class="p-1 flex">
+        <label for="toggleTimeline" class=" items-center flex gap-1">
+          Tidslinje
+          <div class="relative inline-block w-8 h-4 items-center">
+            <input
+              id="toggleTimeline"
+              type="checkbox"
+              bind:checked={$showTimeline}
+              class="sr-only peer"
+            />
+            <div
+              class="w-full h-full bg-gray-300 rounded-full peer-checked:bg-purple-500 transition-colors"
+            ></div>
+            <div
+              class="absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full shadow-md transition-all peer-checked:translate-x-4"
+            ></div>
+          </div>
+        </label>
+      </div>
+      
+      {#if $showTimeline}
+      <div id="ToggleDestruct" class="p-1 flex">
+        <label for="toggleDestruct" class=" items-center flex gap-1">
+          Dölj
+          <div class="relative inline-block w-8 h-4 items-center">
+            <input
+              id="toggleDestruct"
+              type="checkbox"
+              bind:checked={$destructMode}
+              class="sr-only peer"
+            />
+            <div
+              class="w-full h-full bg-gray-300 rounded-full peer-checked:bg-purple-500 transition-colors"
+            ></div>
+            <div
+              class="absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full shadow-md transition-all peer-checked:translate-x-4"
+            ></div>
+          </div>
+        </label>
+      </div>
+      {/if}
     </div>
     {/if}
     <div id="ToggleCanvas" class="p-1 flex">
@@ -232,13 +280,14 @@
       </label>
     </div>
   </div>
+
   <div
     id="Filtermenu"
-    class="grid grid-flow-col grid-rows-2 xl:flex xl:flex-row xl:flex-grow text-sm items-center justify-end gap-1"
+    class="flex flex-row xl:text-sm text-xs items-center space-x-1"
   >
     <div
       id="DateDiv"
-      class="outline-1 outline-gray-300 rounded-md bg-white flex flex-row space-x-2 px-2 text-sm"
+      class="outline-1 outline-gray-300 rounded-md bg-white flex flex-row space-x-2 px-2"
     >
       <input
         type="date"
@@ -267,16 +316,16 @@
     >
       <div
         id="dropdown_button"
-        class="px-2 flex flex-row justify-between text-sm"
+        class="px-2 flex flex-row justify-between"
       >
         <input id="keyword-searcher" class="w-[80%]" type="search" bind:value={search} placeholder="Sökord">
         {#if filteredKeywords.size != 0}
           <button
             onclick={(event) => reset("Sökord")}
-            class="text-red-500 text-sm font-bold">X</button
+            class="text-red-500 font-bold">X</button
           >
         {:else}
-          <i class="fa fa-caret-down pt-1"></i>
+          <i class="fa fa-caret-down pt-[2px]"></i>
         {/if}
       </div>
       <div class="w-full flex justify-center">
@@ -303,7 +352,7 @@
     <div id="template" class="outline-1 outline-gray-300 rounded-md bg-white">
       <div
         id="dropdown_button"
-        class="px-2 flex flex-row justify-between text-sm"
+        class="px-2 flex flex-row justify-between "
       >
         <button>
           {template}
@@ -311,10 +360,10 @@
         {#if filteredTemplates.size != 0}
           <button
             onclick={(event) => reset(template)}
-            class="text-red-500 text-sm font-bold">X</button
+            class="text-red-500  font-bold">X</button
           >
         {:else}
-          <i class="fa fa-caret-down pt-1"></i>
+          <i class="fa fa-caret-down pt-[2px]"></i>
         {/if}
       </div>
 
@@ -323,7 +372,7 @@
           {#each Array.from(templates) as [key, journal]}
             <li>
               <button
-                class="w-[100%] flex row justify-between text-left text-sm {journal.selected ==
+                class="w-[100%] flex row justify-between text-left  {journal.selected ==
                 true
                   ? 'bg-purple-100 hover:bg-purple-200'
                   : 'bg-white hover:bg-gray-100'}"
@@ -358,7 +407,7 @@
     >
       <div
         id="dropdown_button"
-        class="px-2 flex flex-row justify-between text-sm"
+        class="px-2 flex flex-row justify-between "
       >
         <button>
           {unit}
@@ -366,10 +415,10 @@
         {#if filteredUnits.size != 0}
           <button
             onclick={() => reset(unit)}
-            class="text-red-500 text-sm font-bold">X</button
+            class="text-red-500  font-bold">X</button
           >
         {:else}
-          <i class="fa fa-caret-down pt-1"></i>
+          <i class="fa fa-caret-down pt-[2px]"></i>
         {/if}
       </div>
       <div class="w-full flex justify-center">
@@ -377,7 +426,7 @@
           {#each Array.from(units) as [key, unit]}
             <li>
               <button
-                class="w-[100%] flex row justify-between text-left text-sm {unit.selected ==
+                class="w-[100%] flex row justify-between text-left  {unit.selected ==
                 true
                   ? 'bg-purple-100 hover:bg-purple-200'
                   : 'bg-white hover:bg-gray-100'}"
@@ -412,7 +461,7 @@
     >
       <div
         id="dropdown_button"
-        class="px-2 flex flex-row justify-between text-sm"
+        class="px-2 flex flex-row justify-between "
       >
         <button>
           {role}
@@ -420,10 +469,10 @@
         {#if filteredRoles.size != 0}
           <button
             onclick={() => reset(role)}
-            class="text-red-500 text-sm font-bold">X</button
+            class="text-red-500  font-bold">X</button
           >
         {:else}
-          <i class="fa fa-caret-down pt-1"></i>
+          <i class="fa fa-caret-down pt-[2px]"></i>
         {/if}
       </div>
       <div class="w-full flex justify-center">
@@ -431,7 +480,7 @@
           {#each Array.from(roles) as [_, role]}
             <li>
               <button
-                class="w-[100%] flex row justify-between text-left text-sm {role.selected ==
+                class="w-[100%] flex row justify-between text-left  {role.selected ==
                 true
                   ? 'bg-purple-100 hover:bg-purple-200'
                   : 'bg-white hover:bg-gray-100'}"
@@ -469,10 +518,16 @@
     </div>
     <div id="ResetFilters" class="p-1 flex items-center">
       <button
-        id="Reset"
-        class="hover:text-purple-500 self-center text-xs"
-        onclick={() => reset("")}>Återställ Filter</button
+      id="Reset"
+      class="px-2 py-[1px] rounded-md transition-colors self-center
+        {filteredTemplates.size === 0 && filteredUnits.size === 0 && filteredRoles.size === 0 && filteredKeywords.size === 0 && minDate === absMin && maxDate === absMax
+        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+        : 'bg-gray-200 hover:bg-gray-300'}"
+      onclick={() => reset("")}
+      disabled={filteredTemplates.size === 0 && filteredUnits.size === 0 && filteredRoles.size === 0 && filteredKeywords.size === 0 && minDate === absMin && maxDate === absMax}
       >
+      Återställ Filter
+      </button>
     </div>
   </div>
 </div>
@@ -508,7 +563,7 @@
   #dropdown_keywords button {
     color: black;
     text-decoration: none;
-    padding: 5px;
+    padding: 4px;
   }
 
   #template:hover ul,
@@ -518,7 +573,6 @@
     display: flex;
     position: absolute;
     flex-direction: column;
-    font-size: 15px;
     background: white;
     width: 100%;
     min-width: fit-content;
