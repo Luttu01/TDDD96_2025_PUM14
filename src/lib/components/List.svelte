@@ -23,26 +23,12 @@
   );
 
   // Get active filter descriptions using proper runes mode
-  let activeFilterText = $derived(getActiveFilterText($filter, $selectedKeywords));
+  let activeFilterText = $derived(getActiveFilterText(localNonFilteredItems));
 
-  function getActiveFilterText(currentFilter: Map<string, Set<string>>, keywords: Set<string>): string {
+  function getActiveFilterText(filtered : Note[]): string {
     let filterText = [];
     
-    // Check each filter category
-    for (const [key, activeValues] of currentFilter.entries()) {
-      if (activeValues.size > 0) {
-        /*
-        const values = Array.from(activeValues);
-        if (values.length === 1) {
-          filterText.push(`${key}: ${values[0]}`);
-        } else if (values.length > 1) {
-          filterText.push(`${key}: ${values.length} valda`);
-        }
-          */
-        filterText[0] = "Filtrerade Journaler";
-      }
-    }
-    if(keywords.size > 0) {
+    if(filtered.length > 0) {
       filterText[0] = "Filtrerade Journaler";
     }
     
@@ -375,6 +361,7 @@
 
   #bottom-section {
     max-height: 50%;
+    min-height: 10%;
     overflow-y: auto;
     background-color: #fafafa;
   }
