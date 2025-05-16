@@ -394,7 +394,7 @@ function scrollToKeywordInDirection(keyword: string, direction: string) {
                       id="note-{note.Dokument_ID}"
                       class={`transition-all mt-2 duration-300 border rounded-md shadow-xs ${isInSelectedNotes(note) ? "bg-purple-50 border-purple-300 hover:bg-purple-100" : "bg-white border-gray-200 hover:bg-gray-50"} relative cursor-pointer ${
                         getNoteSizeState(yearGroup, monthGroup, note) === "compact"
-                          ? "flex flex-col py-2 px-1 w-12 space-y-1"
+                          ? "flex flex-col py-2 w-12 space-y-1"
                           : getNoteSizeState(yearGroup, monthGroup, note) === "medium"
                             ? "flex flex-col p-2 w-42 text-sm text-left"
                             : getNoteSizeState(yearGroup, monthGroup, note) === "hidden"
