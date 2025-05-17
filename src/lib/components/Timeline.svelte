@@ -300,8 +300,8 @@ function scrollToKeywordInDirection(keyword: string, direction: string) {
             class="w-5 h-5 rounded-md text-xs flex items-center justify-center relative"
             style="background-color: {stringToColor(key.split('::')[0])}"
             onclick={() => scrollToKeywordInDirection(key.split("::")[0], "right")}
-            aria-label="Scroll to keyword {key.split('::')[0]}"
-            title="Scroll to keyword {key.split('::')[0]}"
+            aria-label="Scrolla till {key.split('::')[0]}"
+            title="Scrolla till {key.split('::')[0]}"
           >
             {count}
             <div
@@ -330,8 +330,8 @@ function scrollToKeywordInDirection(keyword: string, direction: string) {
             class="w-5 h-5 rounded-md text-xs flex items-center justify-center relative"
             style="background-color: {stringToColor(key.split('::')[0])}"
             onclick={() => scrollToKeywordInDirection(key.split("::")[0], "left")}
-            aria-label="Scroll to keyword {key.split('::')[0]}"
-            title="Scroll to keyword {key.split('::')[0]}"
+            aria-label="Scrolla till {key.split('::')[0]}"
+            title="Scrolla till {key.split('::')[0]}"
           >
             {count}
             <div
@@ -350,7 +350,7 @@ function scrollToKeywordInDirection(keyword: string, direction: string) {
 
 <div
   id="scroll-container"
-  class="flex bg-gray-100 overflow-x-auto h-full"
+  class="flex bg-gray-100 overflow-x-auto h-full overflow-y-hidden"
   bind:this={scrollContainer}
 >
   <div id="years-container" class="flex flex-row space-x-[8px] h-full min-h-0">

@@ -222,7 +222,7 @@
       <div id="note_collection_container" class="flex-1 overflow-x-auto p-2">
         <div id="note_collection_container_2" class="flex space-x-2 h-full min-w-full">
           {#each $selectedNotes as note, i (note.CaseData)}
-            <div id="normal_note_{i}" class="w-[100vw] min-w-120 bg-white rounded-lg shadow-md flex flex-col flex-grow overflow-hidden h-full">
+            <div id="normal_note_{i}" class="w-[100vw] min-w-100 bg-white rounded-lg shadow-md flex flex-col flex-grow overflow-hidden h-full">
               <div id="normal_note_info_{i}" class="text-left text-xs text-gray-500 flex justify-between items-center border-b border-gray-200 px-2 font-mono h-8">
                 {new Date(note?.DateTime).toLocaleDateString('sv-SE', {
                   year: 'numeric',
