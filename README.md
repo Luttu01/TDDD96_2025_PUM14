@@ -40,20 +40,20 @@ Projektet är utvecklat som ett kandidatarbete på uppdrag av Karolinska Univers
 
 För att köra projektet lokalt, följ dessa steg:
 
-### 1. Klona projektet
+1. Klona projektet
 
 ```bash
 git clone https://github.com/Luttu01/TDDD96_2025_PUM14.git
 cd TDDD96_2025_PUM14
 ```
 
-### 2. Installera beroenden
+2. Installera beroenden
 
 ```bash
 npm install
 ```
 
-### 3. Starta utvecklingsservern
+3. Starta utvecklingsservern
 
 ```bash
 npm run dev
@@ -62,13 +62,22 @@ npm run dev
 ---
 
 ## Köra release-versionen
+Följ dessa steg för att hämta och köra senaste release-versionen.
 
-Om du vill köra en färdig release-version utan att bygga själv:
+1. Gå till [Releases](https://github.com/Luttu01/TDDD96_2025_PUM14/releases).
+2. Ladda ner den senaste zip-filen från listan med releaser.
+3. Packa upp filerna och skapa en `.env`-fil i projektroten med följande innehåll:
+   
+   ```env
+   API_USER="username"
+   API_PASS="password"
 
-1. Gå till [Releases]([https://github.com/<ditt-org>/<repo-namn>/releases](https://github.com/Luttu01/TDDD96_2025_PUM14/releases))
-2. Ladda ner den senaste zip-filen
-3. Packa upp den och öppna `index.html` i en webbläsare
+4. Öppna en terminal i projektmappen och kör följande kommando:
 
+   ```bash
+   node --env-file=.env build
+   ```
+   
 ---
 
 ## Projektgruppen
