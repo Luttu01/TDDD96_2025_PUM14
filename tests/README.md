@@ -35,19 +35,19 @@ This document explains how to set up and run the automated tests for the TDDD96_
 ### Running all tests
 
 ```bash
-python3 -m pytest tests/unittests/
+python3 -m pytest tests/test_suite.py
 ```
 
-### Running specific test files
+### Running specific test functions
 
 ```bash
-python3 -m pytest tests/unittests/test_filter.py
+python3 -m pytest tests/test_suite.py::test_function_name
 ```
 
 ### Running tests with HTML reports
 
 ```bash
-python3 -m pytest tests/unittests/ --html=report.html
+python3 -m pytest tests/test_suite.py --html=report.html
 ```
 
 The HTML report will be generated at the root of the project directory.
@@ -55,15 +55,18 @@ The HTML report will be generated at the root of the project directory.
 ### Running tests with XML reports (for CI/CD)
 
 ```bash
-python3 -m pytest tests/unittests/ --junitxml=test-results.xml
+python3 -m pytest tests/test_suite.py --junitxml=test-results.xml
 ```
 
 ## Test Structure
 
-- `tests/unittests/`: Contains all unit and integration tests
-  - `test_filter.py`: Tests for the filter functionality
-  - `test_document_view.py`: Tests for the document view functionality
-  - `test_listvy.py`: Tests for the list view functionality
+All tests are contained in `tests/test_suite.py`. The test suite includes:
+
+- List view tests (L1-L11)
+- Detail view tests (D1-D3)
+- Timeline view tests (T1-T12)
+- Filter tests (F1-F24)
+- System tests (S1-S12)
 
 ## Debugging Tests
 
