@@ -21,7 +21,7 @@ behövde utökningen bortprioriteras. Det är dock en stor utvecklingsmöjlighet
 med journalsystemet sådant att presenterad medicinsk data kan knytas till journaldata på 
 ett innovativt och interaktivt sätt. 
 
-### Genomföra gedigen användartestning med vårdgivare för att mäta användarvänligheten och identifiera potentiella problemområden.
+### Genomföra gedigen användartestning med vårdgivare
 ClarityCare bör genomgå fler användartester och vidareutvecklas iterativt baserat på återkoppling i större grad än vad som 
 var möjligt för detta projekt. Det finns säkerligen flera viktiga funktioner som saknas och problem som är olösa. 
 
