@@ -104,6 +104,11 @@ Se hela licenstexten i filen [`LICENSE`](https://github.com/Luttu01/TDDD96_2025_
 
 ---
 
+## Framtida vidareutveckling
+[Läs mer om förslag på vidareutveckling](https://github.com/Luttu01/TDDD96_2025_PUM14/blob/main/FUTURE_WORK.md)
+
+---
+
 ## Läs mer
 
 Rapporten (PDF): `diva/länk`
