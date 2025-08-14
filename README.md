@@ -111,7 +111,7 @@ Se hela licenstexten i filen [`LICENSE`](https://github.com/Luttu01/TDDD96_2025_
 
 ## Läs mer
 
-Rapporten (PDF): `diva/länk`
+Rapporten (PDF): [`diva/länk`](https://liu.diva-portal.org/smash/record.jsf?pid=diva2%3A1973964&dswid=2284)
 
 ---
 
